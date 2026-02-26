@@ -1,3 +1,8 @@
+import Header from "./Header";
+
 export default function Login() {
-    return <h1>Login</h1>;
+    return <>
+        <Header />
+        <h1>Login</h1>;
+    </>
 }
