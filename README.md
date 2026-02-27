@@ -1,17 +1,38 @@
-# React + TypeScript + Vite
+# GridWorks Web Front-End
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the front-end of the GridWorks web application for managing our fleet of space heating installations.
 
-Currently, two official plugins are available:
+## Technology Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+* The code is TypeScript and CSS
+* React is used as a UI framework
+* Bootstrap (via `react-boostrap`) is used for look-and-feel and some standard web app functionality
+* Axios is used as a HTTP request library
+* Vite (which runs on the NodeJS platform) is used as the development server and build system
+* ESLint is used for static code analysis
 
-## React Compiler
+## Developing
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Run `npm run dev` from the terminal, which will serve the site on your localhost.
+Hot module reload is enabled, so any changes you make to the code will reflect immediately.
 
-## Expanding the ESLint configuration
+### Mock API Responses
+
+API responses are currently mocked via `vite-plugin-mock-dev-server`.
+This allows us to write out mock JSON responses or HTTP status codes, rather than calling our real APIs.
+These mocks are contained in the `mock` folder.
+
+### Strict Mode & Double-Rendering
+
+Note that since we are using React in "strict mode", our components will get unmounted and then re-mounted (and re-rendered) in development mode.
+This is a feature to help us find bugs, but it sometimes a bit confusing while debugging code or observing network calls.
+You can temporarily turn this off by removing the `<StrictMode>` element in `main.tsx`.
+
+## Building
+
+TODO -- Vite can build the app into a bundle of static files that can be served by a static web server.
+
+## TODO (as recommended by the Vite template) - Expanding the ESLint configuration
 
 If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
