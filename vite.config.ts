@@ -8,9 +8,13 @@ export default defineConfig({
     react(),
     mockDevServerPlugin(),
   ],
+  build: {
+    // Enable production source maps (for both JS and CSS)
+    sourcemap: true,
+  },
   server: {
     proxy: {
       '^/api': 'http://example.com/'
     },
-  },
+  }
 })

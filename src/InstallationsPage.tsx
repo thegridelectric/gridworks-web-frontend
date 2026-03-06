@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
-import Header from "./Header";
 import GridworksApi from './GridWorksApi';
+import SidebarNavLayout from "./SidebarNavLayout";
 
 interface Installation {
     id: string,
     displayName: string
 }
 
-export default function Home() {
+export default function InstallationsPage() {
 
     const [isLoading, setIsLoading] = useState(false);
     const [homes, setHomes] = useState<Installation[] | null>(null);
@@ -27,8 +27,9 @@ export default function Home() {
         })
     }, []);
 
-    return <>
-        <Header />
+
+
+    return <SidebarNavLayout>
         <div>
             <h2>Installations</h2>
             {isLoading &&
@@ -43,5 +44,5 @@ export default function Home() {
                 </pre>
             }
         </div>
-    </>
+    </SidebarNavLayout>
 }

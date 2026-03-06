@@ -20,8 +20,9 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
                     //   console.log('401 error caught by interceptor. Redirecting to login.');
                     //   // Clear local storage or Redux store if necessary
                     //   localStorage.clear(); 
-                    // Redirect to the login page using navigate
-                    navigate('/login');
+                    // Redirect to the login page and never resolve the promise (so we don't get a flash of error message)
+                    navigate('/login/');
+                    return new Promise(() => {});
                 }
                 // Reject the promise so the error propagates to the component's catch block
                 return Promise.reject(error);

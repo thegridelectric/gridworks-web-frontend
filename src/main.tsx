@@ -4,22 +4,37 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css'
 
+
 import GridWorksApiInterceptor from './GridWorksApiInterceptor.ts';
 
-import Login from './Login.tsx';
-import Dashboard from './Dashboard.tsx';
-import Home from './Home.tsx';
+import App from './App.tsx';
+
+import LoginPage from './LoginPage.tsx';
+import InstallationsPage from './InstallationsPage.tsx';
+import SnapshotPage from './SnapshotPage.tsx';
+import VisualizerPage from './VisualizerPage.tsx';
+import DataExportPage from './DataExportPage.tsx';
+import MorningReportPage from './MorningReportPage.tsx';
+import ParametersPage from './ParametersPage.tsx';
+
 
 
 createRoot(document.getElementById('root')!).render(
-	<StrictMode>
+	// <StrictMode>
 		<BrowserRouter>
 			<GridWorksApiInterceptor />
+			<App>
 				<Routes>
-					<Route path="/" element={<Home />} />
-					<Route path="/login" element={<Login />} />
-					<Route path="/dashboard/:homeId" element={<Dashboard />} />
+					<Route path="/login/" element={<LoginPage />} />
+
+					<Route path="/installations" element={<InstallationsPage />} />
+					<Route path="/snapshot/:homeId?/" element={<SnapshotPage />} />
+					<Route path="/visualizer/:homeId?/" element={<VisualizerPage />} />
+					<Route path="/data-export/:homeId?/" element={<DataExportPage />} />
+					<Route path="/morning-report/:homeId?/" element={<MorningReportPage />} />
+					<Route path="/parameters/:homeId?/" element={<ParametersPage />} />
 				</Routes>
+			</App>
 		</BrowserRouter>
-	</StrictMode>,
+	// </StrictMode>,
 )

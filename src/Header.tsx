@@ -1,37 +1,29 @@
+import { useContext } from 'react';
+
+import { Nav } from 'react-bootstrap'
 import { NavLink as ReactRouterNavLink } from 'react-router';
-import Container from 'react-bootstrap/Container';
-import Nav from 'react-bootstrap/Nav';
-import Navbar from 'react-bootstrap/Navbar';
-import NavDropdown from 'react-bootstrap/NavDropdown';
+import { LogOut } from 'feather-icons-react';
+
+import SessionContext from './SessionContext';
 
 import './Header.css'
 
 export default function Header() {
+    
+    const sessionContext = useContext(SessionContext);
 
-    //  We use Bootstrap navs to get the look/feel/functionality, but we need them
-    //  to render react-router NavLink elements to get the correct routing behavior
-    //  (i.e., to navigate directly between pages without a full page-load)
+    return <header className="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        <Nav.Link as={ReactRouterNavLink} to="/" className="navbar-brand col-md-3 col-lg-2 me-0 px-3">GridWorks Web Portal</Nav.Link>
+        <button className="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span className="navbar-toggler-icon"></span>
+        </button>
+        <div className="navbar-nav">
+            <div className="nav-item text-nowrap">
+                {sessionContext &&
+                    <Nav.Link as={ReactRouterNavLink} to="/login?logOut=true"><LogOut />Sign Out</Nav.Link>
+                }
+            </div>
+        </div>
+    </header>
 
-    return (
-        <Navbar expand="lg" className="bg-body-tertiary">
-            <Container>
-                <Navbar.Brand as={ReactRouterNavLink} to="/">Home</Navbar.Brand>
-                <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                <Navbar.Collapse id="basic-navbar-nav">
-                    <Nav className="me-auto"> 
-                        <Nav.Link as={ReactRouterNavLink} to="/login">Login</Nav.Link>
-                        <NavDropdown title="Dropdown" id="basic-nav-dropdown">
-                            <NavDropdown.Item as={ReactRouterNavLink} to="#action/3.1">Action</NavDropdown.Item>
-                            <NavDropdown.Item as={ReactRouterNavLink} to="#action/3.2">Another action</NavDropdown.Item>
-                            <NavDropdown.Item as={ReactRouterNavLink} to="#action/3.3">Something</NavDropdown.Item>
-                            <NavDropdown.Divider />
-                            <NavDropdown.Item as={ReactRouterNavLink} to="#action/3.4">
-                                Separated link
-                            </NavDropdown.Item>
-                        </NavDropdown>
-                    </Nav>
-                </Navbar.Collapse>
-            </Container>
-        </Navbar>
-    );
 }
