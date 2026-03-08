@@ -1,0 +1,89 @@
+#dashboard-snapshot-timestamp {
+    font-size: 0.8rem;
+    display: block;
+}
+
+#dashboard-loader {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 0.8rem;
+}
+
+#loader-bar {
+    width: 120px; height: 3px; background-color: var(--border-color); border-radius: 2px; position: relative; overflow: hidden;
+    display: flex;
+}
+
+#loader-progress {
+    width: 0%; height: 100%; background-color: var(--primary-color); border-radius: 2px;
+}
+
+#dashboard-status{
+    text-align: center; padding: 8px 20px;
+}
+#dashboard-status-left {
+    font-size: 1em;
+    color: var(--text-color);
+}
+#dashboard-status-right {
+    font-size: 0.9em;
+}
+#dashboard-system-diagram {
+    display: block;
+    text-align: center; max-width: 100%; margin: 0 auto 2rem auto;
+}
+
+#dashboard-diagram-svg{
+    width: 100%; height: auto; max-width: 1000px;
+}
+
+#dashboard-ewt-stop, #dashboard-lwt-stop, #dashboard-dist-rwt-stop, #dashboard-dist-swt-stop {
+    stop-color:#888; stop-opacity:1
+}
+
+#dashboard-monitoring-tables {
+    max-width: 100%; margin: 50px auto 20px auto; display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;
+}
+
+#dashboard-thermostat-table {
+    border: 1px solid var(--border-color); border-collapse: collapse; border-radius: 0.25rem; background-color: var(--card-background); margin: 0 auto; font-size: 0.75rem; color: var(--text-muted);
+}
+
+#dashboard-thermostat-table th {
+    border: 1px solid var(--border-color); padding: 6px; text-align: left; font-weight: bold; font-size: 0.75rem; color: var(--text-muted);
+    background-color: var(--hover-color);
+}
+
+#dashboard-thermostat-tbody td {
+    border: 1px solid var(--border-color); padding: 6px; font-size: 0.8rem; color: var(--text-muted);
+}
+
+#dashboard-hp-power-table {
+    border: 1px solid var(--border-color); border-collapse: collapse; border-radius: 0.25rem; background-color: var(--card-background); margin: 0 auto; font-size: 0.8rem; color: var(--text-muted);
+}
+
+#dashboard-hp-power-table tr{
+    background-color: var(--hover-color);
+}
+#dashboard-hp-power-table th{
+    border: 1px solid var(--border-color); padding: 6px; text-align: left; font-weight: bold; font-size: 0.8rem; color: var(--text-muted);
+}
+#dashboard-hp-power-tbody td {
+    border: 1px solid var(--border-color); padding: 6px; font-size: 0.8rem; color: var(--text-muted);
+}
+
+#dashboard-pump-table {
+    border: 1px solid var(--border-color); border-collapse: collapse; border-radius: 0.25rem; background-color: var(--card-background); margin: 0 auto; font-size: 0.8rem; color: var(--text-muted);
+}
+
+#dashboard-pump-table tr{
+    background-color: var(--hover-color);
+}
+
+#dashboard-pump-table th{
+    border: 1px solid var(--border-color); padding: 6px; text-align: left; font-weight: bold; font-size: 0.8rem; color: var(--text-muted);
+}
+
+#dashboard-pump-tbody td {
+    border: 1px solid var(--border-color); padding: 6px; font-size: 0.8rem; color: var(--text-muted);
+}
+

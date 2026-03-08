@@ -1,7 +1,7 @@
-import DefaultLayout from "./SidebarNavLayout";
+import SidebarNavLayout from "./SidebarNavLayout";
 
 export default function VisualizerPage() {
-    return <DefaultLayout>
+    return <SidebarNavLayout>
         <h1>Visualizer</h1>
-    </DefaultLayout>
+    </SidebarNavLayout>
 }

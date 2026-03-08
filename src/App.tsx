@@ -4,6 +4,7 @@ import { Spinner } from "react-bootstrap";
 
 import GridworksApi from './GridWorksApi';
 import SessionContext, { type Session } from "./SessionContext";
+import HeaderLayout from "./HeaderLayout";
 
 
 
@@ -39,7 +40,9 @@ export default function App({ children }: React.PropsWithChildren) {
     if (loadSession) {
 
         if (isLoadingSession) {
-            return <Spinner animation="border" role="status" />
+            return <HeaderLayout>
+                <Spinner animation="border" role="status" />
+            </HeaderLayout>
         }
 
         if (!session) {

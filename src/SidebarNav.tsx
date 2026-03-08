@@ -1,4 +1,4 @@
-import { BarChart, List, Camera, Table, Settings, Sun } from 'feather-icons-react';
+import { BarChart, List, Camera, Table, Settings, Sun, Clock } from 'feather-icons-react';
 import { NavLink as ReactRouterNavLink } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 
@@ -28,10 +28,10 @@ export default function SidebarNav() {
                 </li>
                 <hr />
                 <li className="nav-item">
-                    <Nav.Link as={ReactRouterNavLink} to="/snapshot/"><Camera />Snapshot</Nav.Link>
+                    <Nav.Link as={ReactRouterNavLink} to="/real-time/"><Clock />Real-Time Status</Nav.Link>
                 </li>
                 <li className="nav-item">
-                    <Nav.Link as={ReactRouterNavLink} to="/visualizer/"><BarChart />Visualizer</Nav.Link>
+                    <Nav.Link as={ReactRouterNavLink} to="/visualizer/"><BarChart />Stats Visualizer</Nav.Link>
                 </li>
                 <li className="nav-item">
                     <Nav.Link as={ReactRouterNavLink} to="/data-export/"><Table />Data Export</Nav.Link>

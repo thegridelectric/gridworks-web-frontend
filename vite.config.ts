@@ -6,7 +6,12 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [
     react(),
-    mockDevServerPlugin(),
+    mockDevServerPlugin({
+      // HTTP Mock path prefix
+      prefix: ['/api'],
+      // WebSocket Mock path prefix
+      wsPrefix: ['/ws']
+    })
   ],
   build: {
     // Enable production source maps (for both JS and CSS)
@@ -18,3 +23,5 @@ export default defineConfig({
     },
   }
 })
+
+

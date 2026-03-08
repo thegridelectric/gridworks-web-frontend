@@ -4,7 +4,7 @@ export default defineMock([{
   method: 'GET',
   url: '/api/v2/session',
   // status: 404,
-  delay: 1500,
+  delay: 150,
   body: {
     userName: 'joe@2040energy.com',
     installations: [{
@@ -23,4 +23,10 @@ export default defineMock([{
     { id: 'a', displayName: 'beech' },
     { id: 'b', displayName: 'oak' },
   ]
+}, {
+  url: '/api/v2/installations/a/snapshot',
+  delay: 1500,
+  body: {
+
+  }
 }]);
