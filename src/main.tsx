@@ -12,7 +12,7 @@ import App from './App.tsx';
 import LoginPage from './LoginPage.tsx';
 import InstallationsPage from './InstallationsPage.tsx';
 import RealTimeStatusPage from './real-time/RealTimeStatusPage.tsx';
-import VisualizerPage from './VisualizerPage.tsx';
+import VisualizerPage from './visualizer/VisualizerPage.tsx';
 import DataExportPage from './DataExportPage.tsx';
 import MorningReportPage from './MorningReportPage.tsx';
 import ParametersPage from './ParametersPage.tsx';

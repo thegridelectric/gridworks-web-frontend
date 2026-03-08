@@ -1,0 +1,89 @@
+.form-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.data-query-form {
+    max-width: 400px;
+}
+
+.data-query-form td:nth-child(1) {
+    width: 80px;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    vertical-align: middle;
+}
+
+.data-query-form td:nth-child(2) {
+    width: 200px;
+}
+
+.data-query-form td:nth-child(3) {
+    width: 150px;
+}
+
+.data-query-form input {
+    color: var(--datetime-text) !important;
+    background-color: var(--datetime-background) !important;
+    border: 1px solid var(--border-color);
+}
+
+input[type="text"] {
+    background-color: rgba(56, 77, 164, 0.2);
+}
+
+:root {
+    --datetime-background: #f1f3f5;
+    --datetime-text: #1b1b1c;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --datetime-background: #d4d4d4;
+        --datetime-text: #1b1b1c;
+
+    }
+}
+
+/* Plot container styling */
+.plot-container {
+    margin-top: 0.5rem;
+    padding: 1rem 2.5% 0 2.5%;
+    background-color: var(--card-background);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 350px;
+}
+
+.plot-div {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    width: 100%;
+    max-width: 1500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Ensure Plotly charts fill and center within their container */
+.plot-div .js-plotly-plot,
+.plot-div .plotly-graph-div,
+.plot-div .plotly {
+    width: 100% !important;
+    min-width: 0;
+}
+
+.plot-div:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 650px) {
+    #plot-container {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
