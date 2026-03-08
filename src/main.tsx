@@ -5,13 +5,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css'
 
 
-import GridWorksApiInterceptor from './GridWorksApiInterceptor.ts';
+import GridWorksApiInterceptor from './_util/GridWorksApiInterceptor.ts';
 
 import App from './App.tsx';
 
 import LoginPage from './LoginPage.tsx';
 import InstallationsPage from './InstallationsPage.tsx';
-import RealTimeStatusPage from './RealTimeStatusPage.tsx';
+import RealTimeStatusPage from './real-time/RealTimeStatusPage.tsx';
 import VisualizerPage from './VisualizerPage.tsx';
 import DataExportPage from './DataExportPage.tsx';
 import MorningReportPage from './MorningReportPage.tsx';

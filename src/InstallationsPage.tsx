@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import GridworksApi from './GridWorksApi';
-import SidebarNavLayout from "./SidebarNavLayout";
+import GridworksApi from './_util/GridWorksApi';
+import SidebarNavLayout from "./_layout/SidebarNavLayout";
 
 interface Installation {
     id: string,

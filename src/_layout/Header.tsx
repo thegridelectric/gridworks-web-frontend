@@ -4,7 +4,7 @@ import { Nav } from 'react-bootstrap'
 import { NavLink as ReactRouterNavLink } from 'react-router';
 import { LogOut } from 'feather-icons-react';
 
-import SessionContext from './SessionContext';
+import SessionContext from '../_util/SessionContext';
 
 import './Header.css'
 

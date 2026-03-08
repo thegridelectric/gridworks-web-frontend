@@ -1,4 +1,4 @@
-import SidebarNavLayout from "./SidebarNavLayout";
+import SidebarNavLayout from "./_layout/SidebarNavLayout";
 
 export default function VisualizerPage() {
     return <SidebarNavLayout>

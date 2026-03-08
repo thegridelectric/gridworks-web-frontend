@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router";
 import { Spinner } from "react-bootstrap";
 
-import GridworksApi from './GridWorksApi';
-import SessionContext, { type Session } from "./SessionContext";
-import HeaderLayout from "./HeaderLayout";
+import GridworksApi from './_util/GridWorksApi';
+import SessionContext, { type Session } from "./_util/SessionContext";
+import HeaderLayout from "./_layout/HeaderLayout";
 
 
 

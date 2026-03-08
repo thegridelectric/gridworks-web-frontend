@@ -1,7 +1,7 @@
-import DefaultLayout from "./SidebarNavLayout";
+import SidebarNavLayout from "./_layout/SidebarNavLayout";
 
 export default function DataExportPage() {
-    return <DefaultLayout>
+    return <SidebarNavLayout>
         <h1>Data Export</h1>
-    </DefaultLayout>
+    </SidebarNavLayout>
 }
