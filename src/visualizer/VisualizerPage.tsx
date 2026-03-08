@@ -4,19 +4,21 @@ import GridworksApi from '../_util/GridWorksApi';
 
 import './VisualizerPage.css';
 import VisualizerHeatPumpPlot from "./VisualizerHeatPumpPlot";
-import type { Datum } from "plotly.js";
+import type { ReadingsData } from "./types";
 
 const DEFAULT_CHANNELS = [
     'hp-lwt',
     'hp-ewt',
 ];
 
+
+
 export default function VisualizerPage() {
 
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(getDefaultDate(false));
     const [channels, setChannels] = useState(DEFAULT_CHANNELS);
-    const [readingsData, setReadingsData] = useState<Record<string, Datum[]> | null>(null);
+    const [readingsData, setReadingsData] = useState<ReadingsData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
             /* <div id="options-div" className="options-container" style="border-top: 1px solid var(--border-color); margin-bottom:0rem">
@@ -108,7 +110,7 @@ export default function VisualizerPage() {
 
             {readingsData &&
                 <div className="plotContainer">
-                    <VisualizerHeatPumpPlot showMarkers={false} times={readingsData['times']} ewts={readingsData['hp-ewt']} lwts={readingsData['hp-lwt']} />
+                    <VisualizerHeatPumpPlot showMarkers={false} {...{readingsData}} />
                 </div>
 
             }
@@ -141,7 +143,7 @@ export default function VisualizerPage() {
 
         setIsLoading(true);
         try {
-            const result = await GridworksApi.get<Record<string, number[]>>('/api/v2/installations/a/readings', {
+            const result = await GridworksApi.get<ReadingsData>('/api/v2/installations/a/readings', {
                 params: {
                     start: startDateTime.toISOString(),
                     end: endDateTime.toISOString(),

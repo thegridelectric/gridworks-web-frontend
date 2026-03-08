@@ -1,13 +1,32 @@
 import { defineMock } from 'vite-plugin-mock-dev-server'
 
+function subtractTime(dt: Date, seconds: number) {
+  return new Date(dt.getTime() - 1000*seconds);
+}
 
-function getTimes() {
+function buildReadingResponse() {
   const now = new Date()
   const times = [];
   for (let i = 0; i < 10; i++) {
-    times.push(new Date(now.getTime() - 60000*(10 - i)));
+    times.push(subtractTime(now, 60 * (9 - i)));
   }
-  return times;
+
+  return {
+    startTime: subtractTime(now, 540),
+    endTime: now,
+    times,
+    dataGaps: [
+      { start: subtractTime(now, 180), end: subtractTime(now, 90) }
+    ],
+    data: {
+      ['hp-ewt']: [122, 121, 123, 120, 122,122, 121, 123, 120, 122],
+      ['hp-lwt']: [142, 141, 143, 140, 142,142, 141, 143, 140, 142],
+      ['hp-odu-pwr']: [3,3.1,2.9,3,2.9,3,3.1,2.9,3,2.9],
+    }
+  }
+}
+
+function getTimes() {
 }
 
 export default defineMock([{
@@ -42,9 +61,5 @@ export default defineMock([{
 }, {
   url: '/api/v2/installations/a/readings',
   delay: 500,
-  body: {
-    times: getTimes(),
-    ['hp-ewt']: [122, 121, 123, 120, 122,122, 121, 123, 120, 122],
-    ['hp-lwt']: [142, 141, 143, 140, 142,142, 141, 143, 140, 142]
-  }
+  body: buildReadingResponse(),
 }]);
