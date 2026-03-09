@@ -45,7 +45,6 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    height: 350px;
 }
 
 .plot-div {
@@ -97,6 +96,7 @@
     font-size: 0.875rem !important;
     padding: 0.25rem 0.5rem !important;
 }
+
 .datetime-picker input[type=date] {
     width: 150px;
     display: inline-block;
@@ -110,4 +110,96 @@
 
 input[type="text"] {
     background-color: rgba(56, 77, 164, 0.2);
+}
+
+/* Options styling */
+.options-container {
+    padding: 0.5rem 2rem;
+    max-height: 2000px;
+    overflow-y: scroll;
+}
+
+.options-content {
+    max-width: 400px;
+}
+
+.options-section {
+    margin-bottom: 1.5rem;
+}
+
+.options-section h6 {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--text-color);
+    margin-bottom: 0.75rem;
+}
+
+.options-section input[type="checkbox"] {
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--text-muted);
+    border-radius: 4px;
+    background-color: transparent;
+    position: relative;
+    cursor: pointer;
+    margin-right: 10px;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    vertical-align: middle;
+}
+
+.options-section input[type="checkbox"]:checked {
+    background-color: var(--text-muted);
+    border-color: var(--text-muted);
+}
+
+.options-section label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
+    padding-left: 0.5rem;
+    cursor: pointer;
+}
+
+/* Plot container styling */
+.plot-container {
+    margin-top: 0.5rem;
+    padding: 1rem 2.5% 0 2.5%;
+    background-color: var(--card-background);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.plot-div {
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    width: 100%;
+    max-width: 1500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Ensure Plotly charts fill and center within their container */
+.plot-div .js-plotly-plot,
+.plot-div .plotly-graph-div,
+.plot-div .plotly {
+    width: 100% !important;
+    min-width: 0;
+}
+
+.plot-div:last-child {
+    margin-bottom: 0;
+}
+
+@media (max-width: 650px) {
+    #plot-container {
+        padding-left: 0;
+        padding-right: 0;
+    }
 }
