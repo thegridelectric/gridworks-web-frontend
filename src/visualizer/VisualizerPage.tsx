@@ -7,6 +7,9 @@ import VisualizerHeatPumpPlot from "./VisualizerHeatPumpPlot";
 import type { ReadingsData } from "./types";
 import DateTimePicker from "../_shared/DateTimePicker";
 import { Spinner } from "react-bootstrap";
+import InstallationPicker from "../_shared/InstallationPicker";
+import { useLocation } from "react-router";
+import { parsePathname } from "../_util/urlUtility";
 
 const CHANNEL_OPTION_GROUPS = [
     {
@@ -77,6 +80,9 @@ export default function VisualizerPage() {
     const [isShowingOptions, setIsShowingOptions] = useState(false);
     const [showPoints, setShowPoints] = useState(false);
 
+    const location = useLocation();
+    const { currentInstallationId } = parsePathname(location.pathname);
+
     function setIncludesChannel(id: string, isIncluded: boolean) {
         if (isIncluded && !channels.has(id)) {
             const newChannels = new Set(channels);
@@ -94,8 +100,7 @@ export default function VisualizerPage() {
         <div>
             <div className="p-4">
                 <div className="mb-4">
-                    <label className="form-label">Selected House</label>
-                    <input type="text" className="form-control text-light border-secondary" id="selected-house" placeholder="Select a house in the table" readOnly={true}></input>
+                    <InstallationPicker />
                 </div>
                 <div className="mb-3 datetime-picker">
                     <label className="form-label">Start</label>
@@ -175,11 +180,11 @@ export default function VisualizerPage() {
         setIsLoading(true);
         setReadingsData(null);
         try {
-            const result = await GridworksApi.get<ReadingsData>('/api/v2/installations/a/readings', {
+            const result = await GridworksApi.get<ReadingsData>(`/api/v2/installations/${currentInstallationId}/readings`, {
                 params: {
                     start: startDateTime.toISOString(),
                     end: endDateTime.toISOString(),
-                    channels: [...channels].join(',')
+                    channels: [...channels].sort().join(',')
                 }
             });
             setReadingsData(result.data);
@@ -187,7 +192,7 @@ export default function VisualizerPage() {
         catch (error) {
             console.error('Error getting plots:', error);
             // Refresh the page on API failure
-            location.reload();
+            window.location.reload();
         }
         finally {
             setIsLoading(false);

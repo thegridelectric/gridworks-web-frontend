@@ -38,10 +38,10 @@ export default defineMock([{
     userName: 'joe@2040energy.com',
     installations: [{
       id: 'a',
-      displayName: 'beech'
+      displayName: 'Beech'
     }, {
       id: 'b',
-      displayName: 'oak'
+      displayName: 'Oak'
     }]
   }
 }, {

@@ -2,7 +2,11 @@ import React from "react";
 import Header from "./Header";
 import SidebarNav from "./SidebarNav";
 
-export default function SidebarNavLayout({ children }: React.PropsWithChildren) {
+interface SidebarNavLayoutProps extends React.PropsWithChildren {
+}
+
+export default function SidebarNavLayout({ children }: SidebarNavLayoutProps) {
+
     return <>
         <Header />
         <div className="container-fluid">

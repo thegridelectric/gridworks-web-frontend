@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { data, useParams } from "react-router";
+import { data, useLocation, useParams } from "react-router";
 
 import GridworksApi from '../_util/GridWorksApi';
 import SidebarNavLayout from "../_layout/SidebarNavLayout";
@@ -10,6 +10,8 @@ import RealTimeStatusTimestamp from "./RealTimeStatusTimestamp";
 import RealTimeStatusThermostatTable from "./RealTimeStatusThermostatTable";
 import { Spinner } from "react-bootstrap";
 import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
+import InstallationPicker from "../_shared/InstallationPicker";
+import { parsePathname } from "../_util/urlUtility";
 
 interface RelayInfo {
     name: string,
@@ -31,21 +33,30 @@ interface Snapshot {
 
 export default function SnapshotPage() {
 
-    // const { homeId } = useParams();
-    const homeId = 'a';
-
     const [targetGNode, setTargetGNode] = useState('');
     const [thermostatNames, setThermostatNames] = useState(null);
     const [relays, setRelays] = useState<Record<string, RelayInfo>>({});
-    const [updateTime, setUpdateTime] = useState<Date>();
-    const [latestReadings, setLatestReadings] = useState<Record<string, number>>();
+    const [updateTime, setUpdateTime] = useState<Date | null>(null);
+    const [latestReadings, setLatestReadings] = useState<Record<string, number> | null>();
     const [isConnected, setIsConnected] = useState(false);
     const [err, setErr] = useState(null);
-    const [ws, setWs] = useState<WebSocket | null>(null);
+
+    const location = useLocation();
+    const { currentInstallationId } = parsePathname(location.pathname);
 
     useEffect(() => {
-        const websocket = new WebSocket('ws://localhost:5173/ws/snapshot');
-        setWs(websocket);
+        setTargetGNode('');
+        setThermostatNames(null);
+        setRelays({});
+        setUpdateTime(null);
+        setLatestReadings(null);
+        setIsConnected(false);
+        setErr(null);
+
+        if (!currentInstallationId) {
+            return;
+        }
+        const websocket = new WebSocket(`ws://localhost:5173/ws${currentInstallationId}`);
 
         websocket.onopen = () => {
             console.log('Connected to WebSocket server');
@@ -103,7 +114,7 @@ export default function SnapshotPage() {
             websocket.close();
         };
 
-    }, [homeId]);
+    }, [currentInstallationId]);
 
 
     // function updateDashboardMonitoringTables(snapshotData) {
@@ -118,80 +129,90 @@ export default function SnapshotPage() {
     return <SidebarNavLayout>
         <h1>Real-Time Status</h1>
 
-        <div className="p-4">
-            <RealTimeStatusHeader {...{ isConnected, targetGNode, err }} />
-            {updateTime &&
-                <RealTimeStatusTimestamp updateTime={updateTime} />
-            }
-            {latestReadings ?
-                <>
-                    {/* System Diagram */}
-                    <RealTimeStatusSystemDiagram relays={relays} readings={latestReadings} />
-
-                    {/* System Monitoring Tables */}
-                    <div id="dashboard-monitoring-tables">
-                        <RealTimeStatusThermostatTable thermostatNames={thermostatNames} readings={latestReadings} />
-
-                        {/* HP Power Table */}
-                        <div>
-                            <table id="dashboard-hp-power-table">
-                                <thead>
-                                    <tr>
-                                        <th>Heat pump</th>
-                                        <th>kW</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dashboard-hp-power-tbody">
-                                    <tr>
-                                        <td>Outdoor Unit</td>
-                                        <td>{((latestReadings['hp-odu-pwr'] ?? 0) / 1000).toFixed(2)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Indoor Unit</td>
-                                        <td>{((latestReadings['hp-idu-pwr'] ?? 0) / 1000).toFixed(2)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Total</td>
-                                        <td>{(((latestReadings['hp-idu-pwr'] ?? 0) + (latestReadings['hp-odu-pwr'] ?? 0)) / 1000).toFixed(2)}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Pump Table */}
-                        <div>
-                            <table id="dashboard-pump-table">
-                                <thead>
-                                    <tr>
-                                        <th>Pumps</th>
-                                        <th>GPM</th>
-                                        <th>W</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dashboard-pump-tbody">
-                                    <tr>
-                                        <td>Primary</td>
-                                        <td>{((latestReadings['primary-flow'] ?? 0) / 100).toFixed(1)}</td>
-                                        <td>{Math.max(0, (latestReadings['primary-pump-pwr'] ?? 0)).toFixed(1)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Distribution</td>
-                                        <td>{((latestReadings['dist-flow'] ?? 0) / 100).toFixed(1)}</td>
-                                        <td>{Math.max(0, (latestReadings['dist-pump-pwr'] ?? 0)).toFixed(1)}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Store</td>
-                                        <td>{((latestReadings['store-flow'] ?? 0) / 100).toFixed(1)}</td>
-                                        <td>{Math.max(0, (latestReadings['store-pump-pwr'] ?? 0)).toFixed(1)}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </> :
-                <div className="p-3 text-center">
-                    <Spinner />
+        <div>
+            <div className="p-4">
+                <div className="mb-4">
+                    <InstallationPicker />
                 </div>
+            </div>
+
+            {currentInstallationId &&
+                <>
+                    <RealTimeStatusHeader {...{ isConnected, targetGNode, err }} />
+                    {updateTime &&
+                        <RealTimeStatusTimestamp updateTime={updateTime} />
+                    }
+                    {latestReadings ?
+                        <>
+                            {/* System Diagram */}
+                            <RealTimeStatusSystemDiagram relays={relays} readings={latestReadings} />
+
+                            {/* System Monitoring Tables */}
+                            <div id="dashboard-monitoring-tables">
+                                <RealTimeStatusThermostatTable thermostatNames={thermostatNames} readings={latestReadings} />
+
+                                {/* HP Power Table */}
+                                <div>
+                                    <table id="dashboard-hp-power-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Heat pump</th>
+                                                <th>kW</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dashboard-hp-power-tbody">
+                                            <tr>
+                                                <td>Outdoor Unit</td>
+                                                <td>{((latestReadings['hp-odu-pwr'] ?? 0) / 1000).toFixed(2)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Indoor Unit</td>
+                                                <td>{((latestReadings['hp-idu-pwr'] ?? 0) / 1000).toFixed(2)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Total</td>
+                                                <td>{(((latestReadings['hp-idu-pwr'] ?? 0) + (latestReadings['hp-odu-pwr'] ?? 0)) / 1000).toFixed(2)}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Pump Table */}
+                                <div>
+                                    <table id="dashboard-pump-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Pumps</th>
+                                                <th>GPM</th>
+                                                <th>W</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dashboard-pump-tbody">
+                                            <tr>
+                                                <td>Primary</td>
+                                                <td>{((latestReadings['primary-flow'] ?? 0) / 100).toFixed(1)}</td>
+                                                <td>{Math.max(0, (latestReadings['primary-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Distribution</td>
+                                                <td>{((latestReadings['dist-flow'] ?? 0) / 100).toFixed(1)}</td>
+                                                <td>{Math.max(0, (latestReadings['dist-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Store</td>
+                                                <td>{((latestReadings['store-flow'] ?? 0) / 100).toFixed(1)}</td>
+                                                <td>{Math.max(0, (latestReadings['store-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </> :
+                        <div className="p-3 text-center">
+                            <Spinner />
+                        </div>
+                    }
+                </>
             }
         </div>
 
