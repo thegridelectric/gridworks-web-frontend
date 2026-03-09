@@ -22,15 +22,6 @@
     width: 150px;
 }
 
-.data-query-form input {
-    color: var(--datetime-text) !important;
-    background-color: var(--datetime-background) !important;
-    border: 1px solid var(--border-color);
-}
-
-input[type="text"] {
-    background-color: rgba(56, 77, 164, 0.2);
-}
 
 :root {
     --datetime-background: #f1f3f5;
@@ -86,4 +77,37 @@ input[type="text"] {
         padding-left: 0;
         padding-right: 0;
     }
+}
+
+.datetime-picker {
+    vertical-align: middle;
+}
+
+.datetime-picker .form-label {
+    width: 3em;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    display: inline-block;
+}
+
+.datetime-picker input {
+    color: var(--datetime-text) !important;
+    background-color: var(--datetime-background) !important;
+    border: 1px solid var(--border-color);
+    font-size: 0.875rem !important;
+    padding: 0.25rem 0.5rem !important;
+}
+.datetime-picker input[type=date] {
+    width: 150px;
+    display: inline-block;
+    margin-right: 1em;
+}
+
+.datetime-picker input[type=time] {
+    width: 100px;
+    display: inline-block;
+}
+
+input[type="text"] {
+    background-color: rgba(56, 77, 164, 0.2);
 }

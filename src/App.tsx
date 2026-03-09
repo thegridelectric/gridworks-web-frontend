@@ -51,10 +51,8 @@ export default function App({ children }: React.PropsWithChildren) {
     }
 
 
-    return <div className="container-fluid">
-        <SessionContext value={loadSession ? session: null}>
-            {children}
-        </SessionContext>
-    </div>
+    return <SessionContext value={loadSession ? session : null}>
+        {children}
+    </SessionContext>
 
 }

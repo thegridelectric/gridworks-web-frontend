@@ -1,3 +1,6 @@
+header {
+    background: var(--bs-dark);
+}
 a.active {
     text-decoration: underline;
 }
