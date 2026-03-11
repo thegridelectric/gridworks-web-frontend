@@ -1,10 +1,155 @@
+:root {
+    --datetime-background: #f1f3f5;
+    --datetime-text: #1b1b1c;
+    --selected-house-bg: rgba(56, 77, 164, 0.1);
+    --selected-house-text: var(--text-color);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --datetime-background: #d4d4d4;
+        --datetime-text: #1b1b1c;
+        --selected-house-bg: rgba(56, 77, 164, 0.2);
+        --selected-house-text: var(--text-color);
+    }
+
+    .data-query-form input[type="date"],
+    .data-query-form input[type="time"] {
+        color-scheme: light;
+    }
+
+    .data-query-form input[type="date"]::-webkit-calendar-picker-indicator,
+    .data-query-form input[type="time"]::-webkit-calendar-picker-indicator {
+        filter: none;
+        opacity: 0.9;
+    }
+}
+
+.visualizer-card {
+    background-color: var(--card-background);
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    margin-bottom: 3rem;
+    transition: all 0.3s ease;
+}
+
+.visualizer-card .card-header {
+    background-color: var(--card-background);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.visualizer-card .card-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.status-badges {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: auto;
+    align-items: center;
+}
+
+.loader {
+    width: 20px;
+    height: 20px;
+    border: 4px solid var(--text-muted);
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.auto-refresh-checkbox {
+    margin-top: 0;
+    margin-right: 6px;
+}
+
+.auto-refresh-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    margin-bottom: 0;
+}
+
+.fullscreen-btn,
+.filter-toggle {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background-color: var(--hover-color);
+}
+
+.fullscreen-btn:hover,
+.filter-toggle:hover {
+    color: var(--text-color);
+}
+
+.fullscreen-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.visualizer-card .btn-outline-secondary {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background-color: var(--hover-color);
+}
+
+.visualizer-card .btn-outline-secondary:hover {
+    background-color: var(--hover-color);
+    color: var(--text-color);
+}
+
 .form-label {
     font-size: 0.875rem;
     color: var(--text-muted);
 }
 
+.selected-house-picker .form-select {
+    max-width: 100% !important;
+    width: 100%;
+    border: none;
+    background-color: var(--selected-house-bg);
+    color: var(--selected-house-text);
+}
+
+.selected-house-picker .form-select:focus {
+    box-shadow: none;
+    border-color: transparent;
+}
+
 .data-query-form {
     max-width: 400px;
+    margin-bottom: 1.5rem !important;
+}
+
+.data-query-form.table>:not(caption)>*>* {
+    background-color: transparent;
+    box-shadow: none;
+    border-bottom: none;
+    padding: 0.25rem 0.75rem 0.25rem 0;
 }
 
 .data-query-form td:nth-child(1) {
@@ -22,97 +167,16 @@
     width: 150px;
 }
 
-
-:root {
-    --datetime-background: #f1f3f5;
-    --datetime-text: #1b1b1c;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --datetime-background: #d4d4d4;
-        --datetime-text: #1b1b1c;
-
-    }
-}
-
-/* Plot container styling */
-.plot-container {
-    margin-top: 0.5rem;
-    padding: 1rem 2.5% 0 2.5%;
-    background-color: var(--card-background);
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.plot-div {
-    margin-bottom: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0;
-    width: 100%;
-    max-width: 1500px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Ensure Plotly charts fill and center within their container */
-.plot-div .js-plotly-plot,
-.plot-div .plotly-graph-div,
-.plot-div .plotly {
-    width: 100% !important;
-    min-width: 0;
-}
-
-.plot-div:last-child {
-    margin-bottom: 0;
-}
-
-@media (max-width: 650px) {
-    #plot-container {
-        padding-left: 0;
-        padding-right: 0;
-    }
-}
-
-.datetime-picker {
-    vertical-align: middle;
-}
-
-.datetime-picker .form-label {
-    width: 3em;
-    font-size: 0.875rem;
-    color: var(--text-muted);
-    display: inline-block;
-}
-
-.datetime-picker input {
+.data-query-form input[type="date"],
+.data-query-form input[type="time"] {
     color: var(--datetime-text) !important;
     background-color: var(--datetime-background) !important;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border-color) !important;
     font-size: 0.875rem !important;
     padding: 0.25rem 0.5rem !important;
+    height: auto !important;
 }
 
-.datetime-picker input[type=date] {
-    width: 150px;
-    display: inline-block;
-    margin-right: 1em;
-}
-
-.datetime-picker input[type=time] {
-    width: 100px;
-    display: inline-block;
-}
-
-input[type="text"] {
-    background-color: rgba(56, 77, 164, 0.2);
-}
-
-/* Options styling */
 .options-container {
     padding: 0.5rem 2rem;
     max-height: 2000px;
@@ -162,7 +226,6 @@ input[type="text"] {
     cursor: pointer;
 }
 
-/* Plot container styling */
 .plot-container {
     margin-top: 0.5rem;
     padding: 1rem 2.5% 0 2.5%;
@@ -185,7 +248,6 @@ input[type="text"] {
     margin-right: auto;
 }
 
-/* Ensure Plotly charts fill and center within their container */
 .plot-div .js-plotly-plot,
 .plot-div .plotly-graph-div,
 .plot-div .plotly {
@@ -198,7 +260,7 @@ input[type="text"] {
 }
 
 @media (max-width: 650px) {
-    #plot-container {
+    .plot-container {
         padding-left: 0;
         padding-right: 0;
     }

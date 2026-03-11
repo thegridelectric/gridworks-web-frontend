@@ -5,8 +5,6 @@ import GridworksApi from '../_util/GridWorksApi';
 import './VisualizerPage.css';
 import VisualizerHeatPumpPlot from "./VisualizerHeatPumpPlot";
 import type { ReadingsData } from "./types";
-import DateTimePicker from "../_shared/DateTimePicker";
-import { Spinner } from "react-bootstrap";
 import InstallationPicker from "../_shared/InstallationPicker";
 import { useLocation } from "react-router";
 import { parsePathname } from "../_util/urlUtility";
@@ -97,64 +95,114 @@ export default function VisualizerPage() {
 
     return <SidebarNavLayout>
         <h1>Visualizer</h1>
-        <div>
+        <div className="card visualizer-card">
+            <div className="card-header d-flex justify-content-between align-items-center">
+                <h5 className="card-title">Visualizer</h5>
+                <div className="status-badges">
+                    {isLoading && <div className="loader" aria-label="Loading visualizer data" />}
+                    <div className="form-check form-check-inline me-3 d-flex align-items-center">
+                        <input className="form-check-input auto-refresh-checkbox" type="checkbox" id="auto-refresh-checkbox" />
+                        <label className="form-check-label auto-refresh-label" htmlFor="auto-refresh-checkbox">
+                            Auto-refresh
+                        </label>
+                    </div>
+                    <button className="fullscreen-btn" type="button" aria-label="Fullscreen view coming soon">
+                        <span aria-hidden="true">⛶</span>
+                    </button>
+                    <button className="filter-toggle" type="button" onClick={onClearClick}>
+                        <span>Clear</span>
+                    </button>
+                </div>
+            </div>
             <div className="p-4">
                 <div className="mb-4">
-                    <InstallationPicker />
-                </div>
-                <div className="mb-3 datetime-picker">
-                    <label className="form-label">Start</label>
-                    <DateTimePicker className="form-control "
-                        value={startDateTime} onChange={setStartDateTime} />
-                </div>
-                <div className="mb-3 datetime-picker">
-                    <label className="form-label">End</label>
-                    <DateTimePicker className="form-control "
-                        value={endDateTime} onChange={setEndDateTime} />
+                    <label className="form-label">Selected House</label>
+                    <div className="selected-house-picker">
+                        <InstallationPicker />
+                    </div>
                 </div>
 
+                <table className="table table-borderless mb-4 data-query-form">
+                    <tbody>
+                        <tr>
+                            <td>Start</td>
+                            <td>
+                                <input
+                                    type="date"
+                                    className="form-control text-light"
+                                    value={formatDate(startDateTime)}
+                                    onChange={onStartDateChange}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    type="time"
+                                    className="form-control text-light"
+                                    value={formatTime(startDateTime)}
+                                    onChange={onStartTimeChange}
+                                />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>End</td>
+                            <td>
+                                <input
+                                    type="date"
+                                    className="form-control text-light"
+                                    value={formatDate(endDateTime)}
+                                    onChange={onEndDateChange}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    type="time"
+                                    className="form-control text-light"
+                                    value={formatTime(endDateTime)}
+                                    onChange={onEndTimeChange}
+                                />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
                 <fieldset className="d-flex gap-2 align-items-center" disabled={isLoading} style={{ opacity: isLoading ? 0.5 : 1 }}>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={onPlotClick}>Plot</button>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={onNowClick}>8pm-Now</button>
-                    <button className="btn btn-sm btn-outline-secondary" id="flo-btn">FLO</button>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={() => setIsShowingOptions(!isShowingOptions)}>Options</button>
+                    <button className="btn btn-sm btn-outline-secondary" type="button" onClick={onPlotClick}>Plot</button>
+                    <button className="btn btn-sm btn-outline-secondary" type="button" onClick={onNowClick}>8pm-Now</button>
+                    <button className="btn btn-sm btn-outline-secondary" type="button" id="flo-btn">FLO</button>
+                    <button className="btn btn-sm btn-outline-secondary" type="button" onClick={() => setIsShowingOptions(!isShowingOptions)}>Options</button>
                 </fieldset>
             </div>
 
             {isShowingOptions &&
-                <div id="options-div bt-1 mb-0" className="options-container border-top">
-                    <div className="options-section mt-2">
-                        <h6>Plot settings</h6>
-                        <label>
-                            <input type="checkbox" checked={showPoints} onChange={evt => {
-                                setShowPoints(evt.currentTarget.checked);
-                            }} />
-                            Show points
-                        </label>
-                    </div>
-                    {CHANNEL_OPTION_GROUPS.map(g => {
-                        return <div key={g.category} className="options-section">
-                            <h6>{g.category}</h6>
-                            {g.channels.map(c => {
-                                return <label>
-                                    <input type="checkbox" checked={channels.has(c.id)}
-                                        onChange={evt => {
-                                            setIncludesChannel(c.id, evt.currentTarget.checked)
-                                        }} />
-                                    {c.label}
-                                </label>;
-                            })}
+                <div id="options-div" className="options-container border-top mb-0">
+                    <div className="options-content">
+                        <div className="options-section mt-3">
+                            <h6>Plot settings</h6>
+                            <label>
+                                <input type="checkbox" checked={showPoints} onChange={evt => {
+                                    setShowPoints(evt.currentTarget.checked);
+                                }} />
+                                Show points
+                            </label>
                         </div>
-                    })}
-
+                        {CHANNEL_OPTION_GROUPS.map(g => {
+                            return <div key={g.category} className="options-section">
+                                <h6>{g.category}</h6>
+                                {g.channels.map(c => {
+                                    return <label key={c.id}>
+                                        <input type="checkbox" checked={channels.has(c.id)}
+                                            onChange={evt => {
+                                                setIncludesChannel(c.id, evt.currentTarget.checked)
+                                            }} />
+                                        {c.label}
+                                    </label>;
+                                })}
+                            </div>
+                        })}
+                    </div>
                 </div>
             }
 
-            {isLoading &&
-                <div className="p-3 text-center">
-                    <Spinner />
-                </div>
-            }
             {readingsData &&
                 <div className="plot-container border-top">
                     <VisualizerHeatPumpPlot showMarkers={showPoints} {...{ readingsData }} />
@@ -168,6 +216,48 @@ export default function VisualizerPage() {
         event.preventDefault();
         setStartDateTime(getDefaultDate(true));
         setEndDateTime(new Date());
+    }
+
+    function onClearClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        setReadingsData(null);
+        setIsShowingOptions(false);
+        setShowPoints(false);
+        setChannels(DEFAULT_CHANNELS);
+        setStartDateTime(getDefaultDate(true));
+        setEndDateTime(getDefaultDate(false));
+    }
+
+    function onStartDateChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [year, month, day] = evt.currentTarget.value.split('-');
+        if (!year || !month || !day) return;
+        const next = new Date(startDateTime);
+        next.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+        setStartDateTime(next);
+    }
+
+    function onStartTimeChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [hours, minutes] = evt.currentTarget.value.split(':');
+        if (!hours || !minutes) return;
+        const next = new Date(startDateTime);
+        next.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        setStartDateTime(next);
+    }
+
+    function onEndDateChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [year, month, day] = evt.currentTarget.value.split('-');
+        if (!year || !month || !day) return;
+        const next = new Date(endDateTime);
+        next.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+        setEndDateTime(next);
+    }
+
+    function onEndTimeChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [hours, minutes] = evt.currentTarget.value.split(':');
+        if (!hours || !minutes) return;
+        const next = new Date(endDateTime);
+        next.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        setEndDateTime(next);
     }
 
     // Update getData function to use selected channels
@@ -210,5 +300,13 @@ export default function VisualizerPage() {
             nyDate.setMinutes(nyDate.getMinutes() + 1);
         }
         return nyDate;
+    }
+
+    function formatDate(dt: Date) {
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    }
+
+    function formatTime(dt: Date) {
+        return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
     }
 }
