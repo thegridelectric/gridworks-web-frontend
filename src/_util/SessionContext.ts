@@ -1,5 +1,7 @@
 import { createContext } from 'react';
 
+import type { HouseParameters } from '../parameters/types';
+
 export interface BasicInstallationInfo {
     id: string;
     displayName: string;
@@ -7,6 +9,7 @@ export interface BasicInstallationInfo {
     locationLabel?: string;
     commit?: string;
     alertStatus?: 'ok' | 'alert' | 'unknown';
+    houseParameters?: HouseParameters;
 }
 
 /** Match route segment to session row; IDs from /homes may be numbers while the URL is always a string. */

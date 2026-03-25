@@ -69,7 +69,9 @@ export default function App({ children }: React.PropsWithChildren) {
         return () => {
             cancelled = true;
         };
-    }, [loadSession, location.pathname]);
+        // Intentionally omit `location.pathname`: installation id lives in the path (e.g.
+        // `/parameters/{id}/`); changing it must not refetch session or show the loading spinner.
+    }, [loadSession]);
 
     if (loadSession) {
 

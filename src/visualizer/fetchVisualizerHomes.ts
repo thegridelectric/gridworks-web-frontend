@@ -1,4 +1,5 @@
 import type { BasicInstallationInfo } from '../_util/SessionContext';
+import type { HouseParameters } from '../parameters/types';
 import { getVisualizerApiBaseUrl } from './fetchVisualizerPlots';
 
 export interface VisualizerHouse {
@@ -16,6 +17,7 @@ export interface VisualizerHouse {
     };
     scada_git_commit?: string;
     alert_status?: { status?: string };
+    house_parameters?: HouseParameters;
 }
 
 export async function fetchVisualizerHomes(token: string): Promise<VisualizerHouse[]> {
@@ -49,6 +51,7 @@ export function housesToInstallations(houses: VisualizerHouse[]): BasicInstallat
             locationLabel,
             commit: h.scada_git_commit || undefined,
             alertStatus,
+            houseParameters: h.house_parameters,
         };
     });
 }
