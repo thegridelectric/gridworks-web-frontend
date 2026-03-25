@@ -2,7 +2,7 @@ import { BarChart, List, Table, Settings, Sun, Clock } from 'feather-icons-react
 import { NavLink as ReactRouterNavLink, useLocation } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 import { useContext } from 'react';
-import SessionContext from '../_util/SessionContext';
+import SessionContext, { installationForRouteId } from '../_util/SessionContext';
 import { parsePathname } from '../_util/urlUtility';
 
 
@@ -24,7 +24,7 @@ export default function SidebarNav() {
     const { currentInstallationId } = parsePathname(location.pathname);
 
     const sessionContext = useContext(SessionContext);
-    const installationName = currentInstallationId ? sessionContext?.installations.find(i => i.id == currentInstallationId)?.displayName : null;
+    const installationName = installationForRouteId(sessionContext?.installations, currentInstallationId)?.displayName ?? null;
     const installationUrlSuffix = currentInstallationId ? `${currentInstallationId}/` : '';
 
     return <nav id="sidebarMenu" className="col-md-3 col-lg-2 d-md-block sidebar collapse">

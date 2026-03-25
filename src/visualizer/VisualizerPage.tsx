@@ -6,7 +6,7 @@ import './VisualizerPage.css';
 import InstallationPicker from "../_shared/InstallationPicker";
 import { useLocation } from "react-router";
 import { parsePathname } from "../_util/urlUtility";
-import SessionContext from "../_util/SessionContext";
+import SessionContext, { installationForRouteId } from "../_util/SessionContext";
 import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
 import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
 import { getDarkModeForVisualizer } from "./visualizerDarkMode";
@@ -106,7 +106,7 @@ export default function VisualizerPage() {
     const { currentInstallationId } = parsePathname(location.pathname);
     const session = useContext(SessionContext);
 
-    const installation = session?.installations.find(i => i.id === currentInstallationId);
+    const installation = installationForRouteId(session?.installations, currentInstallationId);
     const houseAlias = (installation?.houseAlias?.trim() || installation?.id || '').trim();
     const hasVisualizerToken = !!getVisualizerAuthToken();
     const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);

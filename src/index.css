@@ -34,8 +34,12 @@
   --hover-color: #f1f3f5;
   --card-background: #ffffff;
   --background-color: var(--bs-body-bg);
-
+  --success-color: #28a745;
+  --danger-color: #ff4444;
+  --table-header-bg: #f8f9fa;
+  --primary-hover: #2667cc;
 }
+
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -43,6 +47,7 @@
     --border-color: rgba(47, 47, 47, 0.5);
     --hover-color: rgb(32, 32, 32);
     --card-background: #1b1b1c;
+    --table-header-bg: var(--card-background);
   }
 }
 

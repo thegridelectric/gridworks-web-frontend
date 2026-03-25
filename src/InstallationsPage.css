@@ -1,0 +1,320 @@
+/* Houses table card — aligned with gridworks-backoffice index.html */
+
+.houses-card.card {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    max-width: 100%;
+}
+
+.houses-card .card-header {
+    background-color: var(--card-background);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 1.5rem;
+}
+
+.houses-card .card-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.houses-card .status-badges {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: auto;
+    align-items: center;
+}
+
+.houses-card .filter-toggle {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background-color: var(--hover-color);
+}
+
+.houses-card #houses-filter-toggle {
+    background-color: var(--card-background);
+}
+
+.houses-card .filter-toggle:hover {
+    color: var(--text-color);
+}
+
+.houses-card .filter-toggle i {
+    font-size: 0.875rem;
+    transition: transform 0.3s ease;
+}
+
+.houses-card .status-badge {
+    display: flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 0.25rem;
+}
+
+.houses-card .status-badge-count {
+    padding: 0.425rem 0.7rem;
+    border-radius: 0.25rem;
+    font-weight: 600;
+}
+
+.houses-card .status-badge.ok {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: var(--success-color);
+}
+
+.houses-card .status-badge.offline {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: var(--danger-color);
+}
+
+.houses-card .search-container {
+    display: none;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1.5rem 0 0 0;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.5rem;
+}
+
+.houses-card .search-container.visible {
+    display: flex;
+}
+
+.houses-card .search-group {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: 150px;
+    flex: none;
+}
+
+.houses-card .search-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.houses-card .search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    pointer-events: none;
+    z-index: 1;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.houses-card .search-input {
+    background-color: var(--card-background);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    width: 100%;
+    padding-left: 2rem;
+    height: 2.5rem;
+    line-height: 1.5;
+}
+
+.houses-card .search-input:focus {
+    outline: none;
+    border-color: #ff6b6b;
+    box-shadow: none;
+    background-color: rgba(255, 107, 107, 0.05);
+}
+
+.houses-card .search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.houses-card .search-input.active {
+    border-color: #ff6b6b;
+    background-color: rgba(255, 107, 107, 0.05);
+}
+
+.houses-card .clear-filters-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    height: 2.5rem;
+    transition: all 0.2s ease;
+}
+
+.houses-card .clear-filters-btn:hover {
+    background-color: var(--hover-color);
+    color: var(--text-color);
+}
+
+.houses-card .table-responsive > .table {
+    margin-bottom: 0;
+    color: var(--text-color);
+    width: 100%;
+    table-layout: fixed;
+}
+
+.houses-card .table-responsive > .table > thead > tr > th {
+    font-weight: 500;
+    color: var(--text-muted);
+    background-color: var(--table-header-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.houses-card .table-responsive > .table > thead > tr > th:hover {
+    background-color: var(--hover-color);
+}
+
+.houses-card .table-responsive > .table > thead > tr > th::after {
+    content: '';
+    position: absolute;
+    right: 0.5rem;
+    opacity: 0.3;
+}
+
+.houses-card .table-responsive > .table > thead > tr > th.sort-asc::after {
+    content: '↓';
+    opacity: 1;
+}
+
+.houses-card .table-responsive > .table > thead > tr > th.sort-desc::after {
+    content: '↑';
+    opacity: 1;
+}
+
+.houses-card .table-responsive > .table > tbody > tr > td {
+    padding: 0.75rem 1.5rem;
+    vertical-align: middle;
+}
+
+.houses-card .table-responsive > .table > tbody > tr.expandable-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.houses-card .table-responsive > .table > tbody > tr.expandable-row:hover {
+    background-color: var(--hover-color);
+}
+
+.houses-card .table-responsive > .table > tbody > tr:last-child > td {
+    border-bottom: none;
+}
+
+.houses-card .json-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.8rem;
+}
+
+.houses-card .badge {
+    font-weight: 500;
+    padding: 0.25em 0.5em;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.houses-card .bg-success {
+    font-weight: 600;
+    background-color: rgba(40, 167, 69, 0.2) !important;
+    color: var(--success-color);
+}
+
+.houses-card .bg-danger {
+    background-color: rgba(220, 53, 69, 0.2) !important;
+    color: var(--danger-color);
+}
+
+.houses-card .bg-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.houses-card .empty-state {
+    padding: 2rem 1.5rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.houses-card .empty-state h3 {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.houses-card .empty-state p {
+    margin-bottom: 0;
+}
+
+.houses-card .no-results {
+    padding: 2rem 1.5rem;
+    text-align: center;
+    color: var(--text-muted);
+    display: none;
+}
+
+.houses-card .no-results.visible {
+    display: block;
+}
+
+.houses-card .no-results h3 {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+.houses-card .no-results-row td {
+    text-align: center;
+    vertical-align: middle;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.875rem;
+    padding: 2rem 1.5rem !important;
+}
+
+@media (min-width: 800px) {
+    .houses-card .table-responsive > .table > thead > tr > th:first-child,
+    .houses-card .table-responsive > .table > tbody > tr > td:first-child {
+        width: 30%;
+    }
+
+    .houses-card .table-responsive > .table > thead > tr > th:nth-child(2),
+    .houses-card .table-responsive > .table > tbody > tr > td:nth-child(2) {
+        width: 35%;
+    }
+
+    .houses-card .table-responsive > .table > thead > tr > th:nth-child(3),
+    .houses-card .table-responsive > .table > tbody > tr > td:nth-child(3) {
+        width: 35%;
+    }
+}

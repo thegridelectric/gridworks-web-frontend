@@ -5,6 +5,8 @@ import { Spinner } from "react-bootstrap";
 import GridworksApi from './_util/GridWorksApi';
 import SessionContext, { type Session } from "./_util/SessionContext";
 import HeaderLayout from "./_layout/HeaderLayout";
+import { fetchVisualizerHomes, housesToInstallations } from "./visualizer/fetchVisualizerHomes";
+import { getVisualizerAuthToken } from "./visualizer/visualizerAuth";
 
 
 
@@ -22,20 +24,52 @@ export default function App({ children }: React.PropsWithChildren) {
 
     const loadSession = location.pathname !== '/login/';
     useEffect(() => {
-        if (loadSession) {
-            GridworksApi.get<Session>('/api/v2/session').then(
-                response => {
-                    setSession(response.data);
-                },
-                apiError => {
-                    console.log(apiError.message),
-                        setSession(null);
-                }
-            ).finally(() => {
-                setIsLoadingSession(false);
-            })
+        if (!loadSession) {
+            return;
         }
-    }, [loadSession]);
+        let cancelled = false;
+        setIsLoadingSession(true);
+        (async () => {
+            try {
+                const sessionRes = await GridworksApi.get<Session>('/api/v2/session');
+                if (cancelled) return;
+                const token = getVisualizerAuthToken();
+                let installations = sessionRes.data.installations ?? [];
+                let homesError: string | null = null;
+                if (token) {
+                    try {
+                        const houses = await fetchVisualizerHomes(token);
+                        if (!cancelled) {
+                            installations = housesToInstallations(houses);
+                        }
+                    } catch (e) {
+                        if (!cancelled) {
+                            homesError =
+                                e instanceof Error ? e.message : 'Unknown error';
+                        }
+                    }
+                }
+                if (!cancelled) {
+                    setSession({
+                        userName: sessionRes.data.userName,
+                        installations,
+                        homesError,
+                    });
+                }
+            } catch {
+                if (!cancelled) {
+                    setSession(null);
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoadingSession(false);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [loadSession, location.pathname]);
 
     if (loadSession) {
 

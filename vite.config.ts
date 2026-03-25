@@ -7,10 +7,7 @@ export default defineConfig({
   plugins: [
     react(),
     mockDevServerPlugin({
-      // HTTP Mock path prefix
       prefix: ['/api'],
-      // WebSocket Mock path prefix
-      wsPrefix: ['/ws']
     })
   ],
   build: {

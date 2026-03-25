@@ -1,15 +1,22 @@
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router";
 import SessionContext from "../_util/SessionContext";
 import { parsePathname } from "../_util/urlUtility";
 
 export default function InstallationPicker() {
-   
-    var session = useContext(SessionContext);
+
+    const session = useContext(SessionContext);
     const navigate = useNavigate();
 
     const location = useLocation();
-    const {pathRoot, currentInstallationId} = parsePathname(location.pathname);
+    const { pathRoot, currentInstallationId } = parsePathname(location.pathname);
+
+    const installationsSorted = useMemo(() => {
+        const list = session?.installations ?? [];
+        return [...list].sort((a, b) =>
+            a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' }),
+        );
+    }, [session?.installations]);
 
     function onInstallationChanged(evt: React.ChangeEvent<HTMLSelectElement, Element>) {
         evt.preventDefault();
@@ -22,7 +29,9 @@ export default function InstallationPicker() {
         {!currentInstallationId &&
             <option value=''>Select an installation</option>
         }
-        {session?.installations.map(i => <option key={i.id} value={i.id}>{i.displayName}</option>)}
+        {installationsSorted.map((i) => (
+            <option key={i.id} value={i.id}>{i.displayName}</option>
+        ))}
     </select>
 
 }
