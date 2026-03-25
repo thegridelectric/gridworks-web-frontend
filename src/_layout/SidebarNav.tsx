@@ -1,4 +1,4 @@
-import { BarChart, List, Camera, Table, Settings, Sun, Clock } from 'feather-icons-react';
+import { BarChart, List, Table, Settings, Sun, Clock } from 'feather-icons-react';
 import { NavLink as ReactRouterNavLink, useLocation } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 import { useContext } from 'react';

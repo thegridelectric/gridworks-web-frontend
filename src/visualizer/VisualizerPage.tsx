@@ -1,13 +1,19 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { DateTime } from "luxon";
 import SidebarNavLayout from "../_layout/SidebarNavLayout";
-import GridworksApi from '../_util/GridWorksApi';
 
 import './VisualizerPage.css';
-import VisualizerHeatPumpPlot from "./VisualizerHeatPumpPlot";
-import type { ReadingsData } from "./types";
 import InstallationPicker from "../_shared/InstallationPicker";
 import { useLocation } from "react-router";
 import { parsePathname } from "../_util/urlUtility";
+import SessionContext from "../_util/SessionContext";
+import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
+import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
+import { getDarkModeForVisualizer } from "./visualizerDarkMode";
+import VisualizerServerPlots from "./VisualizerServerPlots";
+import type { VisualizerPlotsApiResponse } from "./visualizerApiTypes";
+import { getVisualizerAuthToken } from "./visualizerAuth";
+import VisualizerSignInForm from "./VisualizerSignInForm";
 
 const CHANNEL_OPTION_GROUPS = [
     {
@@ -68,18 +74,42 @@ const NON_DEFAULT_CHANNELS = new Set([
 ])
 const DEFAULT_CHANNELS = new Set(CHANNEL_OPTION_GROUPS.flatMap(g => g.channels).map(c => c.id).filter(id => !NON_DEFAULT_CHANNELS.has(id)))
 
+function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boolean {
+    const username = localStorage.getItem('username') || '';
+    if (username.trim().toLowerCase() === 'admin') {
+        return true;
+    }
+    const cutoff = DateTime.now().setZone('America/New_York').minus({ days: lookbackDays }).toUTC().toMillis();
+    return endUnixMs <= cutoff;
+}
+
+function wallDateTimeToUtcMs(date: Date): number {
+    const ymd = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const hm = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    return DateTime.fromFormat(`${ymd} ${hm}`, 'yyyy-MM-dd HH:mm', { zone: 'America/New_York' }).toUTC().toMillis();
+}
+
 export default function VisualizerPage() {
 
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(getDefaultDate(false));
     const [channels, setChannels] = useState(DEFAULT_CHANNELS);
-    const [readingsData, setReadingsData] = useState<ReadingsData | null>(null);
+    const [plotsPayload, setPlotsPayload] = useState<VisualizerPlotsApiResponse['plots'] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isFloLoading, setIsFloLoading] = useState(false);
     const [isShowingOptions, setIsShowingOptions] = useState(false);
     const [showPoints, setShowPoints] = useState(false);
+    const [plotError, setPlotError] = useState<string | null>(null);
+    const [, setAuthTick] = useState(0);
 
     const location = useLocation();
     const { currentInstallationId } = parsePathname(location.pathname);
+    const session = useContext(SessionContext);
+
+    const installation = session?.installations.find(i => i.id === currentInstallationId);
+    const houseAlias = (installation?.houseAlias?.trim() || installation?.id || '').trim();
+    const hasVisualizerToken = !!getVisualizerAuthToken();
+    const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);
 
     function setIncludesChannel(id: string, isIncluded: boolean) {
         if (isIncluded && !channels.has(id)) {
@@ -99,7 +129,7 @@ export default function VisualizerPage() {
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="card-title">Visualizer</h5>
                 <div className="status-badges">
-                    {isLoading && <div className="loader" aria-label="Loading visualizer data" />}
+                    {(isLoading || isFloLoading) && <div className="loader" aria-label="Loading visualizer data" />}
                     <div className="form-check form-check-inline me-3 d-flex align-items-center">
                         <input className="form-check-input auto-refresh-checkbox" type="checkbox" id="auto-refresh-checkbox" />
                         <label className="form-check-label auto-refresh-label" htmlFor="auto-refresh-checkbox">
@@ -115,6 +145,9 @@ export default function VisualizerPage() {
                 </div>
             </div>
             <div className="p-4">
+                {!hasVisualizerToken &&
+                    <VisualizerSignInForm onSuccess={() => setAuthTick((t) => t + 1)} />
+                }
                 <div className="mb-4">
                     <label className="form-label">Selected House</label>
                     <div className="selected-house-picker">
@@ -165,12 +198,15 @@ export default function VisualizerPage() {
                     </tbody>
                 </table>
 
-                <fieldset className="d-flex gap-2 align-items-center" disabled={isLoading} style={{ opacity: isLoading ? 0.5 : 1 }}>
+                <fieldset className="d-flex gap-2 align-items-center" disabled={isLoading || isFloLoading} style={{ opacity: (isLoading || isFloLoading) ? 0.5 : 1 }}>
                     <button className="btn btn-sm btn-outline-secondary" type="button" onClick={onPlotClick}>Plot</button>
                     <button className="btn btn-sm btn-outline-secondary" type="button" onClick={onNowClick}>8pm-Now</button>
-                    <button className="btn btn-sm btn-outline-secondary" type="button" id="flo-btn">FLO</button>
+                    <button className="btn btn-sm btn-outline-secondary" type="button" id="flo-btn" onClick={onFloClick} aria-busy={isFloLoading}>FLO</button>
                     <button className="btn btn-sm btn-outline-secondary" type="button" onClick={() => setIsShowingOptions(!isShowingOptions)}>Options</button>
                 </fieldset>
+                {plotError &&
+                    <div className="alert alert-danger mt-3 mb-0" role="alert">{plotError}</div>
+                }
             </div>
 
             {isShowingOptions &&
@@ -203,24 +239,32 @@ export default function VisualizerPage() {
                 </div>
             }
 
-            {readingsData &&
+            {plotsPayload &&
                 <div className="plot-container border-top">
-                    <VisualizerHeatPumpPlot showMarkers={showPoints} {...{ readingsData }} />
+                    <VisualizerServerPlots
+                        plots={plotsPayload}
+                        selectedChannels={plotSelectedChannels}
+                        darkmode={getDarkModeForVisualizer()}
+                    />
                 </div>
             }
 
         </div>
     </SidebarNavLayout>
 
-    function onNowClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+    async function onNowClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         event.preventDefault();
-        setStartDateTime(getDefaultDate(true));
-        setEndDateTime(new Date());
+        const start = getDefaultDate(true);
+        const end = getDefaultDate(false);
+        setStartDateTime(start);
+        setEndDateTime(end);
+        await runPlotQuery(start, end);
     }
 
     function onClearClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         event.preventDefault();
-        setReadingsData(null);
+        setPlotsPayload(null);
+        setPlotError(null);
         setIsShowingOptions(false);
         setShowPoints(false);
         setChannels(DEFAULT_CHANNELS);
@@ -260,36 +304,105 @@ export default function VisualizerPage() {
         setEndDateTime(next);
     }
 
-    // Update getData function to use selected channels
     async function onPlotClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         event.preventDefault();
+        await runPlotQuery(startDateTime, endDateTime);
+    }
 
-        // const selectedChannels = Array.from(document.querySelectorAll('input[name="channels"]:checked'))
-        //     .map(checkbox => checkbox.value);
+    async function onFloClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        setPlotError(null);
 
-        setIsLoading(true);
-        setReadingsData(null);
+        if (!currentInstallationId) {
+            setPlotError('Select an installation first.');
+            return;
+        }
+        if (!houseAlias) {
+            setPlotError('Could not resolve a house alias for this installation.');
+            return;
+        }
+
+        const token = getVisualizerAuthToken();
+        if (!token) {
+            setPlotError('Sign in to the visualizer API above (same credentials as the backoffice login page).');
+            return;
+        }
+
+        const endMs = wallDateTimeToUtcMs(endDateTime);
+        if (!isEndDateOldEnough(endMs, 10)) {
+            window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
+            return;
+        }
+
+        setIsFloLoading(true);
         try {
-            const result = await GridworksApi.get<ReadingsData>(`/api/v2/installations/${currentInstallationId}/readings`, {
-                params: {
-                    start: startDateTime.toISOString(),
-                    end: endDateTime.toISOString(),
-                    channels: [...channels].sort().join(',')
-                }
-            });
-            setReadingsData(result.data);
-        }
-        catch (error) {
-            console.error('Error getting plots:', error);
-            // Refresh the page on API failure
-            window.location.reload();
-        }
-        finally {
-            setIsLoading(false);
+            await downloadVisualizerFlo({ houseAlias, timeMs: endMs, token });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setPlotError(message);
+        } finally {
+            setIsFloLoading(false);
         }
     }
 
+    async function runPlotQuery(startDt: Date, endDt: Date) {
+        setPlotError(null);
 
+        if (!currentInstallationId) {
+            setPlotError('Select an installation first.');
+            return;
+        }
+        if (!houseAlias) {
+            setPlotError('Could not resolve a house alias for this installation.');
+            return;
+        }
+
+        const token = getVisualizerAuthToken();
+        if (!token) {
+            setPlotError('Sign in to the visualizer API above (same credentials as the backoffice login page).');
+            return;
+        }
+
+        const startMs = wallDateTimeToUtcMs(startDt);
+        const endMs = wallDateTimeToUtcMs(endDt);
+
+        if (!isEndDateOldEnough(endMs, 10)) {
+            window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
+            return;
+        }
+
+        const selectedChannels = [...channels].sort();
+        if (showPoints) {
+            selectedChannels.push('show-points');
+        }
+
+        setIsLoading(true);
+        setPlotsPayload(null);
+        try {
+            const data = await fetchVisualizerPlots({
+                houseAlias,
+                startMs,
+                endMs,
+                selectedChannels,
+                darkmode: getDarkModeForVisualizer(),
+                token,
+            });
+
+            if (!data.success) {
+                throw new Error(data.message || 'Visualizer returned success: false');
+            }
+            if (!data.plots) {
+                throw new Error('Visualizer returned no plots object.');
+            }
+
+            setPlotsPayload(data.plots);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setPlotError(message);
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     function getDefaultDate(start: boolean) {
         const nyDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));

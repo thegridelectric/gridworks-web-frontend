@@ -228,31 +228,41 @@
 
 .plot-container {
     margin-top: 0.5rem;
-    padding: 1rem 2.5% 0 2.5%;
+    padding: 1rem 0 0;
     background-color: var(--card-background);
     border-top: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.visualizer-server-plots-root {
+    width: 100%;
+    min-width: 0;
 }
 
 .plot-div {
     margin-bottom: 2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0;
+    box-sizing: border-box;
+    padding: 0 1rem;
     width: 100%;
-    max-width: 1500px;
-    margin-left: auto;
-    margin-right: auto;
+    max-width: none;
+    min-width: 0;
 }
 
 .plot-div .js-plotly-plot,
 .plot-div .plotly-graph-div,
 .plot-div .plotly {
     width: 100% !important;
+    max-width: 100% !important;
     min-width: 0;
+}
+
+.plot-div .svg-container {
+    width: 100% !important;
+    max-width: 100% !important;
 }
 
 .plot-div:last-child {
@@ -260,8 +270,8 @@
 }
 
 @media (max-width: 650px) {
-    .plot-container {
-        padding-left: 0;
-        padding-right: 0;
+    .plot-div {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
     }
 }

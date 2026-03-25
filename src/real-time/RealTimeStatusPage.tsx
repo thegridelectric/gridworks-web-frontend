@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { data, useLocation, useParams } from "react-router";
-
-import GridworksApi from '../_util/GridWorksApi';
+import { useLocation } from "react-router";
 import SidebarNavLayout from "../_layout/SidebarNavLayout";
 
 import './RealTimeStatusPage.css';

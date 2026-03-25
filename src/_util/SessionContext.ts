@@ -2,7 +2,8 @@ import { createContext } from 'react';
 
 export interface BasicInstallationInfo {
     id: string,
-    displayName: string
+    displayName: string,
+    houseAlias?: string,
 }
 
 export interface Session {
