@@ -1,0 +1,138 @@
+/* Card body — backoffice morning card uses padding-bottom: 0 */
+.morning-report-card-body {
+    padding-bottom: 0 !important;
+}
+
+.morning-report-card .morning-selected-house-label,
+.morning-report-card .morning-message-types-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+/*
+ * Morning message types — custom square checkboxes. Use inset box-shadow instead of
+ * border so WebKit does not stack a second UA frame; edge uses --border-color like
+ * other card chrome (avoids heavy 2px --text-muted ring).
+ */
+#morning-report-card #morning-checkboxDiv input.morning-message-type-checkbox,
+#morning-report-card #morning-checkboxDiv input[type='checkbox'] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    flex-shrink: 0;
+    margin: 0 10px 0 0;
+    vertical-align: middle;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    background-image: none;
+    /* Single hairline; no extra outer border from border + native chrome */
+    box-shadow: inset 0 0 0 1px var(--border-color);
+    position: relative;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition:
+        background-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+#morning-report-card #morning-checkboxDiv input.morning-message-type-checkbox:checked,
+#morning-report-card #morning-checkboxDiv input[type='checkbox']:checked {
+    background-color: var(--text-muted);
+    background-image: none;
+    color: transparent;
+    box-shadow: none;
+}
+
+#morning-report-card #morning-checkboxDiv input.morning-message-type-checkbox:focus,
+#morning-report-card #morning-checkboxDiv input[type='checkbox']:focus,
+#morning-report-card #morning-checkboxDiv input.morning-message-type-checkbox:focus-visible,
+#morning-report-card #morning-checkboxDiv input[type='checkbox']:focus-visible {
+    outline: none;
+}
+
+#morning-report-card #morning-checkboxDiv input.morning-message-type-checkbox:focus:not(:checked),
+#morning-report-card #morning-checkboxDiv input[type='checkbox']:focus:not(:checked) {
+    box-shadow: inset 0 0 0 1px var(--border-color);
+}
+
+#morning-report-card #morning-checkboxDiv input.morning-message-type-checkbox:focus:checked,
+#morning-report-card #morning-checkboxDiv input[type='checkbox']:focus:checked {
+    box-shadow: none;
+}
+
+#morning-report-card #morning-checkboxDiv label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    padding-left: 0.5rem;
+    cursor: pointer;
+}
+
+#morning-report-card #morning-checkboxDiv label.morning-checkbox-label-last {
+    margin-bottom: 1.75rem;
+}
+
+/* Backoffice #morning-table-container */
+#morning-table-container {
+    margin-top: 1.5rem;
+}
+
+#morning-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+}
+
+#morning-table-container th,
+#morning-table-container td {
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    text-align: left;
+    font-size: 0.9rem;
+    background: var(--card-background);
+    color: var(--text-color);
+}
+
+#morning-table-container th {
+    background: var(--table-header-bg);
+    color: var(--text-muted);
+}
+
+#morning-table-container tbody tr {
+    cursor: pointer;
+}
+
+#morning-table-container tbody tr:hover {
+    background: var(--hover-color);
+}
+
+#morning-table-container .summary-table {
+    max-width: 500px;
+    margin-bottom: 40px;
+}
+
+/* Same as backoffice index.html #morning-selected-house */
+.morning-report-card #morning-selected-house {
+    border: none !important;
+    cursor: pointer;
+    background-color: var(--selected-house-bg) !important;
+    color: var(--text-color) !important;
+}
+
+.morning-report-card #morning-selected-house::placeholder {
+    color: var(--text-muted) !important;
+    font-size: 0.875rem;
+    opacity: 0.7;
+}
+
+.morning-report-card #morning-selected-house:focus {
+    box-shadow: none;
+    border-color: transparent;
+}

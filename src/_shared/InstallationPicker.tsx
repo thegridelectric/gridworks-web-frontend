@@ -21,7 +21,11 @@ export default function InstallationPicker() {
     function onInstallationChanged(evt: React.ChangeEvent<HTMLSelectElement, Element>) {
         evt.preventDefault();
         const installationId = evt.currentTarget.value;
-        navigate(`/${pathRoot}/${installationId}/`, { replace: true });
+        const root = pathRoot ?? 'installations';
+        navigate(
+            installationId ? `/${root}/${installationId}/` : `/${root}/`,
+            { replace: true },
+        );
     }
 
 

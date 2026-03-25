@@ -1,7 +1,4 @@
-import SidebarNavLayout from "./_layout/SidebarNavLayout";
-
+/** Placeholder; houses table stays mounted via AuthedSidebarOutletLayout. */
 export default function DataExportPage() {
-    return <SidebarNavLayout>
-        <h1>Data Export</h1>
-    </SidebarNavLayout>
+    return null;
 }

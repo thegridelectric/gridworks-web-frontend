@@ -168,11 +168,18 @@
     color: var(--text-color);
 }
 
+/* Match backoffice: Montserrat 0.875rem, row borders, card-colored rows (not Bootstrap default table fill). */
 .houses-card .table-responsive > .table {
+    --bs-table-color: var(--text-color);
+    --bs-table-bg: transparent;
+    --bs-table-border-color: var(--table-row-border);
     margin-bottom: 0;
     color: var(--text-color);
     width: 100%;
     table-layout: fixed;
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+        Ubuntu, Cantarell, sans-serif;
+    font-size: 0.875rem;
 }
 
 .houses-card .table-responsive > .table > thead > tr > th {
@@ -211,6 +218,14 @@
 .houses-card .table-responsive > .table > tbody > tr > td {
     padding: 0.75rem 1.5rem;
     vertical-align: middle;
+    border-bottom: 0.5px solid var(--table-row-border);
+    font-size: 0.875rem;
+    color: var(--text-color);
+    background-color: transparent;
+}
+
+.houses-card .table-responsive > .table > tbody > tr.expandable-row:hover > td {
+    background-color: var(--hover-color);
 }
 
 .houses-card .table-responsive > .table > tbody > tr.expandable-row {
@@ -218,21 +233,33 @@
     transition: background-color 0.2s ease;
 }
 
-.houses-card .table-responsive > .table > tbody > tr.expandable-row:hover {
-    background-color: var(--hover-color);
+/* Selected row — matches backoffice .expandable-row.expanded */
+.houses-card .table-responsive > .table > tbody > tr.expandable-row.expanded {
+    background-color: var(--selected-house-bg);
+}
+
+.houses-card .table-responsive > .table > tbody > tr.expandable-row.expanded > td {
+    background-color: transparent;
+}
+
+.houses-card .table-responsive > .table > tbody > tr.expandable-row.expanded:hover {
+    background-color: var(--selected-house-bg);
+}
+
+.houses-card .table-responsive > .table > tbody > tr.expandable-row.expanded:hover > td {
+    background-color: transparent;
 }
 
 .houses-card .table-responsive > .table > tbody > tr:last-child > td {
     border-bottom: none;
 }
 
+/* Backoffice .json-cell: ellipsis only, same body font/size as other cells */
 .houses-card .json-cell {
     max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 0.8rem;
 }
 
 .houses-card .badge {
@@ -300,6 +327,23 @@
     font-style: italic;
     font-size: 0.875rem;
     padding: 2rem 1.5rem !important;
+}
+
+@media (max-width: 800px) {
+    .houses-card .table-responsive > .table > thead > tr > th:first-child,
+    .houses-card .table-responsive > .table > tbody > tr > td:first-child {
+        width: 27%;
+    }
+
+    .houses-card .table-responsive > .table > thead > tr > th:nth-child(2),
+    .houses-card .table-responsive > .table > tbody > tr > td:nth-child(2) {
+        width: 36%;
+    }
+
+    .houses-card .table-responsive > .table > thead > tr > th:nth-child(3),
+    .houses-card .table-responsive > .table > tbody > tr > td:nth-child(3) {
+        width: 36%;
+    }
 }
 
 @media (min-width: 800px) {

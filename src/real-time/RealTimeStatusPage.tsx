@@ -1,6 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router";
-import SidebarNavLayout from "../_layout/SidebarNavLayout";
 
 import './RealTimeStatusPage.css';
 import RealTimeStatusHeader from "./RealTimeStatusHeader";
@@ -178,9 +177,7 @@ export default function RealTimeStatusPage() {
     const houseAliasMissing =
         !!currentInstallationId && !!installation && !houseAlias;
 
-    return <SidebarNavLayout>
-        <h1>Real-Time Status</h1>
-
+    return (
         <div className="card visualizer-card mb-4">
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0">Real-time</h5>
@@ -289,6 +286,5 @@ export default function RealTimeStatusPage() {
                 }
             </div>
         </div>
-
-    </SidebarNavLayout>;
+    );
 }

@@ -1,7 +1,5 @@
 import { useContext, useState } from "react";
 import { DateTime } from "luxon";
-import SidebarNavLayout from "../_layout/SidebarNavLayout";
-
 import './VisualizerPage.css';
 import InstallationPicker from "../_shared/InstallationPicker";
 import { useLocation } from "react-router";
@@ -123,8 +121,7 @@ export default function VisualizerPage() {
         }
     }
 
-    return <SidebarNavLayout>
-        <h1>Visualizer</h1>
+    return (
         <div className="card visualizer-card">
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="card-title">Visualizer</h5>
@@ -250,7 +247,7 @@ export default function VisualizerPage() {
             }
 
         </div>
-    </SidebarNavLayout>
+    );
 
     async function onNowClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         event.preventDefault();

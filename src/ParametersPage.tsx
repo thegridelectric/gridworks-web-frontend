@@ -2,7 +2,6 @@ import { useContext, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router';
 import Plot from 'react-plotly.js';
 
-import SidebarNavLayout from './_layout/SidebarNavLayout';
 import InstallationPicker from './_shared/InstallationPicker';
 import SessionContext, {
     installationForRouteId,
@@ -183,10 +182,5 @@ export default function ParametersPage() {
     const session = useContext(SessionContext);
     const installation = installationForRouteId(session?.installations, currentInstallationId);
 
-    return (
-        <SidebarNavLayout>
-            <h1>Parameters</h1>
-            <ParametersCard key={installation?.id ?? '__none__'} installation={installation} />
-        </SidebarNavLayout>
-    );
+    return <ParametersCard key={installation?.id ?? '__none__'} installation={installation} />;
 }
