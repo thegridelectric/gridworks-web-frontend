@@ -26,8 +26,8 @@ export default function RealTimeStatusSystemDiagram({ relays, readings }: RealTi
             <defs>
                 {/* Dynamic gradient for heat pump animation (EWT to LWT) */}
                 <linearGradient id="dashboardHeatGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-                    <stop offset="25%" style={getGradientStopStyle(readings, 'hp-lwt')} />
-                    <stop offset="75%" style={getGradientStopStyle(readings, 'hp-ewt')} />
+                    <stop offset="25%" style={getGradientStopStyle(readings, 'hp-ewt')} />
+                    <stop offset="75%" style={getGradientStopStyle(readings, 'hp-lwt')} />
                 </linearGradient>
 
                 {/* Dynamic gradient for house animation (dist-rwt to dist-swt, left to right) */}
