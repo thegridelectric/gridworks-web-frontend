@@ -1,5 +1,4 @@
 import { DateTime } from 'luxon';
-import type { BasicInstallationInfo } from '../_util/SessionContext';
 
 export const CHANNEL_SECTIONS: { title: string; items: { id: string; label: string }[] }[] = [
   {
@@ -108,21 +107,3 @@ export function triggerBlobDownload(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-export function shortAliasesForElectricity(
-  currentInstallationId: string | undefined,
-  installation: BasicInstallationInfo | undefined,
-  installations: BasicInstallationInfo[],
-): string[] {
-  if (currentInstallationId && installation) {
-    const a = (installation.houseAlias || installation.displayName || '').trim();
-    return a ? [a] : [];
-  }
-  const out: string[] = [];
-  for (const inst of installations) {
-    const a = (inst.houseAlias || inst.displayName || '').trim();
-    if (a) {
-      out.push(a);
-    }
-  }
-  return out;
-}

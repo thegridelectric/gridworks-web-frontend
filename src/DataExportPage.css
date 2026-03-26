@@ -1,21 +1,3 @@
-/* Read-only selected-house fields (match backoffice / morning report) */
-.data-export-page .data-export-selected-house {
-    border: none !important;
-    background-color: var(--selected-house-bg) !important;
-    color: var(--text-color) !important;
-}
-
-.data-export-page .data-export-selected-house::placeholder {
-    color: var(--text-muted) !important;
-    font-size: 0.875rem;
-    opacity: 0.7;
-}
-
-.data-export-page .data-export-selected-house:focus {
-    box-shadow: none;
-    border-color: transparent;
-}
-
 /* Backoffice electricity-selected-house */
 .data-export-page .data-export-hourly-house-input {
     background-color: rgba(56, 77, 164, 0.2) !important;

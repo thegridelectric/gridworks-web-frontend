@@ -44,7 +44,7 @@
   border-color: transparent;
 }
 
-.visualizer-card .form-control.text-light:not(.data-export-selected-house):not(.data-export-hourly-house-input) {
+.visualizer-card .form-control.text-light:not(.data-export-hourly-house-input) {
   color: var(--datetime-text) !important;
   background-color: var(--datetime-background) !important;
   border: 1px solid var(--border-color) !important;
