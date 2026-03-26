@@ -199,10 +199,6 @@ export default function RealTimeStatusPage() {
                         <InstallationPicker />
                     </div>
                 </div>
-
-                {!currentInstallationId &&
-                    <p className="text-muted mb-0">Select an installation to connect.</p>
-                }
                 {installationUnknown &&
                     <p className="text-danger mb-0">This installation is not in your current session.</p>
                 }

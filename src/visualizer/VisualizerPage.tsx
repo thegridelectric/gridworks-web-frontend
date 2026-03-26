@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { DateTime } from "luxon";
 import './VisualizerPage.css';
 import InstallationPicker from "../_shared/InstallationPicker";
@@ -87,6 +87,25 @@ function wallDateTimeToUtcMs(date: Date): number {
     return DateTime.fromFormat(`${ymd} ${hm}`, 'yyyy-MM-dd HH:mm', { zone: 'America/New_York' }).toUTC().toMillis();
 }
 
+function getDefaultDate(start: boolean): Date {
+    const nyDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+    if (start) {
+        nyDate.setDate(nyDate.getDate() - 1);
+        nyDate.setHours(20, 0, 0, 0);
+    } else {
+        nyDate.setMinutes(nyDate.getMinutes() + 1);
+    }
+    return nyDate;
+}
+
+function formatDate(dt: Date) {
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+function formatTime(dt: Date) {
+    return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+}
+
 export default function VisualizerPage() {
 
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
@@ -99,15 +118,23 @@ export default function VisualizerPage() {
     const [showPoints, setShowPoints] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
     const [, setAuthTick] = useState(0);
+    const [autoRefresh, setAutoRefresh] = useState(false);
 
     const location = useLocation();
-    const { currentInstallationId } = parsePathname(location.pathname);
+    const { currentInstallationId, pathRoot } = parsePathname(location.pathname);
     const session = useContext(SessionContext);
 
     const installation = installationForRouteId(session?.installations, currentInstallationId);
     const houseAlias = (installation?.houseAlias?.trim() || installation?.id || '').trim();
     const hasVisualizerToken = !!getVisualizerAuthToken();
     const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);
+
+    const isPageFocusedRef = useRef(true);
+    const blockPlotRef = useRef(false);
+    const runPlotQueryRef = useRef<(startDt: Date, endDt: Date) => Promise<void>>(async () => { });
+    const autoRefreshRef = useRef(autoRefresh);
+    autoRefreshRef.current = autoRefresh;
+    blockPlotRef.current = isLoading || isFloLoading;
 
     function setIncludesChannel(id: string, isIncluded: boolean) {
         if (isIncluded && !channels.has(id)) {
@@ -121,6 +148,245 @@ export default function VisualizerPage() {
         }
     }
 
+    async function runPlotQuery(startDt: Date, endDt: Date) {
+        setPlotError(null);
+
+        if (!currentInstallationId) {
+            setPlotError('Select an installation first.');
+            return;
+        }
+        if (!houseAlias) {
+            setPlotError('Could not resolve a house alias for this installation.');
+            return;
+        }
+
+        const token = getVisualizerAuthToken();
+        if (!token) {
+            setPlotError('Sign in to the visualizer API above (same credentials as the backoffice login page).');
+            return;
+        }
+
+        const startMs = wallDateTimeToUtcMs(startDt);
+        const endMs = wallDateTimeToUtcMs(endDt);
+
+        if (!isEndDateOldEnough(endMs, 10)) {
+            window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
+            return;
+        }
+
+        const selectedChannels = [...channels].sort();
+        if (showPoints) {
+            selectedChannels.push('show-points');
+        }
+
+        setIsLoading(true);
+        setPlotsPayload(null);
+        try {
+            const data = await fetchVisualizerPlots({
+                houseAlias,
+                startMs,
+                endMs,
+                selectedChannels,
+                darkmode: getDarkModeForVisualizer(),
+                token,
+            });
+
+            if (!data.success) {
+                throw new Error(data.message || 'Visualizer returned success: false');
+            }
+            if (!data.plots) {
+                throw new Error('Visualizer returned no plots object.');
+            }
+
+            setPlotsPayload(data.plots);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setPlotError(message);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    runPlotQueryRef.current = runPlotQuery;
+
+    async function onNowClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        if (isLoading || isFloLoading) {
+            return;
+        }
+        const start = getDefaultDate(true);
+        const end = getDefaultDate(false);
+        setStartDateTime(start);
+        setEndDateTime(end);
+        await runPlotQuery(start, end);
+    }
+
+    function onClearClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        setPlotsPayload(null);
+        setPlotError(null);
+        setIsShowingOptions(false);
+        setShowPoints(false);
+        setChannels(DEFAULT_CHANNELS);
+        setStartDateTime(getDefaultDate(true));
+        setEndDateTime(getDefaultDate(false));
+    }
+
+    function onStartDateChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [year, month, day] = evt.currentTarget.value.split('-');
+        if (!year || !month || !day) return;
+        const next = new Date(startDateTime);
+        next.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+        setStartDateTime(next);
+    }
+
+    function onStartTimeChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [hours, minutes] = evt.currentTarget.value.split(':');
+        if (!hours || !minutes) return;
+        const next = new Date(startDateTime);
+        next.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        setStartDateTime(next);
+    }
+
+    function onEndDateChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [year, month, day] = evt.currentTarget.value.split('-');
+        if (!year || !month || !day) return;
+        const next = new Date(endDateTime);
+        next.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+        setEndDateTime(next);
+    }
+
+    function onEndTimeChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [hours, minutes] = evt.currentTarget.value.split(':');
+        if (!hours || !minutes) return;
+        const next = new Date(endDateTime);
+        next.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        setEndDateTime(next);
+    }
+
+    async function onPlotClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        await runPlotQuery(startDateTime, endDateTime);
+    }
+
+    async function onFloClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        setPlotError(null);
+
+        if (!currentInstallationId) {
+            setPlotError('Select an installation first.');
+            return;
+        }
+        if (!houseAlias) {
+            setPlotError('Could not resolve a house alias for this installation.');
+            return;
+        }
+
+        const token = getVisualizerAuthToken();
+        if (!token) {
+            setPlotError('Sign in to the visualizer API above (same credentials as the backoffice login page).');
+            return;
+        }
+
+        const endMs = wallDateTimeToUtcMs(endDateTime);
+        if (!isEndDateOldEnough(endMs, 10)) {
+            window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
+            return;
+        }
+
+        setIsFloLoading(true);
+        try {
+            await downloadVisualizerFlo({ houseAlias, timeMs: endMs, token });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setPlotError(message);
+        } finally {
+            setIsFloLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        if (!autoRefresh || pathRoot !== 'visualizer') {
+            return;
+        }
+
+        let intervalId: ReturnType<typeof setInterval> | undefined;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+        const clearTimers = () => {
+            if (intervalId !== undefined) {
+                clearInterval(intervalId);
+                intervalId = undefined;
+            }
+            if (timeoutId !== undefined) {
+                clearTimeout(timeoutId);
+                timeoutId = undefined;
+            }
+        };
+
+        const maybeAutoRefreshTick = () => {
+            if (!autoRefreshRef.current || document.hidden || !isPageFocusedRef.current) {
+                return;
+            }
+            if (parsePathname(location.pathname).pathRoot !== 'visualizer') {
+                return;
+            }
+            if (blockPlotRef.current) {
+                return;
+            }
+            const start = getDefaultDate(true);
+            const end = getDefaultDate(false);
+            setStartDateTime(start);
+            setEndDateTime(end);
+            void runPlotQueryRef.current(start, end);
+        };
+
+        const startAutoRefresh = () => {
+            clearTimers();
+            timeoutId = setTimeout(maybeAutoRefreshTick, 500);
+            intervalId = setInterval(maybeAutoRefreshTick, 60000);
+        };
+
+        const checkPageFocus = () => {
+            isPageFocusedRef.current = document.hasFocus();
+            const onVisualizerRoute = parsePathname(location.pathname).pathRoot === 'visualizer';
+            const allow =
+                isPageFocusedRef.current &&
+                !document.hidden &&
+                autoRefreshRef.current &&
+                onVisualizerRoute;
+            if (allow) {
+                startAutoRefresh();
+            } else if (!isPageFocusedRef.current || document.hidden || !onVisualizerRoute) {
+                clearTimers();
+            }
+        };
+
+        isPageFocusedRef.current = document.hasFocus();
+        if (isPageFocusedRef.current && !document.hidden) {
+            startAutoRefresh();
+        }
+
+        window.addEventListener('focus', checkPageFocus);
+        window.addEventListener('blur', checkPageFocus);
+        const onVisibilityChange = () => {
+            if (!document.hidden) {
+                setTimeout(checkPageFocus, 100);
+            } else {
+                isPageFocusedRef.current = false;
+                clearTimers();
+            }
+        };
+        document.addEventListener('visibilitychange', onVisibilityChange);
+
+        return () => {
+            window.removeEventListener('focus', checkPageFocus);
+            window.removeEventListener('blur', checkPageFocus);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            clearTimers();
+        };
+    }, [autoRefresh, location.pathname, pathRoot]);
+
     return (
         <div className="card visualizer-card">
             <div className="card-header d-flex justify-content-between align-items-center">
@@ -128,7 +394,13 @@ export default function VisualizerPage() {
                 <div className="status-badges">
                     {(isLoading || isFloLoading) && <div className="loader" aria-label="Loading visualizer data" />}
                     <div className="form-check form-check-inline me-3 d-flex align-items-center">
-                        <input className="form-check-input auto-refresh-checkbox" type="checkbox" id="auto-refresh-checkbox" />
+                        <input
+                            className="form-check-input auto-refresh-checkbox"
+                            type="checkbox"
+                            id="auto-refresh-checkbox"
+                            checked={autoRefresh}
+                            onChange={(evt) => setAutoRefresh(evt.currentTarget.checked)}
+                        />
                         <label className="form-check-label auto-refresh-label" htmlFor="auto-refresh-checkbox">
                             Auto-refresh
                         </label>
@@ -248,175 +520,4 @@ export default function VisualizerPage() {
 
         </div>
     );
-
-    async function onNowClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-        event.preventDefault();
-        const start = getDefaultDate(true);
-        const end = getDefaultDate(false);
-        setStartDateTime(start);
-        setEndDateTime(end);
-        await runPlotQuery(start, end);
-    }
-
-    function onClearClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-        event.preventDefault();
-        setPlotsPayload(null);
-        setPlotError(null);
-        setIsShowingOptions(false);
-        setShowPoints(false);
-        setChannels(DEFAULT_CHANNELS);
-        setStartDateTime(getDefaultDate(true));
-        setEndDateTime(getDefaultDate(false));
-    }
-
-    function onStartDateChange(evt: React.ChangeEvent<HTMLInputElement>) {
-        const [year, month, day] = evt.currentTarget.value.split('-');
-        if (!year || !month || !day) return;
-        const next = new Date(startDateTime);
-        next.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
-        setStartDateTime(next);
-    }
-
-    function onStartTimeChange(evt: React.ChangeEvent<HTMLInputElement>) {
-        const [hours, minutes] = evt.currentTarget.value.split(':');
-        if (!hours || !minutes) return;
-        const next = new Date(startDateTime);
-        next.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        setStartDateTime(next);
-    }
-
-    function onEndDateChange(evt: React.ChangeEvent<HTMLInputElement>) {
-        const [year, month, day] = evt.currentTarget.value.split('-');
-        if (!year || !month || !day) return;
-        const next = new Date(endDateTime);
-        next.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
-        setEndDateTime(next);
-    }
-
-    function onEndTimeChange(evt: React.ChangeEvent<HTMLInputElement>) {
-        const [hours, minutes] = evt.currentTarget.value.split(':');
-        if (!hours || !minutes) return;
-        const next = new Date(endDateTime);
-        next.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-        setEndDateTime(next);
-    }
-
-    async function onPlotClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-        event.preventDefault();
-        await runPlotQuery(startDateTime, endDateTime);
-    }
-
-    async function onFloClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-        event.preventDefault();
-        setPlotError(null);
-
-        if (!currentInstallationId) {
-            setPlotError('Select an installation first.');
-            return;
-        }
-        if (!houseAlias) {
-            setPlotError('Could not resolve a house alias for this installation.');
-            return;
-        }
-
-        const token = getVisualizerAuthToken();
-        if (!token) {
-            setPlotError('Sign in to the visualizer API above (same credentials as the backoffice login page).');
-            return;
-        }
-
-        const endMs = wallDateTimeToUtcMs(endDateTime);
-        if (!isEndDateOldEnough(endMs, 10)) {
-            window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
-            return;
-        }
-
-        setIsFloLoading(true);
-        try {
-            await downloadVisualizerFlo({ houseAlias, timeMs: endMs, token });
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            setPlotError(message);
-        } finally {
-            setIsFloLoading(false);
-        }
-    }
-
-    async function runPlotQuery(startDt: Date, endDt: Date) {
-        setPlotError(null);
-
-        if (!currentInstallationId) {
-            setPlotError('Select an installation first.');
-            return;
-        }
-        if (!houseAlias) {
-            setPlotError('Could not resolve a house alias for this installation.');
-            return;
-        }
-
-        const token = getVisualizerAuthToken();
-        if (!token) {
-            setPlotError('Sign in to the visualizer API above (same credentials as the backoffice login page).');
-            return;
-        }
-
-        const startMs = wallDateTimeToUtcMs(startDt);
-        const endMs = wallDateTimeToUtcMs(endDt);
-
-        if (!isEndDateOldEnough(endMs, 10)) {
-            window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
-            return;
-        }
-
-        const selectedChannels = [...channels].sort();
-        if (showPoints) {
-            selectedChannels.push('show-points');
-        }
-
-        setIsLoading(true);
-        setPlotsPayload(null);
-        try {
-            const data = await fetchVisualizerPlots({
-                houseAlias,
-                startMs,
-                endMs,
-                selectedChannels,
-                darkmode: getDarkModeForVisualizer(),
-                token,
-            });
-
-            if (!data.success) {
-                throw new Error(data.message || 'Visualizer returned success: false');
-            }
-            if (!data.plots) {
-                throw new Error('Visualizer returned no plots object.');
-            }
-
-            setPlotsPayload(data.plots);
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            setPlotError(message);
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
-    function getDefaultDate(start: boolean) {
-        const nyDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
-        if (start) {
-            nyDate.setDate(nyDate.getDate() - 1);
-            nyDate.setHours(20, 0, 0, 0);
-        } else {
-            nyDate.setMinutes(nyDate.getMinutes() + 1);
-        }
-        return nyDate;
-    }
-
-    function formatDate(dt: Date) {
-        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-    }
-
-    function formatTime(dt: Date) {
-        return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
-    }
 }

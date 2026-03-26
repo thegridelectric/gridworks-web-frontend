@@ -95,3 +95,20 @@ main.header-layout {
 h1 {
   text-align: center;
 }
+
+/* Backoffice-style fullscreen cards (data export, etc.) */
+.card.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  z-index: 1000;
+  border-radius: 0;
+  overflow-y: auto;
+}
+
+.card.fullscreen .p-4 {
+  border-bottom: solid 1px var(--border-color);
+}

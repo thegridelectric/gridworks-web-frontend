@@ -107,15 +107,6 @@ function ParametersCard({ installation }: { installation: BasicInstallationInfo 
                     </div>
                 )}
 
-                {!hasHouse && (
-                    <div
-                        className="text-center text-secondary py-5"
-                        style={{ fontSize: '0.875rem' }}
-                    >
-                        Select an installation to view and edit parameters
-                    </div>
-                )}
-
                 {hasHouse && figures && (
                     <>
                         <div className="parameters-plot-wrap mb-4">
