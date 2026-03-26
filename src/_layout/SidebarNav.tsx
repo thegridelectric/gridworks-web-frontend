@@ -44,7 +44,7 @@ export default function SidebarNav() {
                     <Nav.Link as={ReactRouterNavLink} to={`/real-time/${installationUrlSuffix}`}><Clock />Real-Time Status</Nav.Link>
                 </li>
                 <li className="nav-item">
-                    <Nav.Link as={ReactRouterNavLink} to={`/visualizer/${installationUrlSuffix}`}><BarChart />Stats Visualizer</Nav.Link>
+                    <Nav.Link as={ReactRouterNavLink} to={`/visualizer/${installationUrlSuffix}`}><BarChart />Visualizer</Nav.Link>
                 </li>
                 <li className="nav-item">
                     <Nav.Link as={ReactRouterNavLink} to={`/data-export-channel/${installationUrlSuffix}`}><Table />Channel data export</Nav.Link>

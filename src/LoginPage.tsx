@@ -35,9 +35,6 @@ export default function LoginPage() {
         <HeaderLayout>
             <div className="mx-auto text-start" style={{ maxWidth: "400px" }}>
                 <h1 className="h3 mb-4 text-center">Sign in</h1>
-                <p className="small text-secondary mb-3">
-                    Use your visualizer credentials (same as the GridWorks backoffice login). This stores an API token your browser uses for charts and downloads.
-                </p>
                 <form onSubmit={onSubmit}>
                     {error && (
                         <div className="alert alert-danger py-2 small mb-3" role="alert">

@@ -189,14 +189,6 @@ export default function HousesTableCard() {
                             >
                                 <i className="bi bi-funnel fs-6" aria-hidden />
                             </button>
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-outline-secondary"
-                                title="Update SCADA code (not wired in web app yet)"
-                                disabled
-                            >
-                                <i className="bi bi-cloud-download fs-6" aria-hidden />
-                            </button>
                             <div className="status-badge ok">
                                 <span className="status-badge-count">{okCount}</span>
                             </div>
