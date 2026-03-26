@@ -4,3 +4,40 @@ header {
 a.active {
     text-decoration: underline;
 }
+
+header .navbar-brand,
+header .navbar-nav .nav-link {
+    font-size: 1.25rem;
+}
+
+header .navbar-nav {
+    margin-left: auto;
+    margin-right: 0.75rem !important;
+}
+
+@media (max-width: 767.98px) {
+    header.navbar {
+        position: relative;
+    }
+
+    header .navbar-brand {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 1rem;
+        line-height: 1.2;
+        margin: 0;
+        white-space: nowrap;
+        max-width: calc(100% - 7.5rem);
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    header .navbar-nav .nav-link {
+        font-size: 1rem;
+    }
+
+    header .navbar-nav {
+        margin-right: 0.5rem !important;
+    }
+}

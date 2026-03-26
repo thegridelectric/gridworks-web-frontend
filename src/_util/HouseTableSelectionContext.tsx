@@ -11,7 +11,7 @@ import { useLocation } from 'react-router';
 import { parsePathname } from './urlUtility';
 
 export type HouseTableSelectionContextValue = {
-    /** On `/morning-report/`, table rows toggle selection instead of changing the URL. */
+    /** On multi-select pages, table rows toggle selection instead of changing the URL. */
     isMultiSelectMode: boolean;
     morningSelectedIds: ReadonlySet<string>;
     toggleMorningSelect: (installationId: string) => void;
@@ -25,7 +25,7 @@ const HouseTableSelectionContext = createContext<HouseTableSelectionContextValue
 export function HouseTableSelectionProvider({ children }: React.PropsWithChildren) {
     const location = useLocation();
     const { pathRoot } = parsePathname(location.pathname);
-    const isMulti = pathRoot === 'morning-report';
+    const isMulti = pathRoot === 'morning-report' || pathRoot === 'data-export-hourly';
 
     const [morningSelectedIds, setMorningSelectedIds] = useState<Set<string>>(
         () => new Set(),
