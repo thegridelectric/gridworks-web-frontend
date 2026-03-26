@@ -16,7 +16,20 @@ export interface VisualizerHouse {
         longitude?: number;
     };
     scada_git_commit?: string;
-    alert_status?: { status?: string };
+    hardware_layout?: string;
+    alert_status?: { status?: string; message?: string };
+    primary_contact?: {
+        first_name?: string;
+        last_name?: string;
+        email?: string;
+        phone?: string;
+    };
+    secondary_contact?: {
+        first_name?: string;
+        last_name?: string;
+        email?: string;
+        phone?: string;
+    };
     house_parameters?: HouseParameters;
 }
 
@@ -49,8 +62,27 @@ export function housesToInstallations(houses: VisualizerHouse[]): BasicInstallat
             displayName: alias || 'N/A',
             houseAlias: alias || undefined,
             locationLabel,
+            address: h.address,
+            primaryContact: h.primary_contact
+                ? {
+                    firstName: h.primary_contact.first_name,
+                    lastName: h.primary_contact.last_name,
+                    email: h.primary_contact.email,
+                    phone: h.primary_contact.phone,
+                }
+                : undefined,
+            secondaryContact: h.secondary_contact
+                ? {
+                    firstName: h.secondary_contact.first_name,
+                    lastName: h.secondary_contact.last_name,
+                    email: h.secondary_contact.email,
+                    phone: h.secondary_contact.phone,
+                }
+                : undefined,
             commit: h.scada_git_commit || undefined,
+            hardwareLayout: h.hardware_layout || undefined,
             alertStatus,
+            alertMessage: h.alert_status?.message || undefined,
             houseParameters: h.house_parameters,
         };
     });

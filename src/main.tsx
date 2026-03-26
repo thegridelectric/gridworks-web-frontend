@@ -19,6 +19,7 @@ import ChannelDataExportPage from './data-export/ChannelDataExportPage.tsx';
 import HourlyDataExportPage from './data-export/HourlyDataExportPage.tsx';
 import MorningReportPage from './MorningReportPage.tsx';
 import ParametersPage from './ParametersPage.tsx';
+import InformationPage from './InformationPage.tsx';
 
 
 
@@ -34,6 +35,7 @@ createRoot(document.getElementById('root')!).render(
 						<Route path="/installations/:homeId?/" element={<InstallationsPage />} />
 						<Route path="/real-time/:homeId?/" element={<RealTimeStatusPage />} />
 						<Route path="/visualizer/:homeId?/" element={<VisualizerPage />} />
+						<Route path="/information/:homeId?/" element={<InformationPage />} />
 						<Route path="/data-export/:homeId?/" element={<DataExportPage />} />
 						<Route path="/data-export-channel/:homeId?/" element={<ChannelDataExportPage />} />
 						<Route path="/data-export-hourly/:homeId?/" element={<HourlyDataExportPage />} />

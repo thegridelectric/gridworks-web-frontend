@@ -1,4 +1,4 @@
-import { BarChart, List, Table, Settings, Sun, Clock } from 'feather-icons-react';
+import { BarChart, List, Table, Settings, Sun, Clock, Info } from 'feather-icons-react';
 import { NavLink as ReactRouterNavLink, useLocation } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 import { useContext } from 'react';
@@ -25,6 +25,9 @@ export default function SidebarNav() {
 
     const sessionContext = useContext(SessionContext);
     const installationName = installationForRouteId(sessionContext?.installations, currentInstallationId)?.displayName ?? null;
+    const installationHeading = installationName
+        ? `${installationName.charAt(0).toUpperCase()}${installationName.slice(1)}`
+        : null;
     const installationUrlSuffix = currentInstallationId ? `${currentInstallationId}/` : '';
 
     return <nav id="sidebarMenu" className="col-md-3 col-lg-2 d-md-block sidebar collapse">
@@ -37,8 +40,8 @@ export default function SidebarNav() {
                     <Nav.Link as={ReactRouterNavLink} to="/morning-report/"><Sun />Morning Report</Nav.Link>
                 </li>
                 <hr />
-                {installationName &&
-                    <h4 className="sidebar-heading px-3 mt-1 mb-2 text-muted">{installationName}</h4>
+                {installationHeading &&
+                    <h4 className="sidebar-heading px-3 mt-1 mb-2 text-muted">{installationHeading}</h4>
                 }
                 <li className="nav-item">
                     <Nav.Link as={ReactRouterNavLink} to={`/real-time/${installationUrlSuffix}`}><Clock />Real-Time Status</Nav.Link>
@@ -51,6 +54,9 @@ export default function SidebarNav() {
                 </li>
                 <li className="nav-item">
                     <Nav.Link as={ReactRouterNavLink} to={`/data-export-hourly/${installationUrlSuffix}`}><Table />Hourly data export</Nav.Link>
+                </li>
+                <li className="nav-item">
+                    <Nav.Link as={ReactRouterNavLink} to={`/information/${installationUrlSuffix}`}><Info />Information</Nav.Link>
                 </li>
                 <li className="nav-item">
                     <Nav.Link as={ReactRouterNavLink} to={`/parameters/${installationUrlSuffix}`}><Settings />Parameters</Nav.Link>

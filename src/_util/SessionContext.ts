@@ -7,8 +7,31 @@ export interface BasicInstallationInfo {
     displayName: string;
     houseAlias?: string;
     locationLabel?: string;
+    address?: {
+        street?: string;
+        city?: string;
+        state?: string;
+        zip?: string;
+        country?: string;
+        latitude?: number;
+        longitude?: number;
+    };
+    primaryContact?: {
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+        phone?: string;
+    };
+    secondaryContact?: {
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+        phone?: string;
+    };
     commit?: string;
+    hardwareLayout?: string;
     alertStatus?: 'ok' | 'alert' | 'unknown';
+    alertMessage?: string;
     houseParameters?: HouseParameters;
 }
 
