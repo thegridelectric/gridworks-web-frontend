@@ -1,4 +1,4 @@
-import { useContext, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import './VisualizerPage.css';
 import { getRequiredAuthToken } from "../auth/auth";
 import InstallationPicker from "../_shared/InstallationPicker";
@@ -215,6 +215,11 @@ export default function VisualizerPage() {
             void runPlotQuery(start, end);
         },
     });
+
+    useEffect(() => {
+        setPlotsPayload(null);
+        setPlotError(null);
+    }, [currentInstallationId, houseAlias]);
 
     return (
         <div ref={visualizerCardRef} className={`card visualizer-card${isFullscreen ? ' fullscreen' : ''}`}>
