@@ -84,11 +84,10 @@
 
 #dashboard-hp-power-tbody tr,
 #dashboard-pump-tbody tr {
-    background-color: #fff;
+    background-color: var(--card-background);
 }
 
 [data-bs-theme="dark"] #dashboard-hp-power-tbody tr,
 [data-bs-theme="dark"] #dashboard-pump-tbody tr {
-    background-color: var(--hover-color);
+    background-color: var(--card-background);
 }
-
