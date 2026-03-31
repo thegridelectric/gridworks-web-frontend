@@ -112,3 +112,15 @@ h1 {
 .card.fullscreen .p-4 {
   border-bottom: solid 1px var(--border-color);
 }
+
+/* Hide app chrome while any card is fullscreen. */
+body:has(.card.fullscreen) header.navbar,
+body:has(.card.fullscreen) #sidebarMenu {
+  display: none !important;
+}
+
+body:has(.card.fullscreen) .main-container {
+  width: 100%;
+  max-width: 100%;
+  flex: 0 0 100%;
+}

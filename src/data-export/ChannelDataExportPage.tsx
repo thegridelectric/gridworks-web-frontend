@@ -1,4 +1,4 @@
-import { useContext, useRef, useState, type CSSProperties } from 'react';
+import { useContext, useState, type CSSProperties } from 'react';
 import { useLocation } from 'react-router';
 
 import SessionContext, { installationForRouteId } from '../_util/SessionContext';
@@ -35,8 +35,6 @@ export default function ChannelDataExportPage() {
   const [, setAuthTick] = useState(0);
   const token = getVisualizerAuthToken();
 
-  const channelCardRef = useRef<HTMLDivElement>(null);
-
   const houseAliasForCsv = (installation?.houseAlias?.trim() || installation?.id || '').trim();
 
   const [channelStart, setChannelStart] = useState(() => getDefaultDate(true));
@@ -45,18 +43,7 @@ export default function ChannelDataExportPage() {
   const [channelIds, setChannelIds] = useState<Set<string>>(() => new Set(ALL_CHANNEL_IDS));
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [channelBusy, setChannelBusy] = useState(false);
-  const [channelFullscreen, setChannelFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  function toggleChannelFullscreen() {
-    setChannelFullscreen((was) => {
-      const next = !was;
-      if (was && !next) {
-        queueMicrotask(() => channelCardRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' }));
-      }
-      return next;
-    });
-  }
 
   function setNowEnd(setter: (d: Date) => void) {
     const nyDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -151,19 +138,11 @@ export default function ChannelDataExportPage() {
         </div>
       )}
 
-      <div ref={channelCardRef} className={`card visualizer-card mb-4${channelFullscreen ? ' fullscreen' : ''}`}>
+      <div className="card visualizer-card mb-4">
         <div className="card-header d-flex justify-content-between align-items-center">
           <h5 className="card-title mb-0">Download channel data</h5>
           <div className="status-badges">
             <div className="loader" style={{ display: channelBusy ? 'inline-block' : 'none' }} aria-hidden={!channelBusy} />
-            <button
-              type="button"
-              className="fullscreen-btn"
-              aria-label={channelFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-              onClick={toggleChannelFullscreen}
-            >
-              <i className={`bi ${channelFullscreen ? 'bi-arrows-angle-contract' : 'bi-arrows-fullscreen'}`} aria-hidden />
-            </button>
           </div>
         </div>
 

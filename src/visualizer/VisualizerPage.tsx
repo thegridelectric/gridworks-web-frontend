@@ -119,6 +119,7 @@ export default function VisualizerPage() {
     const [plotError, setPlotError] = useState<string | null>(null);
     const [, setAuthTick] = useState(0);
     const [autoRefresh, setAutoRefresh] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const location = useLocation();
     const { currentInstallationId, pathRoot } = parsePathname(location.pathname);
@@ -133,6 +134,7 @@ export default function VisualizerPage() {
     const blockPlotRef = useRef(false);
     const runPlotQueryRef = useRef<(startDt: Date, endDt: Date) => Promise<void>>(async () => { });
     const autoRefreshRef = useRef(autoRefresh);
+    const visualizerCardRef = useRef<HTMLDivElement>(null);
     autoRefreshRef.current = autoRefresh;
     blockPlotRef.current = isLoading || isFloLoading;
 
@@ -305,6 +307,18 @@ export default function VisualizerPage() {
         }
     }
 
+    function onFullscreenToggle() {
+        setIsFullscreen((was) => {
+            const next = !was;
+            if (was && !next) {
+                queueMicrotask(() =>
+                    visualizerCardRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' }),
+                );
+            }
+            return next;
+        });
+    }
+
     useEffect(() => {
         if (!autoRefresh || pathRoot !== 'visualizer') {
             return;
@@ -388,7 +402,7 @@ export default function VisualizerPage() {
     }, [autoRefresh, location.pathname, pathRoot]);
 
     return (
-        <div className="card visualizer-card">
+        <div ref={visualizerCardRef} className={`card visualizer-card${isFullscreen ? ' fullscreen' : ''}`}>
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="card-title">Visualizer</h5>
                 <div className="status-badges">
@@ -405,8 +419,13 @@ export default function VisualizerPage() {
                             Auto-refresh
                         </label>
                     </div>
-                    <button className="fullscreen-btn" type="button" aria-label="Fullscreen view coming soon">
-                        <span aria-hidden="true">⛶</span>
+                    <button
+                        className="fullscreen-btn"
+                        type="button"
+                        aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                        onClick={onFullscreenToggle}
+                    >
+                        <i className={`bi ${isFullscreen ? 'bi-arrows-angle-contract' : 'bi-arrows-fullscreen'}`} aria-hidden />
                     </button>
                     <button className="filter-toggle" type="button" onClick={onClearClick}>
                         <span>Clear</span>

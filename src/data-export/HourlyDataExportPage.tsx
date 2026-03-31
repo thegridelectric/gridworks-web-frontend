@@ -32,7 +32,6 @@ export default function HourlyDataExportPage() {
   const [, setAuthTick] = useState(0);
   const token = getVisualizerAuthToken();
 
-  const hourlyCardRef = useRef<HTMLDivElement>(null);
   const hourlyPlotHostRef = useRef<HTMLDivElement>(null);
   const hourlyPlotBlobUrlsRef = useRef<string[]>([]);
 
@@ -93,7 +92,6 @@ export default function HourlyDataExportPage() {
   const [hourlyCsvBusy, setHourlyCsvBusy] = useState(false);
   const [hourlyPlotBusy, setHourlyPlotBusy] = useState(false);
   const [hourlyPlotVisible, setHourlyPlotVisible] = useState(false);
-  const [hourlyFullscreen, setHourlyFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const hourlyActionsBusy = hourlyCsvBusy || hourlyPlotBusy;
@@ -121,16 +119,6 @@ export default function HourlyDataExportPage() {
       host.innerHTML = '';
     }
     setHourlyPlotVisible(false);
-  }
-
-  function toggleHourlyFullscreen() {
-    setHourlyFullscreen((was) => {
-      const next = !was;
-      if (was && !next) {
-        queueMicrotask(() => hourlyCardRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' }));
-      }
-      return next;
-    });
   }
 
   function setNowEnd(setter: (d: Date) => void) {
@@ -286,19 +274,11 @@ export default function HourlyDataExportPage() {
         </div>
       )}
 
-      <div ref={hourlyCardRef} className={`card visualizer-card mb-4${hourlyFullscreen ? ' fullscreen' : ''}`}>
+      <div className="card visualizer-card mb-4">
         <div className="card-header d-flex justify-content-between align-items-center">
           <h5 className="card-title mb-0">Download hourly data</h5>
           <div className="status-badges">
             <div className="loader" style={{ display: hourlyActionsBusy ? 'inline-block' : 'none' }} aria-hidden={!hourlyActionsBusy} />
-            <button
-              type="button"
-              className="fullscreen-btn"
-              aria-label={hourlyFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-              onClick={toggleHourlyFullscreen}
-            >
-              <i className={`bi ${hourlyFullscreen ? 'bi-arrows-angle-contract' : 'bi-arrows-fullscreen'}`} aria-hidden />
-            </button>
             <button type="button" className="filter-toggle" onClick={clearHourlyPlots}>
               <span>Clear</span>
             </button>
