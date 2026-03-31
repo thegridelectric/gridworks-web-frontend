@@ -4,7 +4,7 @@ interface RealTimeStatusTimestampProps {
     updateTime: Date
 }
 
-export default function ({ updateTime }: RealTimeStatusTimestampProps) {
+export default function RealTimeStatusTimestamp({ updateTime }: RealTimeStatusTimestampProps) {
 
     const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
@@ -20,8 +20,6 @@ export default function ({ updateTime }: RealTimeStatusTimestampProps) {
     let formattedTime = 'Unknown';
     let isDataFresh = false;
 
-    // TODO why is this Swedish??
-    // Should we display it in user-local timezone? 
     formattedTime = updateTime.toLocaleString('sv-SE', {
         timeZone: 'America/New_York',
         year: 'numeric',
@@ -55,7 +53,6 @@ export default function ({ updateTime }: RealTimeStatusTimestampProps) {
         progress = ((seconds - 30) + milliseconds / 1000) / 30 * 100;
     }
 
-    // Set the progress bar width0
     const loaderProgressStyle = { width: Math.min(100, Math.max(0, progress)) + '%' };
 
 

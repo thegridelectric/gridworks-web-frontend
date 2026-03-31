@@ -1,214 +1,337 @@
-import { useState } from "react";
-import SidebarNavLayout from "../_layout/SidebarNavLayout";
-import GridworksApi from '../_util/GridWorksApi';
-
+import { useContext, useEffect, useRef, useState } from "react";
 import './VisualizerPage.css';
-import VisualizerHeatPumpPlot from "./VisualizerHeatPumpPlot";
-import type { ReadingsData } from "./types";
-import DateTimePicker from "../_shared/DateTimePicker";
-import { Spinner } from "react-bootstrap";
+import { getRequiredAuthToken } from "../auth/auth";
 import InstallationPicker from "../_shared/InstallationPicker";
-import { useLocation } from "react-router";
-import { parsePathname } from "../_util/urlUtility";
-
-const CHANNEL_OPTION_GROUPS = [
-    {
-        category: 'Heat pump',
-        channels: [
-            { id: 'hp-lwt', label: 'Leaving water temperature' },
-            { id: 'hp-ewt', label: 'Entering water temperature' },
-            { id: 'hp-odu-pwr', label: 'Outdoor unit power' },
-            { id: 'hp-idu-pwr', label: 'Indoor unit power' },
-            { id: 'primary-flow', label: 'Primary pump flow rate' },
-            { id: 'primary-pump-pwr', label: 'Primary pump power' },
-            { id: 'oil-boiler-pwr', label: 'Oil boiler power' },
-        ]
-    },
-    {
-        category: 'Distribution',
-        channels: [
-            { id: 'dist-swt', label: 'Source water temperature' },
-            { id: 'dist-rwt', label: 'Return water temperature' },
-            { id: 'dist-flow', label: 'Distribution pump flow rate' },
-            { id: 'dist-pump-pwr', label: 'Distribution pump power' },
-        ]
-    },
-    {
-        category: 'Zones',
-        channels: [
-            { id: 'zone-heat-calls', label: 'Heat calls' },
-            { id: 'oat', label: 'Outside air temperature' },
-        ]
-    },
-    {
-        category: 'Buffer',
-        channels: [
-            { id: 'buffer-depths', label: 'Buffer depths' },
-            { id: 'buffer-hot-pipe', label: 'Hot pipe' },
-            { id: 'buffer-cold-pipe', label: 'Cold pipe' },
-        ]
-    },
-    {
-        category: 'Storage',
-        channels: [
-            { id: 'storage-depths', label: 'Storage depths' },
-            { id: 'store-hot-pipe', label: 'Hot pipe' },
-            { id: 'store-cold-pipe', label: 'Cold pipe' },
-            { id: 'store-flow', label: 'Storage pump flow rate' },
-            { id: 'store-pump-pwr', label: 'Storage pump power' },
-            { id: 'store-energy', label: 'Available and required energy' },
-        ]
-    },
-]
-
-const NON_DEFAULT_CHANNELS = new Set([
-    'buffer-hot-pipe',
-    'buffer-cold-pipe',
-    'store-hot-pipe',
-    'store-cold-pipe',
-    'store-energy'
-])
-const DEFAULT_CHANNELS = new Set(CHANNEL_OPTION_GROUPS.flatMap(g => g.channels).map(c => c.id).filter(id => !NON_DEFAULT_CHANNELS.has(id)))
+import SessionContext, { installationForRouteId } from "../_util/SessionContext";
+import {
+    formatDate,
+    formatTime,
+    getDefaultDate,
+    isEndDateOldEnough,
+    wallDateTimeToUtcMs,
+} from "../_util/newYorkTime";
+import { getIsDarkMode } from "../_util/theme";
+import { useRouteInfo } from "../_util/useRouteInfo";
+import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
+import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
+import VisualizerServerPlots from "./VisualizerServerPlots";
+import type { VisualizerPlotsApiResponse } from "./visualizerApiTypes";
+import { VisualizerOptionsPanel } from "./VisualizerControls";
+import { useVisualizerControls } from "./useVisualizerControls";
+import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 
 export default function VisualizerPage() {
 
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(getDefaultDate(false));
-    const [channels, setChannels] = useState(DEFAULT_CHANNELS);
-    const [readingsData, setReadingsData] = useState<ReadingsData | null>(null);
+    const [plotsPayload, setPlotsPayload] = useState<VisualizerPlotsApiResponse['plots'] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [isShowingOptions, setIsShowingOptions] = useState(false);
-    const [showPoints, setShowPoints] = useState(false);
+    const [isFloLoading, setIsFloLoading] = useState(false);
+    const [plotError, setPlotError] = useState<string | null>(null);
+    const [autoRefresh, setAutoRefresh] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const {
+        channels,
+        isShowingOptions,
+        setIsShowingOptions,
+        showPoints,
+        setShowPoints,
+        setIncludesChannel,
+        resetControls,
+    } = useVisualizerControls();
 
-    const location = useLocation();
-    const { currentInstallationId } = parsePathname(location.pathname);
+    const { currentInstallationId, pathRoot } = useRouteInfo();
+    const session = useContext(SessionContext);
 
-    function setIncludesChannel(id: string, isIncluded: boolean) {
-        if (isIncluded && !channels.has(id)) {
-            const newChannels = new Set(channels);
-            newChannels.add(id);
-            setChannels(newChannels)
-        } else if (!isIncluded && channels.has(id)) {
-            const newChannels = new Set(channels);
-            newChannels.delete(id);
-            setChannels(newChannels);
+    const installation = installationForRouteId(session?.installations, currentInstallationId);
+    const houseAlias = (installation?.houseAlias?.trim() || installation?.id || '').trim();
+    const token = getRequiredAuthToken();
+    const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);
+
+    const visualizerCardRef = useRef<HTMLDivElement>(null);
+
+    async function runPlotQuery(startDt: Date, endDt: Date) {
+        setPlotError(null);
+
+        if (!currentInstallationId) {
+            setPlotError('Select an installation first.');
+            return;
         }
-    }
+        if (!houseAlias) {
+            setPlotError('Could not resolve a house alias for this installation.');
+            return;
+        }
 
-    return <SidebarNavLayout>
-        <h1>Visualizer</h1>
-        <div>
-            <div className="p-4">
-                <div className="mb-4">
-                    <InstallationPicker />
-                </div>
-                <div className="mb-3 datetime-picker">
-                    <label className="form-label">Start</label>
-                    <DateTimePicker className="form-control "
-                        value={startDateTime} onChange={setStartDateTime} />
-                </div>
-                <div className="mb-3 datetime-picker">
-                    <label className="form-label">End</label>
-                    <DateTimePicker className="form-control "
-                        value={endDateTime} onChange={setEndDateTime} />
-                </div>
+        const startMs = wallDateTimeToUtcMs(startDt);
+        const endMs = wallDateTimeToUtcMs(endDt);
 
-                <fieldset className="d-flex gap-2 align-items-center" disabled={isLoading} style={{ opacity: isLoading ? 0.5 : 1 }}>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={onPlotClick}>Plot</button>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={onNowClick}>8pm-Now</button>
-                    <button className="btn btn-sm btn-outline-secondary" id="flo-btn">FLO</button>
-                    <button className="btn btn-sm btn-outline-secondary" onClick={() => setIsShowingOptions(!isShowingOptions)}>Options</button>
-                </fieldset>
-            </div>
+        if (!isEndDateOldEnough(endMs, 10)) {
+            window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
+            return;
+        }
 
-            {isShowingOptions &&
-                <div id="options-div bt-1 mb-0" className="options-container border-top">
-                    <div className="options-section mt-2">
-                        <h6>Plot settings</h6>
-                        <label>
-                            <input type="checkbox" checked={showPoints} onChange={evt => {
-                                setShowPoints(evt.currentTarget.checked);
-                            }} />
-                            Show points
-                        </label>
-                    </div>
-                    {CHANNEL_OPTION_GROUPS.map(g => {
-                        return <div key={g.category} className="options-section">
-                            <h6>{g.category}</h6>
-                            {g.channels.map(c => {
-                                return <label>
-                                    <input type="checkbox" checked={channels.has(c.id)}
-                                        onChange={evt => {
-                                            setIncludesChannel(c.id, evt.currentTarget.checked)
-                                        }} />
-                                    {c.label}
-                                </label>;
-                            })}
-                        </div>
-                    })}
-
-                </div>
-            }
-
-            {isLoading &&
-                <div className="p-3 text-center">
-                    <Spinner />
-                </div>
-            }
-            {readingsData &&
-                <div className="plot-container border-top">
-                    <VisualizerHeatPumpPlot showMarkers={showPoints} {...{ readingsData }} />
-                </div>
-            }
-
-        </div>
-    </SidebarNavLayout>
-
-    function onNowClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-        event.preventDefault();
-        setStartDateTime(getDefaultDate(true));
-        setEndDateTime(new Date());
-    }
-
-    // Update getData function to use selected channels
-    async function onPlotClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-        event.preventDefault();
-
-        // const selectedChannels = Array.from(document.querySelectorAll('input[name="channels"]:checked'))
-        //     .map(checkbox => checkbox.value);
+        const selectedChannels = [...channels].sort();
+        if (showPoints) {
+            selectedChannels.push('show-points');
+        }
 
         setIsLoading(true);
-        setReadingsData(null);
+        setPlotsPayload(null);
         try {
-            const result = await GridworksApi.get<ReadingsData>(`/api/v2/installations/${currentInstallationId}/readings`, {
-                params: {
-                    start: startDateTime.toISOString(),
-                    end: endDateTime.toISOString(),
-                    channels: [...channels].sort().join(',')
-                }
+            const data = await fetchVisualizerPlots({
+                houseAlias,
+                startMs,
+                endMs,
+                selectedChannels,
+                darkmode: getIsDarkMode(),
+                token,
             });
-            setReadingsData(result.data);
-        }
-        catch (error) {
-            console.error('Error getting plots:', error);
-            // Refresh the page on API failure
-            window.location.reload();
-        }
-        finally {
+
+            if (!data.success) {
+                throw new Error(data.message || 'Visualizer returned success: false');
+            }
+            if (!data.plots) {
+                throw new Error('Visualizer returned no plots object.');
+            }
+
+            setPlotsPayload(data.plots);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setPlotError(message);
+        } finally {
             setIsLoading(false);
         }
     }
 
-
-
-    function getDefaultDate(start: boolean) {
-        const nyDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
-        if (start) {
-            nyDate.setDate(nyDate.getDate() - 1);
-            nyDate.setHours(20, 0, 0, 0);
-        } else {
-            nyDate.setMinutes(nyDate.getMinutes() + 1);
+    async function onNowClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        if (isLoading || isFloLoading) {
+            return;
         }
-        return nyDate;
+        const start = getDefaultDate(true);
+        const end = getDefaultDate(false);
+        setStartDateTime(start);
+        setEndDateTime(end);
+        await runPlotQuery(start, end);
     }
+
+    function onClearClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        setPlotsPayload(null);
+        setPlotError(null);
+        resetControls();
+        setStartDateTime(getDefaultDate(true));
+        setEndDateTime(getDefaultDate(false));
+    }
+
+    function onStartDateChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [year, month, day] = evt.currentTarget.value.split('-');
+        if (!year || !month || !day) return;
+        const next = new Date(startDateTime);
+        next.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+        setStartDateTime(next);
+    }
+
+    function onStartTimeChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [hours, minutes] = evt.currentTarget.value.split(':');
+        if (!hours || !minutes) return;
+        const next = new Date(startDateTime);
+        next.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        setStartDateTime(next);
+    }
+
+    function onEndDateChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [year, month, day] = evt.currentTarget.value.split('-');
+        if (!year || !month || !day) return;
+        const next = new Date(endDateTime);
+        next.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+        setEndDateTime(next);
+    }
+
+    function onEndTimeChange(evt: React.ChangeEvent<HTMLInputElement>) {
+        const [hours, minutes] = evt.currentTarget.value.split(':');
+        if (!hours || !minutes) return;
+        const next = new Date(endDateTime);
+        next.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+        setEndDateTime(next);
+    }
+
+    async function onPlotClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        await runPlotQuery(startDateTime, endDateTime);
+    }
+
+    async function onFloClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        setPlotError(null);
+
+        if (!currentInstallationId) {
+            setPlotError('Select an installation first.');
+            return;
+        }
+        if (!houseAlias) {
+            setPlotError('Could not resolve a house alias for this installation.');
+            return;
+        }
+
+        const endMs = wallDateTimeToUtcMs(endDateTime);
+        if (!isEndDateOldEnough(endMs, 10)) {
+            window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
+            return;
+        }
+
+        setIsFloLoading(true);
+        try {
+            await downloadVisualizerFlo({ houseAlias, timeMs: endMs, token });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setPlotError(message);
+        } finally {
+            setIsFloLoading(false);
+        }
+    }
+
+    function onFullscreenToggle() {
+        setIsFullscreen((was) => {
+            const next = !was;
+            if (was && !next) {
+                queueMicrotask(() =>
+                    visualizerCardRef.current?.scrollIntoView({ behavior: 'auto', block: 'start' }),
+                );
+            }
+            return next;
+        });
+    }
+
+    useVisualizerAutoRefresh({
+        autoRefresh,
+        isBusy: isLoading || isFloLoading,
+        pathRoot,
+        setDateWindow: (start, end) => {
+            setStartDateTime(start);
+            setEndDateTime(end);
+        },
+        onTick: (start, end) => {
+            void runPlotQuery(start, end);
+        },
+    });
+
+    useEffect(() => {
+        setPlotsPayload(null);
+        setPlotError(null);
+    }, [currentInstallationId, houseAlias]);
+
+    return (
+        <div ref={visualizerCardRef} className={`card visualizer-card${isFullscreen ? ' fullscreen' : ''}`}>
+            <div className="card-header d-flex justify-content-between align-items-center">
+                <h5 className="card-title">Visualizer</h5>
+                <div className="status-badges">
+                    {(isLoading || isFloLoading) && <div className="loader" aria-label="Loading visualizer data" />}
+                    <div className="form-check form-check-inline me-3 d-flex align-items-center">
+                        <input
+                            className="form-check-input auto-refresh-checkbox"
+                            type="checkbox"
+                            id="auto-refresh-checkbox"
+                            checked={autoRefresh}
+                            onChange={(evt) => setAutoRefresh(evt.currentTarget.checked)}
+                        />
+                        <label className="form-check-label auto-refresh-label" htmlFor="auto-refresh-checkbox">
+                            Auto-refresh
+                        </label>
+                    </div>
+                    <button
+                        className="fullscreen-btn"
+                        type="button"
+                        aria-label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                        onClick={onFullscreenToggle}
+                    >
+                        <i className={`bi ${isFullscreen ? 'bi-arrows-angle-contract' : 'bi-arrows-fullscreen'}`} aria-hidden />
+                    </button>
+                    <button className="filter-toggle" type="button" onClick={onClearClick}>
+                        <span>Clear</span>
+                    </button>
+                </div>
+            </div>
+            <div className="p-4">
+                <div className="mb-4">
+                    <label className="form-label">Selected House</label>
+                    <div className="selected-house-picker">
+                        <InstallationPicker />
+                    </div>
+                </div>
+
+                <table className="table table-borderless mb-4 data-query-form">
+                    <tbody>
+                        <tr>
+                            <td>Start</td>
+                            <td>
+                                <input
+                                    type="date"
+                                    className="form-control text-light"
+                                    value={formatDate(startDateTime)}
+                                    onChange={onStartDateChange}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    type="time"
+                                    className="form-control text-light"
+                                    value={formatTime(startDateTime)}
+                                    onChange={onStartTimeChange}
+                                />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>End</td>
+                            <td>
+                                <input
+                                    type="date"
+                                    className="form-control text-light"
+                                    value={formatDate(endDateTime)}
+                                    onChange={onEndDateChange}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    type="time"
+                                    className="form-control text-light"
+                                    value={formatTime(endDateTime)}
+                                    onChange={onEndTimeChange}
+                                />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <fieldset className="d-flex gap-2 align-items-center" disabled={isLoading || isFloLoading} style={{ opacity: (isLoading || isFloLoading) ? 0.5 : 1 }}>
+                    <button className="btn btn-sm btn-outline-secondary" type="button" onClick={onPlotClick}>Plot</button>
+                    <button className="btn btn-sm btn-outline-secondary" type="button" onClick={onNowClick}>8pm-Now</button>
+                    <button className="btn btn-sm btn-outline-secondary" type="button" id="flo-btn" onClick={onFloClick} aria-busy={isFloLoading}>FLO</button>
+                    <button className="btn btn-sm btn-outline-secondary" type="button" onClick={() => setIsShowingOptions(!isShowingOptions)}>Options</button>
+                </fieldset>
+                {plotError &&
+                    <div className="alert alert-danger mt-3 mb-0" role="alert">{plotError}</div>
+                }
+            </div>
+
+            <VisualizerOptionsPanel
+                isShowingOptions={isShowingOptions}
+                showPoints={showPoints}
+                setShowPoints={setShowPoints}
+                channels={channels}
+                setIncludesChannel={setIncludesChannel}
+            />
+
+            {plotsPayload &&
+                <div className="plot-container border-top">
+                    <VisualizerServerPlots
+                        plots={plotsPayload}
+                        selectedChannels={plotSelectedChannels}
+                        darkmode={getIsDarkMode()}
+                    />
+                </div>
+            }
+
+        </div>
+    );
 }

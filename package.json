@@ -13,6 +13,8 @@
     "axios": "^1.13.5",
     "bootstrap": "^5.3.8",
     "feather-icons-react": "^1.0.0",
+    "jszip": "^3.10.1",
+    "luxon": "^3.7.2",
     "plotly.js": "^3.4.0",
     "react": "^19.2.0",
     "react-bootstrap": "^2.10.10",
@@ -22,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/luxon": "^3.7.1",
     "@types/node": "^24.10.1",
     "@types/plotly.js": "^3.0.10",
     "@types/react": "^19.2.7",

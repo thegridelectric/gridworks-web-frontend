@@ -27,7 +27,7 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
         }
     } else if (currentState === 'HpOffStoreDischarge') {
         activePipeColors['dashboard-tank1-hp-vertical-pipe'] = 'url(#dashboardVerticalFlowPattern)';
-        activePipeColors['dashboard-tank1-buffer-horizontal-pipe'] = 'url(#dashboardVerticalFlowPattern)';
+        activePipeColors['dashboard-tank1-buffer-horizontal-pipe'] = 'url(#dashboardFlowPattern)';
         activePipeColors['dashboard-tank1-connection-pipe'] = 'url(#dashboardFlowPattern)';
         activePipeColors['dashboard-tank3-hp-vertical-pipe'] = 'url(#dashboardVerticalDownFlowPattern)';
         activePipeColors['dashboard-tank3-buffer-horizontal-pipe'] = 'url(#dashboardLeftFlowPattern)';

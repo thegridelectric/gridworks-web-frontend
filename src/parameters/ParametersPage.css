@@ -1,0 +1,87 @@
+.parameters-controls {
+    flex-direction: column;
+    gap: 10px;
+    padding: 3rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.parameters-control-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+}
+
+.parameters-control-group label {
+    font-weight: 500;
+    margin: 0;
+    font-size: 0.875rem;
+    min-width: 180px;
+    flex-shrink: 0;
+}
+
+.parameters-control-group input[type="number"] {
+    padding: 5px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    width: 80px;
+    flex-shrink: 0;
+}
+
+.parameters-controls input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: var(--bs-border-color);
+    border-radius: 3px;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.parameters-controls input[type="range"]:hover {
+    opacity: 1;
+}
+
+.parameters-controls input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--bs-secondary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.parameters-controls input[type="range"]::-webkit-slider-thumb:hover {
+    background: var(--bs-body-color);
+}
+
+.parameters-controls input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: var(--bs-secondary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+}
+
+.parameters-controls input[type="range"]::-moz-range-thumb:hover {
+    background: var(--bs-body-color);
+}
+
+.parameters-controls input[type="range"]::-moz-range-track {
+    background: var(--bs-border-color);
+    height: 6px;
+    border-radius: 3px;
+}
+
+.parameters-plot-wrap {
+    width: 100%;
+    max-width: 750px;
+    height: 400px;
+    margin: 0 auto;
+}

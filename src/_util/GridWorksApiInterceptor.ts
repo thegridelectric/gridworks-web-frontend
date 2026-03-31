@@ -33,7 +33,7 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
         return () => {
             GridWorksApi.interceptors.response.eject(responseInterceptor);
         };
-    }, []);
+    }, [navigate]);
 
     return children;
 };
