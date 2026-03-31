@@ -1,9 +1,15 @@
 import { useContext, useRef, useState } from "react";
 import './VisualizerPage.css';
-import { getAuthToken } from "../auth/auth";
+import { getRequiredAuthToken } from "../auth/auth";
 import InstallationPicker from "../_shared/InstallationPicker";
-import { Navigate, useLocation } from "react-router";
 import SessionContext, { installationForRouteId } from "../_util/SessionContext";
+import {
+    formatDate,
+    formatTime,
+    getDefaultDate,
+    isEndDateOldEnough,
+    wallDateTimeToUtcMs,
+} from "../_util/newYorkTime";
 import { getIsDarkMode } from "../_util/theme";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
@@ -14,13 +20,6 @@ import {
     VisualizerOptionsPanel,
     useVisualizerControls,
 } from "./VisualizerControls";
-import {
-    formatDate,
-    formatTime,
-    getDefaultDate,
-    isEndDateOldEnough,
-    wallDateTimeToUtcMs,
-} from "./visualizerTime";
 import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 
 export default function VisualizerPage() {
@@ -43,19 +42,13 @@ export default function VisualizerPage() {
         resetControls,
     } = useVisualizerControls();
 
-    const location = useLocation();
     const { currentInstallationId, pathRoot } = useRouteInfo();
     const session = useContext(SessionContext);
 
     const installation = installationForRouteId(session?.installations, currentInstallationId);
     const houseAlias = (installation?.houseAlias?.trim() || installation?.id || '').trim();
-    const authToken = getAuthToken();
+    const token = getRequiredAuthToken();
     const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);
-
-    if (!authToken) {
-        return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
-    }
-    const token = authToken;
 
     const visualizerCardRef = useRef<HTMLDivElement>(null);
 

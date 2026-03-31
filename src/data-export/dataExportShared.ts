@@ -1,6 +1,3 @@
-import { DateTime } from 'luxon';
-import { isAdminUser } from '../auth/auth';
-
 export const CHANNEL_SECTIONS: { title: string; items: { id: string; label: string }[] }[] = [
   {
     title: 'Heat pump',
@@ -62,39 +59,6 @@ export const CHANNEL_SECTIONS: { title: string; items: { id: string; label: stri
 ];
 
 export const ALL_CHANNEL_IDS = new Set(CHANNEL_SECTIONS.flatMap((s) => s.items.map((i) => i.id)));
-
-export function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boolean {
-  if (isAdminUser()) {
-    return true;
-  }
-  const cutoff = DateTime.now().setZone('America/New_York').minus({ days: lookbackDays }).toUTC().toMillis();
-  return endUnixMs <= cutoff;
-}
-
-export function getDefaultDate(start: boolean) {
-  const nyDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-  if (start) {
-    nyDate.setDate(nyDate.getDate() - 1);
-    nyDate.setHours(20, 0, 0, 0);
-  } else {
-    nyDate.setMinutes(nyDate.getMinutes() + 1);
-  }
-  return nyDate;
-}
-
-export function formatDate(dt: Date) {
-  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-}
-
-export function formatTime(dt: Date) {
-  return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
-}
-
-export function wallDateTimeToUtcMs(date: Date): number {
-  const ymd = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  const hm = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-  return DateTime.fromFormat(`${ymd} ${hm}`, 'yyyy-MM-dd HH:mm', { zone: 'America/New_York' }).toUTC().toMillis();
-}
 
 export function triggerBlobDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);

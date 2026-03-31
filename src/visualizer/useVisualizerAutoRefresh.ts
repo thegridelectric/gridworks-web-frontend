@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { getDefaultDate } from './visualizerTime';
+import { getDefaultDate } from '../_util/newYorkTime';
 
 export function useVisualizerAutoRefresh(params: {
     autoRefresh: boolean;

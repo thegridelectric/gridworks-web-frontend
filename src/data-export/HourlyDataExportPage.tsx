@@ -1,10 +1,17 @@
 import { useContext, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import JSZip from 'jszip';
-import { Navigate, useLocation } from 'react-router';
 
-import { getAuthToken } from '../auth/auth';
+import { getRequiredAuthToken } from '../auth/auth';
 import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/HouseTableSelectionContext';
+import {
+  formatDate,
+  formatTime,
+  getDefaultDate,
+  getNowInNewYork,
+  isEndDateOldEnough,
+  wallDateTimeToUtcMs,
+} from '../_util/newYorkTime';
 import { getIsDarkMode } from '../_util/theme';
 import {
   downloadHourlyDataCsv,
@@ -13,12 +20,7 @@ import {
   fetchHourlyPlots,
 } from './fetchHourlyPlots';
 import {
-  formatDate,
-  formatTime,
-  getDefaultDate,
-  isEndDateOldEnough,
   triggerBlobDownload,
-  wallDateTimeToUtcMs,
 } from './dataExportShared';
 
 import './DataExportPage.css';
@@ -30,15 +32,9 @@ const LABEL_MUTED: CSSProperties = {
 
 export default function HourlyDataExportPage() {
   const session = useContext(SessionContext);
-  const location = useLocation();
   const { selectedInstallationIds } = useHouseTableSelection();
 
-  const authToken = getAuthToken();
-
-  if (!authToken) {
-    return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
-  }
-  const token = authToken;
+  const token = getRequiredAuthToken();
 
   const hourlyPlotHostRef = useRef<HTMLDivElement>(null);
   const hourlyPlotBlobUrlsRef = useRef<string[]>([]);
@@ -130,7 +126,7 @@ export default function HourlyDataExportPage() {
   }
 
   function setNowEnd(setter: (d: Date) => void) {
-    const nyDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const nyDate = getNowInNewYork();
     nyDate.setMinutes(nyDate.getMinutes() + 1);
     setter(nyDate);
   }

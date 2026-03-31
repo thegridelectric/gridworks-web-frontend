@@ -38,6 +38,14 @@ export function getAuthToken(): string | null {
     return localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
+export function getRequiredAuthToken(): string {
+    const token = getAuthToken();
+    if (!token) {
+        throw new Error('Expected auth token for protected route');
+    }
+    return token;
+}
+
 export function getAuthUsername(): string | null {
     return localStorage.getItem(AUTH_USERNAME_KEY);
 }

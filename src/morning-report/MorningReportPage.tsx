@@ -1,11 +1,17 @@
 import { useContext, useMemo, useState } from 'react';
-import { DateTime } from 'luxon';
 import { Modal } from 'react-bootstrap';
-import { Navigate, useLocation } from 'react-router';
 
-import { getAuthToken, isAdminUser } from '../auth/auth';
+import { getRequiredAuthToken } from '../auth/auth';
 import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/HouseTableSelectionContext';
+import {
+    formatDate,
+    formatTime,
+    getDefaultDate,
+    getNowInNewYork,
+    isEndDateOldEnough,
+    wallDateTimeToUtcMs,
+} from '../_util/newYorkTime';
 import { getIsDarkMode } from '../_util/theme';
 import {
     fetchMorningReportMessages,
@@ -18,47 +24,6 @@ const MESSAGE_TYPES = [
     { value: 'gridworks.event.problem', label: 'gridworks.event.problem' },
     { value: 'glitch', label: 'glitch' },
 ] as const;
-
-function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boolean {
-    if (isAdminUser()) {
-        return true;
-    }
-    const cutoff = DateTime.now()
-        .setZone('America/New_York')
-        .minus({ days: lookbackDays })
-        .toUTC()
-        .toMillis();
-    return endUnixMs <= cutoff;
-}
-
-function wallDateTimeToUtcMs(date: Date): number {
-    const ymd = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    const hm = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    return DateTime.fromFormat(`${ymd} ${hm}`, 'yyyy-MM-dd HH:mm', {
-        zone: 'America/New_York',
-    })
-        .toUTC()
-        .toMillis();
-}
-
-function getDefaultDate(start: boolean) {
-    const nyDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    if (start) {
-        nyDate.setDate(nyDate.getDate() - 1);
-        nyDate.setHours(20, 0, 0, 0);
-    } else {
-        nyDate.setMinutes(nyDate.getMinutes() + 1);
-    }
-    return nyDate;
-}
-
-function formatDate(dt: Date) {
-    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-}
-
-function formatTime(dt: Date) {
-    return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
-}
 
 function dataColumnKeys(data: MorningReportMessagesPayload): string[] {
     return Object.keys(data).filter(
@@ -119,7 +84,6 @@ function selectedHouseFieldValue(
 
 function MorningReportPageContent() {
     const session = useContext(SessionContext);
-    const location = useLocation();
     const { selectedInstallationIds } = useHouseTableSelection();
 
     const [startDateTime, setStartDateTime] = useState(() => getDefaultDate(true));
@@ -132,13 +96,8 @@ function MorningReportPageContent() {
     const [isLoading, setIsLoading] = useState(false);
     const [detailRowIndex, setDetailRowIndex] = useState<number | null>(null);
 
-    const authToken = getAuthToken();
+    const token = getRequiredAuthToken();
     const installations = session?.installations ?? [];
-
-    if (!authToken) {
-        return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
-    }
-    const token = authToken;
 
     const houseAliasParam = useMemo(
         () => aliasesForQuery(selectedInstallationIds, installations),
@@ -151,7 +110,7 @@ function MorningReportPageContent() {
     );
 
     function setNowEnd() {
-        const nyDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const nyDate = getNowInNewYork();
         nyDate.setMinutes(nyDate.getMinutes() + 1);
         setEndDateTime(nyDate);
     }

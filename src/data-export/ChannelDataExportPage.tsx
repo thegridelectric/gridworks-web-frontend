@@ -1,20 +1,22 @@
 import { useContext, useState, type CSSProperties } from 'react';
-import { Navigate, useLocation } from 'react-router';
 
-import { getAuthToken } from '../auth/auth';
+import { getRequiredAuthToken } from '../auth/auth';
 import SessionContext, { installationForRouteId } from '../_util/SessionContext';
+import {
+  formatDate,
+  formatTime,
+  getDefaultDate,
+  getNowInNewYork,
+  isEndDateOldEnough,
+  wallDateTimeToUtcMs,
+} from '../_util/newYorkTime';
 import { useRouteInfo } from '../_util/useRouteInfo';
 import InstallationPicker from '../_shared/InstallationPicker';
 import { requestChannelDataCsv } from './requestChannelDataCsv';
 import {
   ALL_CHANNEL_IDS,
   CHANNEL_SECTIONS,
-  formatDate,
-  formatTime,
-  getDefaultDate,
-  isEndDateOldEnough,
   triggerBlobDownload,
-  wallDateTimeToUtcMs,
 } from './dataExportShared';
 
 import './DataExportPage.css';
@@ -26,16 +28,10 @@ const LABEL_MUTED: CSSProperties = {
 
 export default function ChannelDataExportPage() {
   const session = useContext(SessionContext);
-  const location = useLocation();
   const { currentInstallationId } = useRouteInfo();
   const installation = installationForRouteId(session?.installations, currentInstallationId);
 
-  const authToken = getAuthToken();
-
-  if (!authToken) {
-    return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
-  }
-  const token = authToken;
+  const token = getRequiredAuthToken();
 
   const houseAliasForCsv = (installation?.houseAlias?.trim() || installation?.id || '').trim();
 
@@ -48,7 +44,7 @@ export default function ChannelDataExportPage() {
   const [error, setError] = useState<string | null>(null);
 
   function setNowEnd(setter: (d: Date) => void) {
-    const nyDate = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const nyDate = getNowInNewYork();
     nyDate.setMinutes(nyDate.getMinutes() + 1);
     setter(nyDate);
   }

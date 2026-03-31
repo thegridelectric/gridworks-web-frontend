@@ -2,12 +2,14 @@ import { DateTime } from 'luxon';
 
 import { isAdminUser } from '../auth/auth';
 
+export const NEW_YORK_TIME_ZONE = 'America/New_York';
+
 export function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boolean {
     if (isAdminUser()) {
         return true;
     }
     const cutoff = DateTime.now()
-        .setZone('America/New_York')
+        .setZone(NEW_YORK_TIME_ZONE)
         .minus({ days: lookbackDays })
         .toUTC()
         .toMillis();
@@ -17,13 +19,17 @@ export function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boo
 export function wallDateTimeToUtcMs(date: Date): number {
     const ymd = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const hm = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    return DateTime.fromFormat(`${ymd} ${hm}`, 'yyyy-MM-dd HH:mm', { zone: 'America/New_York' })
+    return DateTime.fromFormat(`${ymd} ${hm}`, 'yyyy-MM-dd HH:mm', { zone: NEW_YORK_TIME_ZONE })
         .toUTC()
         .toMillis();
 }
 
+export function getNowInNewYork(): Date {
+    return new Date(new Date().toLocaleString('en-US', { timeZone: NEW_YORK_TIME_ZONE }));
+}
+
 export function getDefaultDate(start: boolean): Date {
-    const nyDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+    const nyDate = getNowInNewYork();
     if (start) {
         nyDate.setDate(nyDate.getDate() - 1);
         nyDate.setHours(20, 0, 0, 0);
