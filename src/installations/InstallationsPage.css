@@ -1,5 +1,3 @@
-/* Houses table card — aligned with gridworks-backoffice index.html */
-
 .houses-card.card {
     background-color: var(--card-background);
     border: 1px solid var(--border-color);
@@ -168,7 +166,6 @@
     color: var(--text-color);
 }
 
-/* Match backoffice: Montserrat 0.875rem, row borders, card-colored rows (not Bootstrap default table fill). */
 .houses-card .table-responsive > .table {
     --bs-table-color: var(--text-color);
     --bs-table-bg: transparent;
@@ -233,7 +230,6 @@
     transition: background-color 0.2s ease;
 }
 
-/* Selected row — matches backoffice .expandable-row.expanded */
 .houses-card .table-responsive > .table > tbody > tr.expandable-row.expanded {
     background-color: var(--selected-house-bg);
 }
@@ -254,7 +250,6 @@
     border-bottom: none;
 }
 
-/* Backoffice .json-cell: ellipsis only, same body font/size as other cells */
 .houses-card .json-cell {
     max-width: 200px;
     overflow: hidden;

@@ -334,7 +334,6 @@ function HousesCardTable({
     );
 }
 
-/** Houses table pinned at top of layout (backoffice-style). Row click: from Installations → Real-time with that house; otherwise same section + id. */
 export default function HousesTableCard() {
     const session = useContext(SessionContext);
     const navigate = useNavigate();

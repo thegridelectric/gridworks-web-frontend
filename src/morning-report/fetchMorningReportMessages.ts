@@ -1,6 +1,5 @@
 import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 
-/** Response shape from POST `/messages` (column-oriented like backoffice). */
 export type MorningReportMessagesPayload = {
     Details?: string[];
     'Time created'?: string[];
@@ -15,7 +14,6 @@ export type MorningReportMessagesPayload = {
 
 export async function fetchMorningReportMessages(params: {
     token: string;
-    /** Empty = all houses (API). One alias, or comma-separated for multiple. */
     houseAlias: string;
     selectedMessageTypes: string[];
     startMs: number;

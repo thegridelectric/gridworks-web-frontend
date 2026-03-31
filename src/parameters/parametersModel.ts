@@ -30,7 +30,6 @@ export function clampParam(key: keyof HeatingParams, value: number): number {
     return Math.max(min, Math.min(max, value));
 }
 
-/** Load state from API house_parameters; ALPHA and DD_POWER stay synced like the backoffice. */
 export function heatingParamsFromHouse(hp?: HouseParameters | null): HeatingParams {
     const d = { ...DEFAULT_HEATING_PARAMS };
     if (!hp) {
@@ -104,7 +103,6 @@ export function validateAlphaDdPower(p: HeatingParams): void {
     }
 }
 
-/** Apply cross-field limits after a single field edit (same rules as backoffice). */
 export function applyCrossFieldConstraints(
     prev: HeatingParams,
     key: keyof HeatingParams,

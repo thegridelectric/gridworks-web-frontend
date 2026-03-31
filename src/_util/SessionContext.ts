@@ -35,7 +35,6 @@ export interface BasicInstallationInfo {
     houseParameters?: HouseParameters;
 }
 
-/** Match route segment to session row; IDs from /homes may be numbers while the URL is always a string. */
 export function installationForRouteId(
     installations: BasicInstallationInfo[] | undefined,
     routeId: string | undefined,

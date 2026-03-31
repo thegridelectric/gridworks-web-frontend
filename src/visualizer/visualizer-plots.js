@@ -1,8 +1,3 @@
-/**
- * Plotly trace/layout builders for visualizer /plots payloads (plotKind + raw data).
- * Styling and presentation live here; the API sends series and axis metadata only.
- */
-
 const STORAGE_TANK_KEYS = [
         'tank1-depth1', 'tank1-depth2', 'tank1-depth3', 'tank1-depth4',
         'tank2-depth1', 'tank2-depth2', 'tank2-depth3', 'tank2-depth4',
@@ -11,10 +6,6 @@ const STORAGE_TANK_KEYS = [
 
     const BUFFER_DEPTH_KEYS = ['buffer-depth1', 'buffer-depth2', 'buffer-depth3', 'buffer-depth4'];
 
-    /**
-     * Matplotlib `plt.get_cmap('coolwarm', N)` discrete colors (Moreland coolwarm, mpl 3.8 segment data).
-     * Index 0 = cool (blue), N-1 = warm (red). Matches server-side buffer/storage traces.
-     */
     const BUFFER_COOLWARM_4 = ['#3b4cc0', '#aac7fd', '#f7b89c', '#b40426'];
 
     const STORAGE_COOLWARM_12 = [

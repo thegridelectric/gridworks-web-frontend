@@ -1,4 +1,3 @@
-/* Card body — backoffice morning card uses padding-bottom: 0 */
 .morning-report-card-body {
     padding-bottom: 0 !important;
 }
@@ -9,11 +8,6 @@
     color: var(--text-muted);
 }
 
-/*
- * Morning message types — custom square checkboxes. Use inset box-shadow instead of
- * border so WebKit does not stack a second UA frame; edge uses --border-color like
- * other card chrome (avoids heavy 2px --text-muted ring).
- */
 #morning-report-card #morning-checkboxDiv input.morning-message-type-checkbox,
 #morning-report-card #morning-checkboxDiv input[type='checkbox'] {
     -webkit-appearance: none;
@@ -30,7 +24,6 @@
     border-radius: 4px;
     background-color: transparent;
     background-image: none;
-    /* Single hairline; no extra outer border from border + native chrome */
     box-shadow: inset 0 0 0 1px var(--border-color);
     position: relative;
     cursor: pointer;
@@ -79,7 +72,6 @@
     margin-bottom: 1.75rem;
 }
 
-/* Backoffice #morning-table-container */
 #morning-table-container {
     margin-top: 1.5rem;
 }
@@ -118,7 +110,6 @@
     margin-bottom: 40px;
 }
 
-/* Same as backoffice index.html #morning-selected-house */
 .morning-report-card #morning-selected-house {
     border: none !important;
     cursor: pointer;

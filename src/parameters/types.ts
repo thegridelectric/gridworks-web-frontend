@@ -1,4 +1,3 @@
-/** Shape returned by `/homes` for `house_parameters` (snake_case). */
 export interface HouseParameters {
     alpha?: number;
     beta?: number;
@@ -10,7 +9,6 @@ export interface HouseParameters {
     dd_delta_t?: number;
 }
 
-/** Internal heating curve state (matches backoffice slider keys). */
 export interface HeatingParams {
     alpha: number;
     beta: number;
