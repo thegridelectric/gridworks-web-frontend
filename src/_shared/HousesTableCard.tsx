@@ -5,7 +5,7 @@ import SessionContext, { type BasicInstallationInfo } from "../_util/SessionCont
 import { useHouseTableSelection } from "../_util/HouseTableSelectionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
 
-import "../InstallationsPage.css";
+import "../installations/InstallationsPage.css";
 
 type SortColumn = "short_alias" | "address" | "commit";
 type SortDirection = "asc" | "desc";

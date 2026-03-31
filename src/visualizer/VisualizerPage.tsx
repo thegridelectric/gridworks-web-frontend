@@ -1,122 +1,47 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { DateTime } from "luxon";
+import { useContext, useRef, useState } from "react";
 import './VisualizerPage.css';
-import { getAuthToken, isAdminUser } from "../auth/auth";
+import { getAuthToken } from "../auth/auth";
 import InstallationPicker from "../_shared/InstallationPicker";
 import { Navigate, useLocation } from "react-router";
 import SessionContext, { installationForRouteId } from "../_util/SessionContext";
+import { getIsDarkMode } from "../_util/theme";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
 import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
-import { getDarkModeForVisualizer } from "./visualizerDarkMode";
 import VisualizerServerPlots from "./VisualizerServerPlots";
 import type { VisualizerPlotsApiResponse } from "./visualizerApiTypes";
-
-const CHANNEL_OPTION_GROUPS = [
-    {
-        category: 'Heat pump',
-        channels: [
-            { id: 'hp-lwt', label: 'Leaving water temperature' },
-            { id: 'hp-ewt', label: 'Entering water temperature' },
-            { id: 'hp-odu-pwr', label: 'Outdoor unit power' },
-            { id: 'hp-idu-pwr', label: 'Indoor unit power' },
-            { id: 'primary-flow', label: 'Primary pump flow rate' },
-            { id: 'primary-pump-pwr', label: 'Primary pump power' },
-            { id: 'oil-boiler-pwr', label: 'Oil boiler power' },
-        ]
-    },
-    {
-        category: 'Distribution',
-        channels: [
-            { id: 'dist-swt', label: 'Source water temperature' },
-            { id: 'dist-rwt', label: 'Return water temperature' },
-            { id: 'dist-flow', label: 'Distribution pump flow rate' },
-            { id: 'dist-pump-pwr', label: 'Distribution pump power' },
-        ]
-    },
-    {
-        category: 'Zones',
-        channels: [
-            { id: 'zone-heat-calls', label: 'Heat calls' },
-            { id: 'oat', label: 'Outside air temperature' },
-        ]
-    },
-    {
-        category: 'Buffer',
-        channels: [
-            { id: 'buffer-depths', label: 'Buffer depths' },
-            { id: 'buffer-hot-pipe', label: 'Hot pipe' },
-            { id: 'buffer-cold-pipe', label: 'Cold pipe' },
-        ]
-    },
-    {
-        category: 'Storage',
-        channels: [
-            { id: 'storage-depths', label: 'Storage depths' },
-            { id: 'store-hot-pipe', label: 'Hot pipe' },
-            { id: 'store-cold-pipe', label: 'Cold pipe' },
-            { id: 'store-flow', label: 'Storage pump flow rate' },
-            { id: 'store-pump-pwr', label: 'Storage pump power' },
-            { id: 'store-energy', label: 'Available and required energy' },
-        ]
-    },
-]
-
-const NON_DEFAULT_CHANNELS = new Set([
-    'buffer-hot-pipe',
-    'buffer-cold-pipe',
-    'store-hot-pipe',
-    'store-cold-pipe',
-    'store-energy'
-])
-const DEFAULT_CHANNELS = new Set(CHANNEL_OPTION_GROUPS.flatMap(g => g.channels).map(c => c.id).filter(id => !NON_DEFAULT_CHANNELS.has(id)))
-
-function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boolean {
-    if (isAdminUser()) {
-        return true;
-    }
-    const cutoff = DateTime.now().setZone('America/New_York').minus({ days: lookbackDays }).toUTC().toMillis();
-    return endUnixMs <= cutoff;
-}
-
-function wallDateTimeToUtcMs(date: Date): number {
-    const ymd = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    const hm = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    return DateTime.fromFormat(`${ymd} ${hm}`, 'yyyy-MM-dd HH:mm', { zone: 'America/New_York' }).toUTC().toMillis();
-}
-
-function getDefaultDate(start: boolean): Date {
-    const nyDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
-    if (start) {
-        nyDate.setDate(nyDate.getDate() - 1);
-        nyDate.setHours(20, 0, 0, 0);
-    } else {
-        nyDate.setMinutes(nyDate.getMinutes() + 1);
-    }
-    return nyDate;
-}
-
-function formatDate(dt: Date) {
-    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
-}
-
-function formatTime(dt: Date) {
-    return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
-}
+import {
+    VisualizerOptionsPanel,
+    useVisualizerControls,
+} from "./VisualizerControls";
+import {
+    formatDate,
+    formatTime,
+    getDefaultDate,
+    isEndDateOldEnough,
+    wallDateTimeToUtcMs,
+} from "./visualizerTime";
+import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 
 export default function VisualizerPage() {
 
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(getDefaultDate(false));
-    const [channels, setChannels] = useState(DEFAULT_CHANNELS);
     const [plotsPayload, setPlotsPayload] = useState<VisualizerPlotsApiResponse['plots'] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFloLoading, setIsFloLoading] = useState(false);
-    const [isShowingOptions, setIsShowingOptions] = useState(false);
-    const [showPoints, setShowPoints] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const {
+        channels,
+        isShowingOptions,
+        setIsShowingOptions,
+        showPoints,
+        setShowPoints,
+        setIncludesChannel,
+        resetControls,
+    } = useVisualizerControls();
 
     const location = useLocation();
     const { currentInstallationId, pathRoot } = useRouteInfo();
@@ -132,25 +57,7 @@ export default function VisualizerPage() {
     }
     const token = authToken;
 
-    const isPageFocusedRef = useRef(true);
-    const blockPlotRef = useRef(false);
-    const runPlotQueryRef = useRef<(startDt: Date, endDt: Date) => Promise<void>>(async () => { });
-    const autoRefreshRef = useRef(autoRefresh);
     const visualizerCardRef = useRef<HTMLDivElement>(null);
-    autoRefreshRef.current = autoRefresh;
-    blockPlotRef.current = isLoading || isFloLoading;
-
-    function setIncludesChannel(id: string, isIncluded: boolean) {
-        if (isIncluded && !channels.has(id)) {
-            const newChannels = new Set(channels);
-            newChannels.add(id);
-            setChannels(newChannels)
-        } else if (!isIncluded && channels.has(id)) {
-            const newChannels = new Set(channels);
-            newChannels.delete(id);
-            setChannels(newChannels);
-        }
-    }
 
     async function runPlotQuery(startDt: Date, endDt: Date) {
         setPlotError(null);
@@ -185,7 +92,7 @@ export default function VisualizerPage() {
                 startMs,
                 endMs,
                 selectedChannels,
-                darkmode: getDarkModeForVisualizer(),
+                darkmode: getIsDarkMode(),
                 token,
             });
 
@@ -205,8 +112,6 @@ export default function VisualizerPage() {
         }
     }
 
-    runPlotQueryRef.current = runPlotQuery;
-
     async function onNowClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         event.preventDefault();
         if (isLoading || isFloLoading) {
@@ -223,9 +128,7 @@ export default function VisualizerPage() {
         event.preventDefault();
         setPlotsPayload(null);
         setPlotError(null);
-        setIsShowingOptions(false);
-        setShowPoints(false);
-        setChannels(DEFAULT_CHANNELS);
+        resetControls();
         setStartDateTime(getDefaultDate(true));
         setEndDateTime(getDefaultDate(false));
     }
@@ -309,87 +212,18 @@ export default function VisualizerPage() {
         });
     }
 
-    useEffect(() => {
-        if (!autoRefresh || pathRoot !== 'visualizer') {
-            return;
-        }
-
-        let intervalId: ReturnType<typeof setInterval> | undefined;
-        let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-        const clearTimers = () => {
-            if (intervalId !== undefined) {
-                clearInterval(intervalId);
-                intervalId = undefined;
-            }
-            if (timeoutId !== undefined) {
-                clearTimeout(timeoutId);
-                timeoutId = undefined;
-            }
-        };
-
-        const maybeAutoRefreshTick = () => {
-            if (!autoRefreshRef.current || document.hidden || !isPageFocusedRef.current) {
-                return;
-            }
-            if (pathRoot !== 'visualizer') {
-                return;
-            }
-            if (blockPlotRef.current) {
-                return;
-            }
-            const start = getDefaultDate(true);
-            const end = getDefaultDate(false);
+    useVisualizerAutoRefresh({
+        autoRefresh,
+        isBusy: isLoading || isFloLoading,
+        pathRoot,
+        setDateWindow: (start, end) => {
             setStartDateTime(start);
             setEndDateTime(end);
-            void runPlotQueryRef.current(start, end);
-        };
-
-        const startAutoRefresh = () => {
-            clearTimers();
-            timeoutId = setTimeout(maybeAutoRefreshTick, 500);
-            intervalId = setInterval(maybeAutoRefreshTick, 60000);
-        };
-
-        const checkPageFocus = () => {
-            isPageFocusedRef.current = document.hasFocus();
-            const onVisualizerRoute = pathRoot === 'visualizer';
-            const allow =
-                isPageFocusedRef.current &&
-                !document.hidden &&
-                autoRefreshRef.current &&
-                onVisualizerRoute;
-            if (allow) {
-                startAutoRefresh();
-            } else if (!isPageFocusedRef.current || document.hidden || !onVisualizerRoute) {
-                clearTimers();
-            }
-        };
-
-        isPageFocusedRef.current = document.hasFocus();
-        if (isPageFocusedRef.current && !document.hidden) {
-            startAutoRefresh();
-        }
-
-        window.addEventListener('focus', checkPageFocus);
-        window.addEventListener('blur', checkPageFocus);
-        const onVisibilityChange = () => {
-            if (!document.hidden) {
-                setTimeout(checkPageFocus, 100);
-            } else {
-                isPageFocusedRef.current = false;
-                clearTimers();
-            }
-        };
-        document.addEventListener('visibilitychange', onVisibilityChange);
-
-        return () => {
-            window.removeEventListener('focus', checkPageFocus);
-            window.removeEventListener('blur', checkPageFocus);
-            document.removeEventListener('visibilitychange', onVisibilityChange);
-            clearTimers();
-        };
-    }, [autoRefresh, location.pathname, pathRoot]);
+        },
+        onTick: (start, end) => {
+            void runPlotQuery(start, end);
+        },
+    });
 
     return (
         <div ref={visualizerCardRef} className={`card visualizer-card${isFullscreen ? ' fullscreen' : ''}`}>
@@ -484,42 +318,20 @@ export default function VisualizerPage() {
                 }
             </div>
 
-            {isShowingOptions &&
-                <div id="options-div" className="options-container border-top mb-0">
-                    <div className="options-content">
-                        <div className="options-section mt-3">
-                            <h6>Plot settings</h6>
-                            <label>
-                                <input type="checkbox" checked={showPoints} onChange={evt => {
-                                    setShowPoints(evt.currentTarget.checked);
-                                }} />
-                                Show points
-                            </label>
-                        </div>
-                        {CHANNEL_OPTION_GROUPS.map(g => {
-                            return <div key={g.category} className="options-section">
-                                <h6>{g.category}</h6>
-                                {g.channels.map(c => {
-                                    return <label key={c.id}>
-                                        <input type="checkbox" checked={channels.has(c.id)}
-                                            onChange={evt => {
-                                                setIncludesChannel(c.id, evt.currentTarget.checked)
-                                            }} />
-                                        {c.label}
-                                    </label>;
-                                })}
-                            </div>
-                        })}
-                    </div>
-                </div>
-            }
+            <VisualizerOptionsPanel
+                isShowingOptions={isShowingOptions}
+                showPoints={showPoints}
+                setShowPoints={setShowPoints}
+                channels={channels}
+                setIncludesChannel={setIncludesChannel}
+            />
 
             {plotsPayload &&
                 <div className="plot-container border-top">
                     <VisualizerServerPlots
                         plots={plotsPayload}
                         selectedChannels={plotSelectedChannels}
-                        darkmode={getDarkModeForVisualizer()}
+                        darkmode={getIsDarkMode()}
                     />
                 </div>
             }

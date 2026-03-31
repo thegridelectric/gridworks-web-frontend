@@ -1,7 +1,7 @@
-import { getVisualizerApiBaseUrl } from './fetchVisualizerPlots';
+import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 
 /** Response shape from POST `/messages` (column-oriented like backoffice). */
-export type VisualizerMessagesTablePayload = {
+export type MorningReportMessagesPayload = {
     Details?: string[];
     'Time created'?: string[];
     'From node'?: string[];
@@ -13,7 +13,7 @@ export type VisualizerMessagesTablePayload = {
     reload?: boolean;
 };
 
-export async function fetchVisualizerMessages(params: {
+export async function fetchMorningReportMessages(params: {
     token: string;
     /** Empty = all houses (API). One alias, or comma-separated for multiple. */
     houseAlias: string;
@@ -21,7 +21,7 @@ export async function fetchVisualizerMessages(params: {
     startMs: number;
     endMs: number;
     darkmode: boolean;
-}): Promise<VisualizerMessagesTablePayload> {
+}): Promise<MorningReportMessagesPayload> {
     const base = getVisualizerApiBaseUrl();
     const res = await fetch(`${base}/messages`, {
         method: 'POST',
@@ -40,7 +40,7 @@ export async function fetchVisualizerMessages(params: {
         }),
     });
 
-    const data = (await res.json()) as VisualizerMessagesTablePayload & {
+    const data = (await res.json()) as MorningReportMessagesPayload & {
         success?: boolean;
         message?: string;
     };

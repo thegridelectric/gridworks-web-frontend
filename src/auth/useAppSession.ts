@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import GridworksApi from '../_util/GridWorksApi';
 import type { Session } from '../_util/SessionContext';
-import { fetchVisualizerHomes, housesToInstallations } from '../visualizer/fetchVisualizerHomes';
 import { getAuthToken, getDisplayUserName } from './auth';
+import { fetchFallbackInstallations } from './fetchFallbackInstallations';
 
 interface UseAppSessionResult {
     isLoadingSession: boolean;
@@ -42,9 +42,9 @@ export function useAppSession(loadSession: boolean): UseAppSessionResult {
 
                 if (installations.length === 0 && token) {
                     try {
-                        const houses = await fetchVisualizerHomes(token);
+                        const installationsFromFallback = await fetchFallbackInstallations(token);
                         if (!cancelled) {
-                            installations = housesToInstallations(houses);
+                            installations = installationsFromFallback;
                             userName = getDisplayUserName();
                         }
                     } catch (e) {
@@ -71,11 +71,11 @@ export function useAppSession(loadSession: boolean): UseAppSessionResult {
                 }
 
                 try {
-                    const houses = await fetchVisualizerHomes(token);
+                    const installationsFromFallback = await fetchFallbackInstallations(token);
                     if (!cancelled) {
                         setSession({
                             userName: getDisplayUserName(),
-                            installations: housesToInstallations(houses),
+                            installations: installationsFromFallback,
                             homesError: null,
                         });
                     }

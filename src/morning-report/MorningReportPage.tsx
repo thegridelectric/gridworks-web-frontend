@@ -3,16 +3,15 @@ import { DateTime } from 'luxon';
 import { Modal } from 'react-bootstrap';
 import { Navigate, useLocation } from 'react-router';
 
-import SessionContext, { type BasicInstallationInfo } from './_util/SessionContext';
-import { useHouseTableSelection } from './_util/HouseTableSelectionContext';
-import { getAuthToken, isAdminUser } from './auth/auth';
+import { getAuthToken, isAdminUser } from '../auth/auth';
+import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
+import { useHouseTableSelection } from '../_util/HouseTableSelectionContext';
+import { getIsDarkMode } from '../_util/theme';
 import {
-    fetchVisualizerMessages,
-    type VisualizerMessagesTablePayload,
-} from './visualizer/fetchVisualizerMessages';
-import { getDarkModeForVisualizer } from './visualizer/visualizerDarkMode';
+    fetchMorningReportMessages,
+    type MorningReportMessagesPayload,
+} from './fetchMorningReportMessages';
 
-import './visualizer/VisualizerPage.css';
 import './MorningReportPage.css';
 
 const MESSAGE_TYPES = [
@@ -61,7 +60,7 @@ function formatTime(dt: Date) {
     return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
 }
 
-function dataColumnKeys(data: VisualizerMessagesTablePayload): string[] {
+function dataColumnKeys(data: MorningReportMessagesPayload): string[] {
     return Object.keys(data).filter(
         (k) =>
             k !== 'Details' &&
@@ -118,10 +117,6 @@ function selectedHouseFieldValue(
     return aliases.join(', ');
 }
 
-/**
- * Renders under `HouseTableSelectionProvider` (AuthedSidebarOutletLayout / main), so
- * `useHouseTableSelection` is valid. Do not call that hook in the default export.
- */
 function MorningReportPageContent() {
     const session = useContext(SessionContext);
     const location = useLocation();
@@ -132,7 +127,7 @@ function MorningReportPageContent() {
     const [selectedTypes, setSelectedTypes] = useState<Set<string>>(
         () => new Set(MESSAGE_TYPES.map((m) => m.value)),
     );
-    const [tableData, setTableData] = useState<VisualizerMessagesTablePayload | null>(null);
+    const [tableData, setTableData] = useState<MorningReportMessagesPayload | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [detailRowIndex, setDetailRowIndex] = useState<number | null>(null);
@@ -193,13 +188,13 @@ function MorningReportPageContent() {
 
         setIsLoading(true);
         try {
-            const data = await fetchVisualizerMessages({
+            const data = await fetchMorningReportMessages({
                 token,
                 houseAlias: houseAliasParam,
                 selectedMessageTypes: types,
                 startMs,
                 endMs,
-                darkmode: getDarkModeForVisualizer(),
+                darkmode: getIsDarkMode(),
             });
             setTableData(data);
         } catch (err) {
@@ -218,7 +213,7 @@ function MorningReportPageContent() {
     const columnKeys = tableData ? dataColumnKeys(tableData) : [];
     const firstColumn =
         tableData && columnKeys[0]
-            ? tableData[columnKeys[0] as keyof VisualizerMessagesTablePayload]
+            ? tableData[columnKeys[0] as keyof MorningReportMessagesPayload]
             : undefined;
     const rowCount = Array.isArray(firstColumn) ? firstColumn.length : 0;
 

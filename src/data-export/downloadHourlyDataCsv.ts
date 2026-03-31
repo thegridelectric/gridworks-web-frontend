@@ -1,4 +1,4 @@
-import { getVisualizerApiBaseUrl } from './fetchVisualizerPlots';
+import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 
 function filenameFromContentDisposition(header: string | null): string {
     if (!header) {
@@ -19,7 +19,7 @@ function filenameFromContentDisposition(header: string | null): string {
     return 'electricity-use.csv';
 }
 
-export async function downloadElectricityUseCsv(params: {
+export async function downloadHourlyDataCsv(params: {
     token: string;
     selectedShortAliases: string[];
     startMs: number;

@@ -1,22 +1,22 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 
-import InstallationPicker from './_shared/InstallationPicker';
+import InstallationPicker from '../_shared/InstallationPicker';
 import SessionContext, {
     installationForRouteId,
     type BasicInstallationInfo,
-} from './_util/SessionContext';
-import { useRouteInfo } from './_util/useRouteInfo';
+} from '../_util/SessionContext';
+import { getIsDarkMode } from '../_util/theme';
+import { useRouteInfo } from '../_util/useRouteInfo';
 import {
     applyCrossFieldConstraints,
     buildParametersFigures,
     clampParam,
     heatingParamsFromHouse,
     PARAM_SPECS,
-} from './parameters/parametersModel';
-import type { HeatingParams } from './parameters/types';
-import { DEFAULT_HEATING_PARAMS } from './parameters/types';
-import { getDarkModeForVisualizer } from './visualizer/visualizerDarkMode';
+} from './parametersModel';
+import type { HeatingParams } from './types';
+import { DEFAULT_HEATING_PARAMS } from './types';
 
 import './ParametersPage.css';
 
@@ -40,7 +40,7 @@ function ParametersCard({ installation }: { installation: BasicInstallationInfo 
     const themeTick = useHtmlThemeMutationTick();
     const isDark = useMemo(() => {
         void themeTick;
-        return getDarkModeForVisualizer();
+        return getIsDarkMode();
     }, [themeTick]);
 
     const { figures, plotError } = useMemo(() => {

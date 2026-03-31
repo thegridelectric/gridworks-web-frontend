@@ -1,11 +1,11 @@
-import { getVisualizerApiBaseUrl } from './fetchVisualizerPlots';
+import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 
-export type VisualizerCsvResult =
+export type ChannelDataCsvResult =
     | { type: 'file'; blob: Blob; filename: string }
     | { type: 'confirm'; message: string }
     | { type: 'error'; message: string };
 
-export async function requestVisualizerCsv(params: {
+export async function requestChannelDataCsv(params: {
     token: string;
     houseAlias: string;
     startMs: number;
@@ -13,7 +13,7 @@ export async function requestVisualizerCsv(params: {
     selectedChannels: string[];
     timestep: string;
     confirmWithUser: boolean;
-}): Promise<VisualizerCsvResult> {
+}): Promise<ChannelDataCsvResult> {
     const base = getVisualizerApiBaseUrl();
     const res = await fetch(`${base}/csv`, {
         method: 'POST',

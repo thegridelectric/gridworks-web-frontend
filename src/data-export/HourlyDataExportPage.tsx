@@ -5,9 +5,13 @@ import { Navigate, useLocation } from 'react-router';
 import { getAuthToken } from '../auth/auth';
 import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/HouseTableSelectionContext';
-import { downloadElectricityUseCsv } from '../visualizer/fetchElectricityUseCsv';
-import { fetchElectricityUse } from '../visualizer/fetchElectricityUse';
-import { getDarkModeForVisualizer } from '../visualizer/visualizerDarkMode';
+import { getIsDarkMode } from '../_util/theme';
+import {
+  downloadHourlyDataCsv,
+} from './downloadHourlyDataCsv';
+import {
+  fetchHourlyPlots,
+} from './fetchHourlyPlots';
 import {
   formatDate,
   formatTime,
@@ -17,8 +21,7 @@ import {
   wallDateTimeToUtcMs,
 } from './dataExportShared';
 
-import '../visualizer/VisualizerPage.css';
-import '../DataExportPage.css';
+import './DataExportPage.css';
 
 const LABEL_MUTED: CSSProperties = {
   fontSize: '0.875rem',
@@ -147,7 +150,7 @@ export default function HourlyDataExportPage() {
 
     setHourlyCsvBusy(true);
     try {
-      const { blob, filename } = await downloadElectricityUseCsv({
+      const { blob, filename } = await downloadHourlyDataCsv({
         token,
         selectedShortAliases: hourlyAliases,
         startMs,
@@ -182,12 +185,12 @@ export default function HourlyDataExportPage() {
         host.innerHTML = '';
       }
 
-      const result = await fetchElectricityUse({
+      const result = await fetchHourlyPlots({
         token,
         selectedShortAliases: hourlyAliases,
         startMs,
         endMs,
-        darkmode: getDarkModeForVisualizer(),
+        darkmode: getIsDarkMode(),
       });
 
       if (result.kind === 'json_error') {

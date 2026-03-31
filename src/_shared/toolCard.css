@@ -1,0 +1,268 @@
+:root {
+  --datetime-background: #f1f3f5;
+  --datetime-text: #1b1b1c;
+  --selected-house-bg: rgba(56, 77, 164, 0.1);
+  --selected-house-text: var(--text-color);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --datetime-background: #d4d4d4;
+    --datetime-text: #1b1b1c;
+    --selected-house-bg: rgba(56, 77, 164, 0.2);
+    --selected-house-text: var(--text-color);
+  }
+
+  .tool-card input[type="date"],
+  .tool-card input[type="time"] {
+    color-scheme: light;
+  }
+
+  .tool-card input[type="date"]::-webkit-calendar-picker-indicator,
+  .tool-card input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: none;
+    opacity: 0.9;
+  }
+}
+
+.tool-card,
+.visualizer-card {
+  background-color: var(--card-background);
+  border-radius: 0.25rem;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  margin-bottom: 3rem;
+  transition: all 0.3s ease;
+}
+
+.tool-card .card-header,
+.visualizer-card .card-header {
+  background-color: var(--card-background);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 1.5rem;
+}
+
+.tool-card .card-title,
+.visualizer-card .card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.status-badges {
+  display: flex;
+  gap: 0.75rem;
+  margin-left: auto;
+  align-items: center;
+}
+
+.loader {
+  width: 20px;
+  height: 20px;
+  border: 4px solid var(--text-muted);
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.filter-toggle,
+.tool-card .btn-outline-secondary,
+.visualizer-card .btn-outline-secondary {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  background-color: var(--hover-color);
+}
+
+.filter-toggle:hover,
+.tool-card .btn-outline-secondary:hover,
+.visualizer-card .btn-outline-secondary:hover {
+  background-color: var(--hover-color);
+  color: var(--text-color);
+}
+
+.tool-card .form-label,
+.visualizer-card .form-label {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.tool-card .selected-house-picker .form-select,
+.visualizer-card .selected-house-picker .form-select {
+  max-width: 100% !important;
+  width: 100%;
+  border: none;
+  background-color: var(--selected-house-bg);
+  color: var(--selected-house-text);
+}
+
+.tool-card .selected-house-picker .form-select:focus,
+.visualizer-card .selected-house-picker .form-select:focus {
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.tool-card .form-control.text-light:not(.data-export-hourly-house-input),
+.visualizer-card .form-control.text-light:not(.data-export-hourly-house-input) {
+  color: var(--datetime-text) !important;
+  background-color: var(--datetime-background) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.tool-card input[type="date"].form-control,
+.tool-card input[type="time"].form-control,
+.visualizer-card input[type="date"].form-control,
+.visualizer-card input[type="time"].form-control {
+  font-size: 0.875rem !important;
+  padding: 0.25rem 0.5rem !important;
+  height: auto !important;
+}
+
+.data-query-form {
+  max-width: 400px;
+  margin-bottom: 1.5rem !important;
+}
+
+.data-query-form.table>:not(caption)>*>* {
+  background-color: transparent;
+  box-shadow: none;
+  border-bottom: none;
+  padding: 0.25rem 0.75rem 0.25rem 0;
+}
+
+.data-query-form td:nth-child(1) {
+  width: 80px;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+
+.data-query-form td:nth-child(2) {
+  width: 200px;
+}
+
+.data-query-form td:nth-child(3) {
+  width: 150px;
+}
+
+.data-query-form input[type="date"],
+.data-query-form input[type="time"] {
+  color: var(--datetime-text) !important;
+  background-color: var(--datetime-background) !important;
+  border: 1px solid var(--border-color) !important;
+  font-size: 0.875rem !important;
+  padding: 0.25rem 0.5rem !important;
+  height: auto !important;
+}
+
+.options-container {
+  padding: 0.5rem 2rem;
+  max-height: 2000px;
+  overflow-y: scroll;
+}
+
+.options-content {
+  max-width: 400px;
+}
+
+.options-section {
+  margin-bottom: 1.5rem;
+}
+
+.options-section h6 {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  margin-bottom: 0.75rem;
+}
+
+.options-section input[type="checkbox"] {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--text-muted);
+  border-radius: 4px;
+  background-color: transparent;
+  position: relative;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  vertical-align: middle;
+}
+
+.options-section input[type="checkbox"]:checked {
+  background-color: var(--text-muted);
+  border-color: var(--text-muted);
+}
+
+.options-section label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  color: var(--text-color);
+  padding-left: 0.5rem;
+  cursor: pointer;
+}
+
+.plot-container {
+  margin-top: 0.5rem;
+  padding: 1rem 0 0;
+  background-color: var(--card-background);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.visualizer-server-plots-root {
+  width: 100%;
+  min-width: 0;
+}
+
+.plot-div {
+  margin-bottom: 2rem;
+  box-sizing: border-box;
+  padding: 0 1rem;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+.plot-div .js-plotly-plot,
+.plot-div .plotly-graph-div,
+.plot-div .plotly {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0;
+}
+
+.plot-div .svg-container {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.plot-div:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 650px) {
+  .plot-div {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}

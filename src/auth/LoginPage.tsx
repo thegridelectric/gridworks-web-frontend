@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { login } from "./auth/auth";
-import HeaderLayout from "./_layout/HeaderLayout";
+import { login } from "./auth";
+import HeaderLayout from "../_layout/HeaderLayout";
 
 export default function LoginPage() {
     const navigate = useNavigate();

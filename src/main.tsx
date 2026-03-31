@@ -2,7 +2,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css'
-import './_shared/visualizerCardForms.css'
+import './_shared/toolCard.css'
 
 
 import GridWorksApiInterceptor from './_util/GridWorksApiInterceptor.ts';
@@ -10,16 +10,16 @@ import GridWorksApiInterceptor from './_util/GridWorksApiInterceptor.ts';
 import App from './App.tsx';
 import AuthedSidebarOutletLayout from './_layout/AuthedSidebarOutletLayout.tsx';
 
-import LoginPage from './LoginPage.tsx';
-import InstallationsPage from './InstallationsPage.tsx';
+import LoginPage from './auth/LoginPage.tsx';
+import InstallationsPage from './installations/InstallationsPage.tsx';
 import RealTimeStatusPage from './real-time/RealTimeStatusPage.tsx';
 import VisualizerPage from './visualizer/VisualizerPage.tsx';
-import DataExportPage from './DataExportPage.tsx';
+import DataExportPage from './data-export/DataExportPage.tsx';
 import ChannelDataExportPage from './data-export/ChannelDataExportPage.tsx';
 import HourlyDataExportPage from './data-export/HourlyDataExportPage.tsx';
-import MorningReportPage from './MorningReportPage.tsx';
-import ParametersPage from './ParametersPage.tsx';
-import InformationPage from './InformationPage.tsx';
+import InformationPage from './information/InformationPage.tsx';
+import MorningReportPage from './morning-report/MorningReportPage.tsx';
+import ParametersPage from './parameters/ParametersPage.tsx';
 
 
 

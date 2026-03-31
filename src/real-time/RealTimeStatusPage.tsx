@@ -9,7 +9,7 @@ import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
 import InstallationPicker from "../_shared/InstallationPicker";
 import SessionContext, { installationForRouteId } from "../_util/SessionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
-import { getDashboardWebSocketUrl } from "../visualizer/fetchVisualizerPlots";
+import { getDashboardWebSocketUrl } from "../_util/visualizerApi";
 
 interface RelayInfo {
     name: string;

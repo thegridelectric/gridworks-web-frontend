@@ -1,16 +1,16 @@
-import { getVisualizerApiBaseUrl } from './fetchVisualizerPlots';
+import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 
-export type ElectricityUseResult =
+export type HourlyPlotsResult =
     | { kind: 'zip'; blob: Blob }
     | { kind: 'json_error'; message: string };
 
-export async function fetchElectricityUse(params: {
+export async function fetchHourlyPlots(params: {
     token: string;
     selectedShortAliases: string[];
     startMs: number;
     endMs: number;
     darkmode: boolean;
-}): Promise<ElectricityUseResult> {
+}): Promise<HourlyPlotsResult> {
     const base = getVisualizerApiBaseUrl();
     const res = await fetch(`${base}/electricity-use`, {
         method: 'POST',

@@ -1,4 +1,4 @@
-export function getDarkModeForVisualizer(): boolean {
+export function getIsDarkMode(): boolean {
     const root = document.documentElement;
     const bsTheme = root.getAttribute('data-bs-theme');
     if (bsTheme === 'dark') {

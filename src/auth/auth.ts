@@ -1,4 +1,4 @@
-import { getVisualizerApiBaseUrl } from '../visualizer/fetchVisualizerPlots';
+import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 
 const AUTH_TOKEN_KEY = 'token';
 const AUTH_USERNAME_KEY = 'username';

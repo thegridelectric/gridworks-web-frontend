@@ -4,8 +4,8 @@ import { Navigate, useLocation } from 'react-router';
 import { getAuthToken } from '../auth/auth';
 import SessionContext, { installationForRouteId } from '../_util/SessionContext';
 import { useRouteInfo } from '../_util/useRouteInfo';
-import { requestVisualizerCsv } from '../visualizer/fetchVisualizerCsv';
 import InstallationPicker from '../_shared/InstallationPicker';
+import { requestChannelDataCsv } from './requestChannelDataCsv';
 import {
   ALL_CHANNEL_IDS,
   CHANNEL_SECTIONS,
@@ -17,8 +17,7 @@ import {
   wallDateTimeToUtcMs,
 } from './dataExportShared';
 
-import '../visualizer/VisualizerPage.css';
-import '../DataExportPage.css';
+import './DataExportPage.css';
 
 const LABEL_MUTED: CSSProperties = {
   fontSize: '0.875rem',
@@ -93,7 +92,7 @@ export default function ChannelDataExportPage() {
     try {
       let confirmWithUser = false;
       for (;;) {
-        const result = await requestVisualizerCsv({
+        const result = await requestChannelDataCsv({
           token,
           houseAlias: houseAliasForCsv,
           startMs,

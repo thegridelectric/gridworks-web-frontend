@@ -1,4 +1,4 @@
-import { getVisualizerApiBaseUrl } from './fetchVisualizerPlots';
+import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 
 function floDownloadFilename(houseAlias: string, endUnixMs: number): string {
     const newYorkDate = new Date(endUnixMs)

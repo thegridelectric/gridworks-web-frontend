@@ -1,10 +1,9 @@
 import { useContext, useMemo, useState } from 'react';
 
-import InstallationPicker from './_shared/InstallationPicker';
-import SessionContext, { installationForRouteId } from './_util/SessionContext';
-import { useRouteInfo } from './_util/useRouteInfo';
+import InstallationPicker from '../_shared/InstallationPicker';
+import SessionContext, { installationForRouteId } from '../_util/SessionContext';
+import { useRouteInfo } from '../_util/useRouteInfo';
 
-import './visualizer/VisualizerPage.css';
 import './InformationPage.css';
 
 type InfoSection = 'address' | 'contact' | 'status' | 'hardware';
