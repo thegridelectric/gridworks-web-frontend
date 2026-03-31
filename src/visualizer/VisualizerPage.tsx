@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { DateTime } from "luxon";
 import './VisualizerPage.css';
-import { getAuthToken } from "../auth/auth";
+import { getAuthToken, isAdminUser } from "../auth/auth";
 import InstallationPicker from "../_shared/InstallationPicker";
 import { Navigate, useLocation } from "react-router";
 import { parsePathname } from "../_util/urlUtility";
@@ -72,8 +72,7 @@ const NON_DEFAULT_CHANNELS = new Set([
 const DEFAULT_CHANNELS = new Set(CHANNEL_OPTION_GROUPS.flatMap(g => g.channels).map(c => c.id).filter(id => !NON_DEFAULT_CHANNELS.has(id)))
 
 function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boolean {
-    const username = localStorage.getItem('username') || '';
-    if (username.trim().toLowerCase() === 'admin') {
+    if (isAdminUser()) {
         return true;
     }
     const cutoff = DateTime.now().setZone('America/New_York').minus({ days: lookbackDays }).toUTC().toMillis();

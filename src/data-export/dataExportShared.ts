@@ -1,4 +1,5 @@
 import { DateTime } from 'luxon';
+import { isAdminUser } from '../auth/auth';
 
 export const CHANNEL_SECTIONS: { title: string; items: { id: string; label: string }[] }[] = [
   {
@@ -63,8 +64,7 @@ export const CHANNEL_SECTIONS: { title: string; items: { id: string; label: stri
 export const ALL_CHANNEL_IDS = new Set(CHANNEL_SECTIONS.flatMap((s) => s.items.map((i) => i.id)));
 
 export function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boolean {
-  const username = localStorage.getItem('username') || '';
-  if (username.trim().toLowerCase() === 'admin') {
+  if (isAdminUser()) {
     return true;
   }
   const cutoff = DateTime.now().setZone('America/New_York').minus({ days: lookbackDays }).toUTC().toMillis();
@@ -106,4 +106,3 @@ export function triggerBlobDownload(blob: Blob, filename: string) {
   a.remove();
   URL.revokeObjectURL(url);
 }
-

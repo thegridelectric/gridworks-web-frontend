@@ -151,12 +151,6 @@ export default function HousesTableCard() {
 
     return (
         <div className="houses-table-at-top mb-4">
-            {!token && (
-                    <p className="text-muted mb-3">
-                    Sign in to load homes into the shared table.
-                </p>
-            )}
-
             {session?.homesError && (
                 <div className="alert alert-warning mb-3" role="alert">
                     Could not load homes from the visualizer API:{" "}

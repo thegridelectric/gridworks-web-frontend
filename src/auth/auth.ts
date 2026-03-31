@@ -1,5 +1,8 @@
 import { getVisualizerApiBaseUrl } from '../visualizer/fetchVisualizerPlots';
 
+const AUTH_TOKEN_KEY = 'token';
+const AUTH_USERNAME_KEY = 'username';
+
 export async function login(username: string, password: string): Promise<void> {
     const base = getVisualizerApiBaseUrl();
     const res = await fetch(`${base}/login`, {
@@ -22,15 +25,28 @@ export async function login(username: string, password: string): Promise<void> {
         throw new Error('Login response did not include access_token');
     }
 
-    localStorage.setItem('token', data.access_token);
-    localStorage.setItem('username', username.trim());
+    localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
+    localStorage.setItem(AUTH_USERNAME_KEY, username.trim());
 }
 
 export function clearAuth(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(AUTH_USERNAME_KEY);
 }
 
 export function getAuthToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+}
+
+export function getAuthUsername(): string | null {
+    return localStorage.getItem(AUTH_USERNAME_KEY);
+}
+
+export function getDisplayUserName(): string {
+    return getAuthUsername() || 'Visualizer user';
+}
+
+export function isAdminUser(): boolean {
+    const username = getAuthUsername() || '';
+    return username.trim().toLowerCase() === 'admin';
 }

@@ -5,13 +5,14 @@ import { Spinner } from "react-bootstrap";
 import GridworksApi from './_util/GridWorksApi';
 import SessionContext, { type Session } from "./_util/SessionContext";
 import HeaderLayout from "./_layout/HeaderLayout";
-import { getAuthToken } from "./auth/auth";
+import { getAuthToken, getDisplayUserName } from "./auth/auth";
 import { fetchVisualizerHomes, housesToInstallations } from "./visualizer/fetchVisualizerHomes";
 
 
 
 export default function App({ children }: React.PropsWithChildren) {
     const location = useLocation();
+    const authToken = getAuthToken();
     if (location.pathname === '/') {
         return <Navigate to="/installations/" />;
     }
@@ -23,6 +24,9 @@ export default function App({ children }: React.PropsWithChildren) {
     const [session, setSession] = useState<Session | null>(null);
 
     const loadSession = location.pathname !== '/login/';
+    if (loadSession && !authToken) {
+        return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
+    }
     useEffect(() => {
         if (!loadSession) {
             return;
@@ -34,6 +38,7 @@ export default function App({ children }: React.PropsWithChildren) {
                 const sessionRes = await GridworksApi.get<Session>('/api/v2/session');
                 if (cancelled) return;
                 let installations = sessionRes.data.installations ?? [];
+                let userName = sessionRes.data.userName;
                 let homesError: string | null = null;
                 const token = getAuthToken();
                 if (installations.length === 0 && token) {
@@ -41,6 +46,7 @@ export default function App({ children }: React.PropsWithChildren) {
                         const houses = await fetchVisualizerHomes(token);
                         if (!cancelled) {
                             installations = housesToInstallations(houses);
+                            userName = getDisplayUserName();
                         }
                     } catch (e) {
                         if (!cancelled) {
@@ -51,7 +57,7 @@ export default function App({ children }: React.PropsWithChildren) {
                 }
                 if (!cancelled) {
                     setSession({
-                        userName: sessionRes.data.userName,
+                        userName,
                         installations,
                         homesError,
                     });
@@ -68,7 +74,7 @@ export default function App({ children }: React.PropsWithChildren) {
                     const houses = await fetchVisualizerHomes(token);
                     if (!cancelled) {
                         setSession({
-                            userName: localStorage.getItem('username') || 'Visualizer user',
+                            userName: getDisplayUserName(),
                             installations: housesToInstallations(houses),
                             homesError: null,
                         });

@@ -5,7 +5,7 @@ import { Navigate, useLocation } from 'react-router';
 
 import SessionContext, { type BasicInstallationInfo } from './_util/SessionContext';
 import { useHouseTableSelection } from './_util/HouseTableSelectionContext';
-import { getAuthToken } from './auth/auth';
+import { getAuthToken, isAdminUser } from './auth/auth';
 import {
     fetchVisualizerMessages,
     type VisualizerMessagesTablePayload,
@@ -21,8 +21,7 @@ const MESSAGE_TYPES = [
 ] as const;
 
 function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boolean {
-    const username = localStorage.getItem('username') || '';
-    if (username.trim().toLowerCase() === 'admin') {
+    if (isAdminUser()) {
         return true;
     }
     const cutoff = DateTime.now()

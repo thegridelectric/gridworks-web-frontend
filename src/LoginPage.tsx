@@ -1,22 +1,15 @@
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router";
-import { clearAuth, login } from "./auth/auth";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router";
+import { login } from "./auth/auth";
 import HeaderLayout from "./_layout/HeaderLayout";
 
 export default function LoginPage() {
     const navigate = useNavigate();
     const location = useLocation();
-    const [searchParams] = useSearchParams();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
-
-    useEffect(() => {
-        if (searchParams.get("logOut") === "true") {
-            clearAuth();
-        }
-    }, [searchParams]);
 
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
