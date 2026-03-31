@@ -9,7 +9,7 @@ import SessionContext from '../_util/SessionContext';
 import './Header.css'
 
 export default function Header() {
-    
+
     const sessionContext = useContext(SessionContext);
 
     return <header className="navbar sticky-top flex-md-nowrap p-0">
@@ -18,9 +18,16 @@ export default function Header() {
             <i className="bi bi-list fs-4 header-menu-icon" aria-hidden="true"></i>
         </button>
         <div className="navbar-nav me-3">
-            <div className="nav-item text-nowrap">
+            <div className="nav-item text-nowrap header-user-actions">
                 {sessionContext &&
-                    <Nav.Link as={ReactRouterNavLink} to="/login?logOut=true"><LogOut />Sign Out</Nav.Link>
+                    <>
+                        <span className="header-username d-none d-md-inline">
+                            {sessionContext.userName}
+                        </span>
+                        <Nav.Link as={ReactRouterNavLink} to="/login?logOut=true" aria-label="Sign out">
+                            <LogOut />
+                        </Nav.Link>
+                    </>
                 }
             </div>
         </div>

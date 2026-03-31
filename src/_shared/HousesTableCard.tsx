@@ -1,9 +1,9 @@
 import { useContext, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { getAuthToken } from "../auth/auth";
 import SessionContext, { type BasicInstallationInfo } from "../_util/SessionContext";
 import { useHouseTableSelection } from "../_util/HouseTableSelectionContext";
 import { parsePathname } from "../_util/urlUtility";
-import { getVisualizerAuthToken } from "../visualizer/visualizerAuth";
 
 import "../InstallationsPage.css";
 
@@ -48,7 +48,7 @@ export default function HousesTableCard() {
     const { isMultiSelectMode, morningSelectedIds, toggleMorningSelect } =
         useHouseTableSelection();
 
-    const token = getVisualizerAuthToken();
+    const token = getAuthToken();
     const homes = useMemo(
         () => session?.installations ?? [],
         [session?.installations],
@@ -152,9 +152,8 @@ export default function HousesTableCard() {
     return (
         <div className="houses-table-at-top mb-4">
             {!token && (
-                <p className="text-muted mb-3">
-                    Sign in with your visualizer credentials to load homes from the
-                    database (same flow as the backoffice table).
+                    <p className="text-muted mb-3">
+                    Sign in to load homes into the shared table.
                 </p>
             )}
 

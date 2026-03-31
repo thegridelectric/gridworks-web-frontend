@@ -26,6 +26,18 @@ header .navbar-nav {
     margin-right: 0.75rem !important;
 }
 
+header .header-user-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+header .header-username {
+    color: var(--text-color);
+    font-size: 0.95rem;
+    opacity: 0.8;
+}
+
 header .navbar-toggler {
     border-color: var(--border-color);
 }

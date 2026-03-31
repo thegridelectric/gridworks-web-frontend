@@ -1,8 +1,9 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { DateTime } from "luxon";
 import './VisualizerPage.css';
+import { getAuthToken } from "../auth/auth";
 import InstallationPicker from "../_shared/InstallationPicker";
-import { useLocation } from "react-router";
+import { Navigate, useLocation } from "react-router";
 import { parsePathname } from "../_util/urlUtility";
 import SessionContext, { installationForRouteId } from "../_util/SessionContext";
 import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
@@ -10,8 +11,6 @@ import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
 import { getDarkModeForVisualizer } from "./visualizerDarkMode";
 import VisualizerServerPlots from "./VisualizerServerPlots";
 import type { VisualizerPlotsApiResponse } from "./visualizerApiTypes";
-import { getVisualizerAuthToken } from "./visualizerAuth";
-import VisualizerSignInForm from "./VisualizerSignInForm";
 
 const CHANNEL_OPTION_GROUPS = [
     {
@@ -117,7 +116,6 @@ export default function VisualizerPage() {
     const [isShowingOptions, setIsShowingOptions] = useState(false);
     const [showPoints, setShowPoints] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
-    const [, setAuthTick] = useState(0);
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -127,8 +125,13 @@ export default function VisualizerPage() {
 
     const installation = installationForRouteId(session?.installations, currentInstallationId);
     const houseAlias = (installation?.houseAlias?.trim() || installation?.id || '').trim();
-    const hasVisualizerToken = !!getVisualizerAuthToken();
+    const authToken = getAuthToken();
     const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);
+
+    if (!authToken) {
+        return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
+    }
+    const token = authToken;
 
     const isPageFocusedRef = useRef(true);
     const blockPlotRef = useRef(false);
@@ -159,12 +162,6 @@ export default function VisualizerPage() {
         }
         if (!houseAlias) {
             setPlotError('Could not resolve a house alias for this installation.');
-            return;
-        }
-
-        const token = getVisualizerAuthToken();
-        if (!token) {
-            setPlotError('Sign in to the visualizer API above (same credentials as the backoffice login page).');
             return;
         }
 
@@ -281,12 +278,6 @@ export default function VisualizerPage() {
         }
         if (!houseAlias) {
             setPlotError('Could not resolve a house alias for this installation.');
-            return;
-        }
-
-        const token = getVisualizerAuthToken();
-        if (!token) {
-            setPlotError('Sign in to the visualizer API above (same credentials as the backoffice login page).');
             return;
         }
 
@@ -433,9 +424,6 @@ export default function VisualizerPage() {
                 </div>
             </div>
             <div className="p-4">
-                {!hasVisualizerToken &&
-                    <VisualizerSignInForm onSuccess={() => setAuthTick((t) => t + 1)} />
-                }
                 <div className="mb-4">
                     <label className="form-label">Selected House</label>
                     <div className="selected-house-picker">

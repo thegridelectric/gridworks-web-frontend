@@ -1,13 +1,13 @@
 import { useContext, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import JSZip from 'jszip';
+import { Navigate, useLocation } from 'react-router';
 
+import { getAuthToken } from '../auth/auth';
 import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/HouseTableSelectionContext';
 import { downloadElectricityUseCsv } from '../visualizer/fetchElectricityUseCsv';
 import { fetchElectricityUse } from '../visualizer/fetchElectricityUse';
-import { getVisualizerAuthToken } from '../visualizer/visualizerAuth';
 import { getDarkModeForVisualizer } from '../visualizer/visualizerDarkMode';
-import VisualizerSignInForm from '../visualizer/VisualizerSignInForm';
 import {
   formatDate,
   formatTime,
@@ -27,10 +27,15 @@ const LABEL_MUTED: CSSProperties = {
 
 export default function HourlyDataExportPage() {
   const session = useContext(SessionContext);
+  const location = useLocation();
   const { morningSelectedIds } = useHouseTableSelection();
 
-  const [, setAuthTick] = useState(0);
-  const token = getVisualizerAuthToken();
+  const authToken = getAuthToken();
+
+  if (!authToken) {
+    return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
+  }
+  const token = authToken;
 
   const hourlyPlotHostRef = useRef<HTMLDivElement>(null);
   const hourlyPlotBlobUrlsRef = useRef<string[]>([]);
@@ -129,10 +134,6 @@ export default function HourlyDataExportPage() {
 
   async function onHourlyCsv() {
     setError(null);
-    if (!token) {
-      setError('Sign in to the visualizer API first.');
-      return;
-    }
     if (hourlyAliases.length === 0) {
       setError('No house aliases available for hourly export.');
       return;
@@ -162,10 +163,6 @@ export default function HourlyDataExportPage() {
 
   async function onHourlyPlot() {
     setError(null);
-    if (!token) {
-      setError('Sign in to the visualizer API first.');
-      return;
-    }
     if (hourlyAliases.length === 0) {
       setError('No house aliases available for hourly plot.');
       return;
@@ -260,14 +257,6 @@ export default function HourlyDataExportPage() {
 
   return (
     <div className="data-export-page">
-      {!token && (
-        <div className="card visualizer-card mb-4">
-          <div className="p-4">
-            <VisualizerSignInForm onSuccess={() => setAuthTick((t) => t + 1)} />
-          </div>
-        </div>
-      )}
-
       {error && (
         <div className="alert alert-danger mb-3" role="alert">
           {error}
@@ -405,4 +394,3 @@ export default function HourlyDataExportPage() {
     </div>
   );
 }
-

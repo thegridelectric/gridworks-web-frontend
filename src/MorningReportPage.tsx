@@ -1,16 +1,16 @@
 import { useContext, useMemo, useState } from 'react';
 import { DateTime } from 'luxon';
 import { Modal } from 'react-bootstrap';
+import { Navigate, useLocation } from 'react-router';
 
 import SessionContext, { type BasicInstallationInfo } from './_util/SessionContext';
 import { useHouseTableSelection } from './_util/HouseTableSelectionContext';
+import { getAuthToken } from './auth/auth';
 import {
     fetchVisualizerMessages,
     type VisualizerMessagesTablePayload,
 } from './visualizer/fetchVisualizerMessages';
-import { getVisualizerAuthToken } from './visualizer/visualizerAuth';
 import { getDarkModeForVisualizer } from './visualizer/visualizerDarkMode';
-import VisualizerSignInForm from './visualizer/VisualizerSignInForm';
 
 import './visualizer/VisualizerPage.css';
 import './MorningReportPage.css';
@@ -125,8 +125,8 @@ function selectedHouseFieldValue(
  */
 function MorningReportPageContent() {
     const session = useContext(SessionContext);
+    const location = useLocation();
     const { morningSelectedIds } = useHouseTableSelection();
-    const [, setAuthTick] = useState(0);
 
     const [startDateTime, setStartDateTime] = useState(() => getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(() => getDefaultDate(false));
@@ -138,8 +138,13 @@ function MorningReportPageContent() {
     const [isLoading, setIsLoading] = useState(false);
     const [detailRowIndex, setDetailRowIndex] = useState<number | null>(null);
 
-    const token = getVisualizerAuthToken();
+    const authToken = getAuthToken();
     const installations = session?.installations ?? [];
+
+    if (!authToken) {
+        return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
+    }
+    const token = authToken;
 
     const houseAliasParam = useMemo(
         () => aliasesForQuery(morningSelectedIds, installations),
@@ -173,11 +178,6 @@ function MorningReportPageContent() {
         e.preventDefault();
         setError(null);
         setTableData(null);
-
-        if (!token) {
-            setError('Sign in to the visualizer API first.');
-            return;
-        }
 
         const types = [...selectedTypes];
         if (types.length === 0) {
@@ -246,10 +246,6 @@ function MorningReportPageContent() {
                     </div>
                 </div>
                 <div className="p-4 morning-report-card-body">
-                    {!token && (
-                        <VisualizerSignInForm onSuccess={() => setAuthTick((t) => t + 1)} />
-                    )}
-
                     <form onSubmit={onSubmit}>
                         <div className="mb-4">
                             <label

@@ -1,6 +1,6 @@
-import { getVisualizerApiBaseUrl } from './fetchVisualizerPlots';
+import { getVisualizerApiBaseUrl } from '../visualizer/fetchVisualizerPlots';
 
-export async function loginToVisualizer(username: string, password: string): Promise<void> {
+export async function login(username: string, password: string): Promise<void> {
     const base = getVisualizerApiBaseUrl();
     const res = await fetch(`${base}/login`, {
         method: 'POST',
@@ -26,11 +26,11 @@ export async function loginToVisualizer(username: string, password: string): Pro
     localStorage.setItem('username', username.trim());
 }
 
-export function clearVisualizerAuth(): void {
+export function clearAuth(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
 }
 
-export function getVisualizerAuthToken(): string | null {
+export function getAuthToken(): string | null {
     return localStorage.getItem('token');
 }

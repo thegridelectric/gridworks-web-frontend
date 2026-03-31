@@ -5,8 +5,8 @@ import { Spinner } from "react-bootstrap";
 import GridworksApi from './_util/GridWorksApi';
 import SessionContext, { type Session } from "./_util/SessionContext";
 import HeaderLayout from "./_layout/HeaderLayout";
+import { getAuthToken } from "./auth/auth";
 import { fetchVisualizerHomes, housesToInstallations } from "./visualizer/fetchVisualizerHomes";
-import { getVisualizerAuthToken } from "./visualizer/visualizerAuth";
 
 
 
@@ -35,7 +35,7 @@ export default function App({ children }: React.PropsWithChildren) {
                 if (cancelled) return;
                 let installations = sessionRes.data.installations ?? [];
                 let homesError: string | null = null;
-                const token = getVisualizerAuthToken();
+                const token = getAuthToken();
                 if (installations.length === 0 && token) {
                     try {
                         const houses = await fetchVisualizerHomes(token);
@@ -57,8 +57,26 @@ export default function App({ children }: React.PropsWithChildren) {
                     });
                 }
             } catch {
-                if (!cancelled) {
-                    setSession(null);
+                const token = getAuthToken();
+                if (!token) {
+                    if (!cancelled) {
+                        setSession(null);
+                    }
+                    return;
+                }
+                try {
+                    const houses = await fetchVisualizerHomes(token);
+                    if (!cancelled) {
+                        setSession({
+                            userName: localStorage.getItem('username') || 'Visualizer user',
+                            installations: housesToInstallations(houses),
+                            homesError: null,
+                        });
+                    }
+                } catch {
+                    if (!cancelled) {
+                        setSession(null);
+                    }
                 }
             } finally {
                 if (!cancelled) {

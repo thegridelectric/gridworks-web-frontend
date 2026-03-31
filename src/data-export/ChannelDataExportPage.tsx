@@ -1,11 +1,10 @@
 import { useContext, useState, type CSSProperties } from 'react';
-import { useLocation } from 'react-router';
+import { Navigate, useLocation } from 'react-router';
 
+import { getAuthToken } from '../auth/auth';
 import SessionContext, { installationForRouteId } from '../_util/SessionContext';
 import { parsePathname } from '../_util/urlUtility';
 import { requestVisualizerCsv } from '../visualizer/fetchVisualizerCsv';
-import { getVisualizerAuthToken } from '../visualizer/visualizerAuth';
-import VisualizerSignInForm from '../visualizer/VisualizerSignInForm';
 import InstallationPicker from '../_shared/InstallationPicker';
 import {
   ALL_CHANNEL_IDS,
@@ -32,8 +31,12 @@ export default function ChannelDataExportPage() {
   const { currentInstallationId } = parsePathname(location.pathname);
   const installation = installationForRouteId(session?.installations, currentInstallationId);
 
-  const [, setAuthTick] = useState(0);
-  const token = getVisualizerAuthToken();
+  const authToken = getAuthToken();
+
+  if (!authToken) {
+    return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
+  }
+  const token = authToken;
 
   const houseAliasForCsv = (installation?.houseAlias?.trim() || installation?.id || '').trim();
 
@@ -70,10 +73,6 @@ export default function ChannelDataExportPage() {
 
   async function onChannelCsv() {
     setError(null);
-    if (!token) {
-      setError('Sign in to the visualizer API first.');
-      return;
-    }
     if (!houseAliasForCsv) {
       setError('Select a house first.');
       return;
@@ -124,14 +123,6 @@ export default function ChannelDataExportPage() {
 
   return (
     <div className="data-export-page">
-      {!token && (
-        <div className="card visualizer-card mb-4">
-          <div className="p-4">
-            <VisualizerSignInForm onSuccess={() => setAuthTick((t) => t + 1)} />
-          </div>
-        </div>
-      )}
-
       {error && (
         <div className="alert alert-danger mb-3" role="alert">
           {error}
@@ -305,4 +296,3 @@ export default function ChannelDataExportPage() {
     </div>
   );
 }
-

@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { loginToVisualizer } from './visualizerAuth';
+import { login } from './auth';
 
-interface VisualizerSignInFormProps {
+interface SignInFormProps {
     onSuccess: () => void;
 }
 
-export default function VisualizerSignInForm({ onSuccess }: VisualizerSignInFormProps) {
+export default function SignInForm({ onSuccess }: SignInFormProps) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -16,7 +16,7 @@ export default function VisualizerSignInForm({ onSuccess }: VisualizerSignInForm
         setError(null);
         setSubmitting(true);
         try {
-            await loginToVisualizer(username, password);
+            await login(username, password);
             onSuccess();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Sign-in failed');
@@ -27,9 +27,9 @@ export default function VisualizerSignInForm({ onSuccess }: VisualizerSignInForm
 
     return (
         <div className="visualizer-sign-in border rounded p-3 mb-4" style={{ maxWidth: '420px', borderColor: 'var(--bs-border-color, #444)' }}>
-            <h6 className="mb-2">Visualizer API sign-in</h6>
+            <h6 className="mb-2">Sign in</h6>
             <p className="small text-secondary mb-3">
-                Plots are loaded from the visualizer service. Use the same username and password as the backoffice login page.
+                Sign in to continue loading app data.
             </p>
             <form onSubmit={onSubmit}>
                 {error && <div className="alert alert-danger py-2 small mb-2" role="alert">{error}</div>}
@@ -52,7 +52,7 @@ export default function VisualizerSignInForm({ onSuccess }: VisualizerSignInForm
                     required
                 />
                 <button type="submit" className="btn btn-sm btn-primary" disabled={submitting}>
-                    {submitting ? 'Signing in…' : 'Sign in to visualizer'}
+                    {submitting ? 'Signing in…' : 'Sign in'}
                 </button>
             </form>
         </div>

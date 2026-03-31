@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
+import { clearAuth, login } from "./auth/auth";
 import HeaderLayout from "./_layout/HeaderLayout";
-import { clearVisualizerAuth, loginToVisualizer } from "./visualizer/visualizerAuth";
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [searchParams] = useSearchParams();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
@@ -13,7 +14,7 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (searchParams.get("logOut") === "true") {
-            clearVisualizerAuth();
+            clearAuth();
         }
     }, [searchParams]);
 
@@ -22,8 +23,11 @@ export default function LoginPage() {
         setError(null);
         setSubmitting(true);
         try {
-            await loginToVisualizer(username, password);
-            navigate("/installations/", { replace: true });
+            await login(username, password);
+            const from = typeof location.state === 'object' && location.state && 'from' in location.state
+                ? location.state.from
+                : null;
+            navigate(typeof from === 'string' ? from : "/installations/", { replace: true });
         } catch (err) {
             setError(err instanceof Error ? err.message : "Sign-in failed");
         } finally {
