@@ -1,9 +1,9 @@
 import { BarChart, List, Table, Settings, Sun, Clock, Info } from 'feather-icons-react';
-import { NavLink as ReactRouterNavLink, useLocation } from 'react-router';
+import { NavLink as ReactRouterNavLink } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 import { useContext } from 'react';
 import SessionContext, { installationForRouteId } from '../_util/SessionContext';
-import { parsePathname } from '../_util/urlUtility';
+import { useRouteInfo } from '../_util/useRouteInfo';
 
 
 //  We use Bootstrap navs to get the look/feel/functionality, but we need them
@@ -19,9 +19,7 @@ import { parsePathname } from '../_util/urlUtility';
 // Logout
 
 export default function SidebarNav() {
-
-    const location = useLocation();
-    const { currentInstallationId } = parsePathname(location.pathname);
+    const { currentInstallationId } = useRouteInfo();
 
     const sessionContext = useContext(SessionContext);
     const installationName = installationForRouteId(sessionContext?.installations, currentInstallationId)?.displayName ?? null;

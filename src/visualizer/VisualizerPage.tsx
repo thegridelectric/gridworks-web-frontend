@@ -4,8 +4,8 @@ import './VisualizerPage.css';
 import { getAuthToken, isAdminUser } from "../auth/auth";
 import InstallationPicker from "../_shared/InstallationPicker";
 import { Navigate, useLocation } from "react-router";
-import { parsePathname } from "../_util/urlUtility";
 import SessionContext, { installationForRouteId } from "../_util/SessionContext";
+import { useRouteInfo } from "../_util/useRouteInfo";
 import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
 import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
 import { getDarkModeForVisualizer } from "./visualizerDarkMode";
@@ -119,7 +119,7 @@ export default function VisualizerPage() {
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     const location = useLocation();
-    const { currentInstallationId, pathRoot } = parsePathname(location.pathname);
+    const { currentInstallationId, pathRoot } = useRouteInfo();
     const session = useContext(SessionContext);
 
     const installation = installationForRouteId(session?.installations, currentInstallationId);
@@ -332,7 +332,7 @@ export default function VisualizerPage() {
             if (!autoRefreshRef.current || document.hidden || !isPageFocusedRef.current) {
                 return;
             }
-            if (parsePathname(location.pathname).pathRoot !== 'visualizer') {
+            if (pathRoot !== 'visualizer') {
                 return;
             }
             if (blockPlotRef.current) {
@@ -353,7 +353,7 @@ export default function VisualizerPage() {
 
         const checkPageFocus = () => {
             isPageFocusedRef.current = document.hasFocus();
-            const onVisualizerRoute = parsePathname(location.pathname).pathRoot === 'visualizer';
+            const onVisualizerRoute = pathRoot === 'visualizer';
             const allow =
                 isPageFocusedRef.current &&
                 !document.hidden &&

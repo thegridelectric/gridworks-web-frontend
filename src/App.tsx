@@ -1,12 +1,10 @@
-import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router";
 import { Spinner } from "react-bootstrap";
 
-import GridworksApi from './_util/GridWorksApi';
-import SessionContext, { type Session } from "./_util/SessionContext";
+import SessionContext from "./_util/SessionContext";
 import HeaderLayout from "./_layout/HeaderLayout";
-import { getAuthToken, getDisplayUserName } from "./auth/auth";
-import { fetchVisualizerHomes, housesToInstallations } from "./visualizer/fetchVisualizerHomes";
+import { getAuthToken } from "./auth/auth";
+import { useAppSession } from "./auth/useAppSession";
 
 
 
@@ -20,86 +18,14 @@ export default function App({ children }: React.PropsWithChildren) {
         return <Navigate to={`${location.pathname}/`} replace />;
     }
 
-    const [isLoadingSession, setIsLoadingSession] = useState(true);
-    const [session, setSession] = useState<Session | null>(null);
-
     const loadSession = location.pathname !== '/login/';
+    const { isLoadingSession, session, hasResolvedSession } = useAppSession(loadSession);
     if (loadSession && !authToken) {
         return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
     }
-    useEffect(() => {
-        if (!loadSession) {
-            return;
-        }
-        let cancelled = false;
-        setIsLoadingSession(true);
-        (async () => {
-            try {
-                const sessionRes = await GridworksApi.get<Session>('/api/v2/session');
-                if (cancelled) return;
-                let installations = sessionRes.data.installations ?? [];
-                let userName = sessionRes.data.userName;
-                let homesError: string | null = null;
-                const token = getAuthToken();
-                if (installations.length === 0 && token) {
-                    try {
-                        const houses = await fetchVisualizerHomes(token);
-                        if (!cancelled) {
-                            installations = housesToInstallations(houses);
-                            userName = getDisplayUserName();
-                        }
-                    } catch (e) {
-                        if (!cancelled) {
-                            homesError =
-                                e instanceof Error ? e.message : 'Unknown error';
-                        }
-                    }
-                }
-                if (!cancelled) {
-                    setSession({
-                        userName,
-                        installations,
-                        homesError,
-                    });
-                }
-            } catch {
-                const token = getAuthToken();
-                if (!token) {
-                    if (!cancelled) {
-                        setSession(null);
-                    }
-                    return;
-                }
-                try {
-                    const houses = await fetchVisualizerHomes(token);
-                    if (!cancelled) {
-                        setSession({
-                            userName: getDisplayUserName(),
-                            installations: housesToInstallations(houses),
-                            homesError: null,
-                        });
-                    }
-                } catch {
-                    if (!cancelled) {
-                        setSession(null);
-                    }
-                }
-            } finally {
-                if (!cancelled) {
-                    setIsLoadingSession(false);
-                }
-            }
-        })();
-        return () => {
-            cancelled = true;
-        };
-        // Intentionally omit `location.pathname`: installation id lives in the path (e.g.
-        // `/parameters/{id}/`); changing it must not refetch session or show the loading spinner.
-    }, [loadSession]);
 
     if (loadSession) {
-
-        if (isLoadingSession) {
+        if (isLoadingSession || !hasResolvedSession) {
             return <HeaderLayout>
                 <Spinner animation="border" role="status" />
             </HeaderLayout>

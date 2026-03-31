@@ -1,5 +1,4 @@
 import { useContext, useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router";
 
 import './RealTimeStatusPage.css';
 import RealTimeStatusHeader from "./RealTimeStatusHeader";
@@ -8,8 +7,8 @@ import RealTimeStatusThermostatTable from "./RealTimeStatusThermostatTable";
 import { Spinner } from "react-bootstrap";
 import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
 import InstallationPicker from "../_shared/InstallationPicker";
-import { parsePathname } from "../_util/urlUtility";
 import SessionContext, { installationForRouteId } from "../_util/SessionContext";
+import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketUrl } from "../visualizer/fetchVisualizerPlots";
 
 interface RelayInfo {
@@ -66,8 +65,7 @@ export default function RealTimeStatusPage() {
 
     const wsRef = useRef<WebSocket | null>(null);
 
-    const location = useLocation();
-    const { currentInstallationId } = parsePathname(location.pathname);
+    const { currentInstallationId } = useRouteInfo();
     const session = useContext(SessionContext);
 
     const installation = installationForRouteId(session?.installations, currentInstallationId);

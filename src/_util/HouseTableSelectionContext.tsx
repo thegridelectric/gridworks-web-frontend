@@ -6,16 +6,14 @@ import {
     useMemo,
     useState,
 } from 'react';
-import { useLocation } from 'react-router';
-
-import { parsePathname } from './urlUtility';
+import { useRouteInfo } from './useRouteInfo';
 
 export type HouseTableSelectionContextValue = {
     /** On multi-select pages, table rows toggle selection instead of changing the URL. */
-    isMultiSelectMode: boolean;
-    morningSelectedIds: ReadonlySet<string>;
-    toggleMorningSelect: (installationId: string) => void;
-    clearMorningSelection: () => void;
+    isSelectionMode: boolean;
+    selectedInstallationIds: ReadonlySet<string>;
+    toggleInstallationSelection: (installationId: string) => void;
+    clearInstallationSelection: () => void;
 };
 
 const HouseTableSelectionContext = createContext<HouseTableSelectionContextValue | null>(
@@ -23,22 +21,21 @@ const HouseTableSelectionContext = createContext<HouseTableSelectionContextValue
 );
 
 export function HouseTableSelectionProvider({ children }: React.PropsWithChildren) {
-    const location = useLocation();
-    const { pathRoot } = parsePathname(location.pathname);
+    const { pathRoot } = useRouteInfo();
     const isMulti = pathRoot === 'morning-report' || pathRoot === 'data-export-hourly';
 
-    const [morningSelectedIds, setMorningSelectedIds] = useState<Set<string>>(
+    const [selectedInstallationIds, setSelectedInstallationIds] = useState<Set<string>>(
         () => new Set(),
     );
 
     useEffect(() => {
         if (!isMulti) {
-            setMorningSelectedIds(new Set());
+            setSelectedInstallationIds(new Set());
         }
     }, [isMulti]);
 
-    const toggleMorningSelect = useCallback((installationId: string) => {
-        setMorningSelectedIds((prev) => {
+    const toggleInstallationSelection = useCallback((installationId: string) => {
+        setSelectedInstallationIds((prev) => {
             const next = new Set(prev);
             if (next.has(installationId)) {
                 next.delete(installationId);
@@ -49,18 +46,18 @@ export function HouseTableSelectionProvider({ children }: React.PropsWithChildre
         });
     }, []);
 
-    const clearMorningSelection = useCallback(() => {
-        setMorningSelectedIds(new Set());
+    const clearInstallationSelection = useCallback(() => {
+        setSelectedInstallationIds(new Set());
     }, []);
 
     const value = useMemo<HouseTableSelectionContextValue>(
         () => ({
-            isMultiSelectMode: isMulti,
-            morningSelectedIds,
-            toggleMorningSelect,
-            clearMorningSelection,
+            isSelectionMode: isMulti,
+            selectedInstallationIds,
+            toggleInstallationSelection,
+            clearInstallationSelection,
         }),
-        [isMulti, morningSelectedIds, toggleMorningSelect, clearMorningSelection],
+        [isMulti, selectedInstallationIds, toggleInstallationSelection, clearInstallationSelection],
     );
 
     return (

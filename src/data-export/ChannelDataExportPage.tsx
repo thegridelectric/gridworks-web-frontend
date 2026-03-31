@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router';
 
 import { getAuthToken } from '../auth/auth';
 import SessionContext, { installationForRouteId } from '../_util/SessionContext';
-import { parsePathname } from '../_util/urlUtility';
+import { useRouteInfo } from '../_util/useRouteInfo';
 import { requestVisualizerCsv } from '../visualizer/fetchVisualizerCsv';
 import InstallationPicker from '../_shared/InstallationPicker';
 import {
@@ -28,7 +28,7 @@ const LABEL_MUTED: CSSProperties = {
 export default function ChannelDataExportPage() {
   const session = useContext(SessionContext);
   const location = useLocation();
-  const { currentInstallationId } = parsePathname(location.pathname);
+  const { currentInstallationId } = useRouteInfo();
   const installation = installationForRouteId(session?.installations, currentInstallationId);
 
   const authToken = getAuthToken();

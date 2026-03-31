@@ -125,7 +125,7 @@ function selectedHouseFieldValue(
 function MorningReportPageContent() {
     const session = useContext(SessionContext);
     const location = useLocation();
-    const { morningSelectedIds } = useHouseTableSelection();
+    const { selectedInstallationIds } = useHouseTableSelection();
 
     const [startDateTime, setStartDateTime] = useState(() => getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(() => getDefaultDate(false));
@@ -146,13 +146,13 @@ function MorningReportPageContent() {
     const token = authToken;
 
     const houseAliasParam = useMemo(
-        () => aliasesForQuery(morningSelectedIds, installations),
-        [morningSelectedIds, installations],
+        () => aliasesForQuery(selectedInstallationIds, installations),
+        [selectedInstallationIds, installations],
     );
 
     const selectedHouseDisplay = useMemo(
-        () => selectedHouseFieldValue(morningSelectedIds, installations),
-        [morningSelectedIds, installations],
+        () => selectedHouseFieldValue(selectedInstallationIds, installations),
+        [selectedInstallationIds, installations],
     );
 
     function setNowEnd() {

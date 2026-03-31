@@ -1,15 +1,13 @@
 import { useContext, useMemo } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import SessionContext from "../_util/SessionContext";
-import { parsePathname } from "../_util/urlUtility";
+import { useRouteInfo } from "../_util/useRouteInfo";
 
 export default function InstallationPicker() {
 
     const session = useContext(SessionContext);
     const navigate = useNavigate();
-
-    const location = useLocation();
-    const { pathRoot, currentInstallationId } = parsePathname(location.pathname);
+    const { pathRoot, currentInstallationId } = useRouteInfo();
 
     const installationsSorted = useMemo(() => {
         const list = session?.installations ?? [];

@@ -1,10 +1,8 @@
-import { Navigate, useLocation } from 'react-router';
-
-import { parsePathname } from './_util/urlUtility';
+import { Navigate } from 'react-router';
+import { useRouteInfo } from './_util/useRouteInfo';
 
 export default function DataExportPage() {
-    const location = useLocation();
-    const { currentInstallationId } = parsePathname(location.pathname);
+    const { currentInstallationId } = useRouteInfo();
     const suffix = currentInstallationId ? `${currentInstallationId}/` : '';
     return <Navigate to={`/data-export-channel/${suffix}`} replace />;
 }

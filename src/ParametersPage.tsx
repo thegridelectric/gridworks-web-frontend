@@ -1,5 +1,4 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
-import { useLocation } from 'react-router';
 import Plot from 'react-plotly.js';
 
 import InstallationPicker from './_shared/InstallationPicker';
@@ -7,7 +6,7 @@ import SessionContext, {
     installationForRouteId,
     type BasicInstallationInfo,
 } from './_util/SessionContext';
-import { parsePathname } from './_util/urlUtility';
+import { useRouteInfo } from './_util/useRouteInfo';
 import {
     applyCrossFieldConstraints,
     buildParametersFigures,
@@ -168,8 +167,7 @@ function ParametersCard({ installation }: { installation: BasicInstallationInfo 
 }
 
 export default function ParametersPage() {
-    const location = useLocation();
-    const { currentInstallationId } = parsePathname(location.pathname);
+    const { currentInstallationId } = useRouteInfo();
     const session = useContext(SessionContext);
     const installation = installationForRouteId(session?.installations, currentInstallationId);
 

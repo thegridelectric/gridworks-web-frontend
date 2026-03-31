@@ -1,9 +1,8 @@
 import { useContext, useMemo, useState } from 'react';
-import { useLocation } from 'react-router';
 
 import InstallationPicker from './_shared/InstallationPicker';
 import SessionContext, { installationForRouteId } from './_util/SessionContext';
-import { parsePathname } from './_util/urlUtility';
+import { useRouteInfo } from './_util/useRouteInfo';
 
 import './visualizer/VisualizerPage.css';
 import './InformationPage.css';
@@ -12,8 +11,7 @@ type InfoSection = 'address' | 'contact' | 'status' | 'hardware';
 
 export default function InformationPage() {
   const session = useContext(SessionContext);
-  const location = useLocation();
-  const { currentInstallationId } = parsePathname(location.pathname);
+  const { currentInstallationId } = useRouteInfo();
   const installation = installationForRouteId(session?.installations, currentInstallationId);
 
   const [activeSection, setActiveSection] = useState<InfoSection | null>(null);
@@ -192,4 +190,3 @@ export default function InformationPage() {
     </div>
   );
 }
-

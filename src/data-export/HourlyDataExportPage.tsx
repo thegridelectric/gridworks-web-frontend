@@ -28,7 +28,7 @@ const LABEL_MUTED: CSSProperties = {
 export default function HourlyDataExportPage() {
   const session = useContext(SessionContext);
   const location = useLocation();
-  const { morningSelectedIds } = useHouseTableSelection();
+  const { selectedInstallationIds } = useHouseTableSelection();
 
   const authToken = getAuthToken();
 
@@ -86,10 +86,10 @@ export default function HourlyDataExportPage() {
     return aliases.join(', ');
   }
 
-  const hourlyAliases = useMemo(() => aliasesForHourlyQuery(morningSelectedIds, installations), [morningSelectedIds, installations]);
+  const hourlyAliases = useMemo(() => aliasesForHourlyQuery(selectedInstallationIds, installations), [selectedInstallationIds, installations]);
   const hourlySelectedHouseDisplay = useMemo(
-    () => selectedHouseFieldValue(morningSelectedIds, installations),
-    [morningSelectedIds, installations],
+    () => selectedHouseFieldValue(selectedInstallationIds, installations),
+    [selectedInstallationIds, installations],
   );
 
   const [hourlyStart, setHourlyStart] = useState(() => getDefaultDate(true));
