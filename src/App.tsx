@@ -33,10 +33,10 @@ export default function App({ children }: React.PropsWithChildren) {
             try {
                 const sessionRes = await GridworksApi.get<Session>('/api/v2/session');
                 if (cancelled) return;
-                const token = getVisualizerAuthToken();
                 let installations = sessionRes.data.installations ?? [];
                 let homesError: string | null = null;
-                if (token) {
+                const token = getVisualizerAuthToken();
+                if (installations.length === 0 && token) {
                     try {
                         const houses = await fetchVisualizerHomes(token);
                         if (!cancelled) {
