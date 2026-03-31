@@ -14,8 +14,13 @@ export function useVisualizerAutoRefresh(params: {
     const autoRefreshRef = useRef(autoRefresh);
     const blockRefreshRef = useRef(isBusy);
 
-    autoRefreshRef.current = autoRefresh;
-    blockRefreshRef.current = isBusy;
+    useEffect(() => {
+        autoRefreshRef.current = autoRefresh;
+    }, [autoRefresh]);
+
+    useEffect(() => {
+        blockRefreshRef.current = isBusy;
+    }, [isBusy]);
 
     useEffect(() => {
         if (!autoRefresh || pathRoot !== 'visualizer') {

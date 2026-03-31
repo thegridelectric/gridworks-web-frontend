@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 
 import { getRequiredAuthToken } from '../auth/auth';
 import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
-import { useHouseTableSelection } from '../_util/HouseTableSelectionContext';
+import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
   formatDate,
   formatTime,
@@ -29,6 +29,7 @@ const LABEL_MUTED: CSSProperties = {
   fontSize: '0.875rem',
   color: 'var(--text-muted)',
 };
+const EMPTY_INSTALLATIONS: BasicInstallationInfo[] = [];
 
 export default function HourlyDataExportPage() {
   const session = useContext(SessionContext);
@@ -39,7 +40,7 @@ export default function HourlyDataExportPage() {
   const hourlyPlotHostRef = useRef<HTMLDivElement>(null);
   const hourlyPlotBlobUrlsRef = useRef<string[]>([]);
 
-  const installations = session?.installations ?? [];
+  const installations = session?.installations ?? EMPTY_INSTALLATIONS;
 
   function aliasesForHourlyQuery(selectedIds: ReadonlySet<string>, installs: BasicInstallationInfo[]): string[] {
     if (installs.length === 0) {

@@ -3,7 +3,7 @@ import { Modal } from 'react-bootstrap';
 
 import { getRequiredAuthToken } from '../auth/auth';
 import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
-import { useHouseTableSelection } from '../_util/HouseTableSelectionContext';
+import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
     formatDate,
     formatTime,
@@ -24,6 +24,7 @@ const MESSAGE_TYPES = [
     { value: 'gridworks.event.problem', label: 'gridworks.event.problem' },
     { value: 'glitch', label: 'glitch' },
 ] as const;
+const EMPTY_INSTALLATIONS: BasicInstallationInfo[] = [];
 
 function dataColumnKeys(data: MorningReportMessagesPayload): string[] {
     return Object.keys(data).filter(
@@ -97,7 +98,7 @@ function MorningReportPageContent() {
     const [detailRowIndex, setDetailRowIndex] = useState<number | null>(null);
 
     const token = getRequiredAuthToken();
-    const installations = session?.installations ?? [];
+    const installations = session?.installations ?? EMPTY_INSTALLATIONS;
 
     const houseAliasParam = useMemo(
         () => aliasesForQuery(selectedInstallationIds, installations),

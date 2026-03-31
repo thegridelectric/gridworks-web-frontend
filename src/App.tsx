@@ -11,15 +11,15 @@ import { useAppSession } from "./auth/useAppSession";
 export default function App({ children }: React.PropsWithChildren) {
     const location = useLocation();
     const authToken = getAuthToken();
+    const loadSession = location.pathname !== '/login/';
+    const { isLoadingSession, session, hasResolvedSession } = useAppSession(loadSession);
+
     if (location.pathname === '/') {
         return <Navigate to="/installations/" />;
     }
     if (!location.pathname.endsWith('/')) {
         return <Navigate to={`${location.pathname}/`} replace />;
     }
-
-    const loadSession = location.pathname !== '/login/';
-    const { isLoadingSession, session, hasResolvedSession } = useAppSession(loadSession);
     if (loadSession && !authToken) {
         return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
     }

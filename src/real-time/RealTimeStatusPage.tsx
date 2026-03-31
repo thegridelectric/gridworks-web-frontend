@@ -53,8 +53,10 @@ type DashboardInbound =
     | DashboardErrorMessage
     | { type: string };
 
-export default function RealTimeStatusPage() {
-
+function RealTimeStatusContent({ currentInstallationId, houseAlias }: {
+    currentInstallationId: string | undefined;
+    houseAlias: string;
+}) {
     const [targetGNode, setTargetGNode] = useState('');
     const [thermostatNames, setThermostatNames] = useState<string[] | null>(null);
     const [relays, setRelays] = useState<Record<string, RelayInfo>>({});
@@ -65,21 +67,7 @@ export default function RealTimeStatusPage() {
 
     const wsRef = useRef<WebSocket | null>(null);
 
-    const { currentInstallationId } = useRouteInfo();
-    const session = useContext(SessionContext);
-
-    const installation = installationForRouteId(session?.installations, currentInstallationId);
-    const houseAlias = (installation?.houseAlias?.trim() || '').trim();
-
     useEffect(() => {
-        setTargetGNode('');
-        setThermostatNames(null);
-        setRelays({});
-        setUpdateTime(null);
-        setLatestReadings(null);
-        setIsConnected(false);
-        setErr(null);
-
         if (!currentInstallationId || !houseAlias) {
             return;
         }
@@ -170,6 +158,98 @@ export default function RealTimeStatusPage() {
         ws.send(JSON.stringify({ type: 'request_snapshot', data: {} }));
     }
 
+    return (
+        <>
+            <RealTimeStatusHeader err={err} isConnected={isConnected} targetGNode={targetGNode} />
+            {updateTime &&
+                <RealTimeStatusTimestamp updateTime={updateTime} />
+            }
+            {latestReadings ?
+                <>
+                    <RealTimeStatusSystemDiagram relays={relays} readings={latestReadings} />
+
+                    <div id="dashboard-monitoring-tables">
+                        <RealTimeStatusThermostatTable thermostatNames={thermostatNames} readings={latestReadings} />
+
+                        <div>
+                            <table id="dashboard-hp-power-table">
+                                <thead>
+                                    <tr>
+                                        <th>Heat pump</th>
+                                        <th>kW</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-hp-power-tbody">
+                                    <tr>
+                                        <td>Outdoor Unit</td>
+                                        <td>{((latestReadings['hp-odu-pwr'] ?? 0) / 1000).toFixed(2)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Indoor Unit</td>
+                                        <td>{((latestReadings['hp-idu-pwr'] ?? 0) / 1000).toFixed(2)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total</td>
+                                        <td>{(((latestReadings['hp-idu-pwr'] ?? 0) + (latestReadings['hp-odu-pwr'] ?? 0)) / 1000).toFixed(2)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div>
+                            <table id="dashboard-pump-table">
+                                <thead>
+                                    <tr>
+                                        <th>Pumps</th>
+                                        <th>GPM</th>
+                                        <th>W</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashboard-pump-tbody">
+                                    <tr>
+                                        <td>Primary</td>
+                                        <td>{((latestReadings['primary-flow'] ?? 0) / 100).toFixed(1)}</td>
+                                        <td>{Math.max(0, (latestReadings['primary-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Distribution</td>
+                                        <td>{((latestReadings['dist-flow'] ?? 0) / 100).toFixed(1)}</td>
+                                        <td>{Math.max(0, (latestReadings['dist-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Store</td>
+                                        <td>{((latestReadings['store-flow'] ?? 0) / 100).toFixed(1)}</td>
+                                        <td>{Math.max(0, (latestReadings['store-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </> :
+                <div className="p-3 text-center">
+                    <Spinner />
+                </div>
+            }
+            <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary"
+                title="Request snapshot"
+                aria-label="Request snapshot"
+                disabled={!isConnected}
+                onClick={requestSnapshot}
+            >
+                Snapshot
+            </button>
+        </>
+    );
+}
+
+export default function RealTimeStatusPage() {
+    const { currentInstallationId } = useRouteInfo();
+    const session = useContext(SessionContext);
+    const installation = installationForRouteId(session?.installations, currentInstallationId);
+    const houseAlias = (installation?.houseAlias?.trim() || '').trim();
+
     const installationUnknown =
         !!currentInstallationId && !!session && !installation;
     const houseAliasMissing =
@@ -179,16 +259,6 @@ export default function RealTimeStatusPage() {
         <div className="card visualizer-card mb-4">
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0">Real-time</h5>
-                <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    title="Request snapshot"
-                    aria-label="Request snapshot"
-                    disabled={!isConnected}
-                    onClick={requestSnapshot}
-                >
-                    Snapshot
-                </button>
             </div>
             <div className="p-4">
                 <div className="mb-4">
@@ -203,80 +273,12 @@ export default function RealTimeStatusPage() {
                 {houseAliasMissing &&
                     <p className="text-danger mb-0">Real-time needs a short house alias for this installation (the Alias column from the installations table / backoffice homes list).</p>
                 }
-
                 {currentInstallationId && houseAlias &&
-                    <>
-                        <RealTimeStatusHeader err={err} isConnected={isConnected} targetGNode={targetGNode} />
-                        {updateTime &&
-                            <RealTimeStatusTimestamp updateTime={updateTime} />
-                        }
-                        {latestReadings ?
-                            <>
-                                <RealTimeStatusSystemDiagram relays={relays} readings={latestReadings} />
-
-                                <div id="dashboard-monitoring-tables">
-                                    <RealTimeStatusThermostatTable thermostatNames={thermostatNames} readings={latestReadings} />
-
-                                    <div>
-                                        <table id="dashboard-hp-power-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Heat pump</th>
-                                                    <th>kW</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="dashboard-hp-power-tbody">
-                                                <tr>
-                                                    <td>Outdoor Unit</td>
-                                                    <td>{((latestReadings['hp-odu-pwr'] ?? 0) / 1000).toFixed(2)}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Indoor Unit</td>
-                                                    <td>{((latestReadings['hp-idu-pwr'] ?? 0) / 1000).toFixed(2)}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Total</td>
-                                                    <td>{(((latestReadings['hp-idu-pwr'] ?? 0) + (latestReadings['hp-odu-pwr'] ?? 0)) / 1000).toFixed(2)}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div>
-                                        <table id="dashboard-pump-table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Pumps</th>
-                                                    <th>GPM</th>
-                                                    <th>W</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="dashboard-pump-tbody">
-                                                <tr>
-                                                    <td>Primary</td>
-                                                    <td>{((latestReadings['primary-flow'] ?? 0) / 100).toFixed(1)}</td>
-                                                    <td>{Math.max(0, (latestReadings['primary-pump-pwr'] ?? 0)).toFixed(1)}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Distribution</td>
-                                                    <td>{((latestReadings['dist-flow'] ?? 0) / 100).toFixed(1)}</td>
-                                                    <td>{Math.max(0, (latestReadings['dist-pump-pwr'] ?? 0)).toFixed(1)}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Store</td>
-                                                    <td>{((latestReadings['store-flow'] ?? 0) / 100).toFixed(1)}</td>
-                                                    <td>{Math.max(0, (latestReadings['store-pump-pwr'] ?? 0)).toFixed(1)}</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </> :
-                            <div className="p-3 text-center">
-                                <Spinner />
-                            </div>
-                        }
-                    </>
+                    <RealTimeStatusContent
+                        key={`${currentInstallationId}:${houseAlias}`}
+                        currentInstallationId={currentInstallationId}
+                        houseAlias={houseAlias}
+                    />
                 }
             </div>
         </div>

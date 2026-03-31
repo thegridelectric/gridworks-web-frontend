@@ -16,10 +16,8 @@ import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
 import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
 import VisualizerServerPlots from "./VisualizerServerPlots";
 import type { VisualizerPlotsApiResponse } from "./visualizerApiTypes";
-import {
-    VisualizerOptionsPanel,
-    useVisualizerControls,
-} from "./VisualizerControls";
+import { VisualizerOptionsPanel } from "./VisualizerControls";
+import { useVisualizerControls } from "./useVisualizerControls";
 import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 
 export default function VisualizerPage() {

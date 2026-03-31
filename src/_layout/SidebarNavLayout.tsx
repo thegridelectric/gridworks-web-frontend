@@ -4,10 +4,7 @@ import { HouseTableSelectionProvider } from "../_util/HouseTableSelectionContext
 import Header from "./Header";
 import SidebarNav from "./SidebarNav";
 
-interface SidebarNavLayoutProps extends React.PropsWithChildren {
-}
-
-export default function SidebarNavLayout({ children }: SidebarNavLayoutProps) {
+export default function SidebarNavLayout({ children }: React.PropsWithChildren) {
 
     return <>
         <Header />

@@ -2,7 +2,7 @@ import { useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { getAuthToken } from "../auth/auth";
 import SessionContext, { type BasicInstallationInfo } from "../_util/SessionContext";
-import { useHouseTableSelection } from "../_util/HouseTableSelectionContext";
+import { useHouseTableSelection } from "../_util/useHouseTableSelection";
 import { useRouteInfo } from "../_util/useRouteInfo";
 
 import "../installations/InstallationsPage.css";

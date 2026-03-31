@@ -4,7 +4,7 @@ interface RealTimeStatusTimestampProps {
     updateTime: Date
 }
 
-export default function ({ updateTime }: RealTimeStatusTimestampProps) {
+export default function RealTimeStatusTimestamp({ updateTime }: RealTimeStatusTimestampProps) {
 
     const [currentTime, setCurrentTime] = useState<Date>(new Date());
 

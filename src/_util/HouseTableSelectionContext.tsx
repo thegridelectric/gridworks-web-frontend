@@ -1,40 +1,38 @@
 import {
-    createContext,
     useCallback,
-    useContext,
-    useEffect,
     useMemo,
     useState,
 } from 'react';
 import { useRouteInfo } from './useRouteInfo';
-
-export type HouseTableSelectionContextValue = {
-    /** On multi-select pages, table rows toggle selection instead of changing the URL. */
-    isSelectionMode: boolean;
-    selectedInstallationIds: ReadonlySet<string>;
-    toggleInstallationSelection: (installationId: string) => void;
-    clearInstallationSelection: () => void;
-};
-
-const HouseTableSelectionContext = createContext<HouseTableSelectionContextValue | null>(
-    null,
-);
+import {
+    HouseTableSelectionContext,
+    type HouseTableSelectionContextValue,
+} from './useHouseTableSelection';
 
 export function HouseTableSelectionProvider({ children }: React.PropsWithChildren) {
     const { pathRoot } = useRouteInfo();
     const isMulti = pathRoot === 'morning-report' || pathRoot === 'data-export-hourly';
+    const selectionScopeKey = isMulti ? pathRoot : 'single-select';
 
+    return (
+        <HouseTableSelectionProviderInner key={selectionScopeKey} isSelectionMode={isMulti}>
+            {children}
+        </HouseTableSelectionProviderInner>
+    );
+}
+
+function HouseTableSelectionProviderInner({
+    children,
+    isSelectionMode,
+}: React.PropsWithChildren<{ isSelectionMode: boolean }>) {
     const [selectedInstallationIds, setSelectedInstallationIds] = useState<Set<string>>(
         () => new Set(),
     );
 
-    useEffect(() => {
-        if (!isMulti) {
-            setSelectedInstallationIds(new Set());
-        }
-    }, [isMulti]);
-
     const toggleInstallationSelection = useCallback((installationId: string) => {
+        if (!isSelectionMode) {
+            return;
+        }
         setSelectedInstallationIds((prev) => {
             const next = new Set(prev);
             if (next.has(installationId)) {
@@ -44,7 +42,7 @@ export function HouseTableSelectionProvider({ children }: React.PropsWithChildre
             }
             return next;
         });
-    }, []);
+    }, [isSelectionMode]);
 
     const clearInstallationSelection = useCallback(() => {
         setSelectedInstallationIds(new Set());
@@ -52,12 +50,12 @@ export function HouseTableSelectionProvider({ children }: React.PropsWithChildre
 
     const value = useMemo<HouseTableSelectionContextValue>(
         () => ({
-            isSelectionMode: isMulti,
-            selectedInstallationIds,
+            isSelectionMode,
+            selectedInstallationIds: isSelectionMode ? selectedInstallationIds : new Set(),
             toggleInstallationSelection,
             clearInstallationSelection,
         }),
-        [isMulti, selectedInstallationIds, toggleInstallationSelection, clearInstallationSelection],
+        [isSelectionMode, selectedInstallationIds, toggleInstallationSelection, clearInstallationSelection],
     );
 
     return (
@@ -65,12 +63,4 @@ export function HouseTableSelectionProvider({ children }: React.PropsWithChildre
             {children}
         </HouseTableSelectionContext.Provider>
     );
-}
-
-export function useHouseTableSelection(): HouseTableSelectionContextValue {
-    const ctx = useContext(HouseTableSelectionContext);
-    if (!ctx) {
-        throw new Error('useHouseTableSelection must be used within HouseTableSelectionProvider');
-    }
-    return ctx;
 }
