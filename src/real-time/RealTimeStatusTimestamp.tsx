@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { DateTime } from "luxon";
+
+import { NEW_YORK_TIME_ZONE } from "../_util/newYorkTime";
 
 interface RealTimeStatusTimestampProps {
     updateTime: Date
 }
 
-export default function ({ updateTime }: RealTimeStatusTimestampProps) {
+export default function RealTimeStatusTimestamp({ updateTime }: RealTimeStatusTimestampProps) {
 
     const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
@@ -20,18 +23,9 @@ export default function ({ updateTime }: RealTimeStatusTimestampProps) {
     let formattedTime = 'Unknown';
     let isDataFresh = false;
 
-    // TODO why is this Swedish??
-    // Should we display it in user-local timezone? 
-    formattedTime = updateTime.toLocaleString('sv-SE', {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
+    formattedTime = DateTime.fromJSDate(updateTime)
+        .setZone(NEW_YORK_TIME_ZONE)
+        .toFormat('yyyy-LL-dd HH:mm:ss');
 
     const twoMinutesAgo = new Date(currentTime.getTime() - 2 * 60 * 1000);
     isDataFresh = updateTime > twoMinutesAgo;
@@ -55,7 +49,6 @@ export default function ({ updateTime }: RealTimeStatusTimestampProps) {
         progress = ((seconds - 30) + milliseconds / 1000) / 30 * 100;
     }
 
-    // Set the progress bar width0
     const loaderProgressStyle = { width: Math.min(100, Math.max(0, progress)) + '%' };
 
 

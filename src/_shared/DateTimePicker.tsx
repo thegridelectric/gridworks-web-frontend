@@ -1,8 +1,8 @@
 interface DateTimePickerProps {
-    value: Date,
-    onChange?: any
-    className: string,
-};
+    value: Date;
+    onChange?: (value: Date) => void;
+    className: string;
+}
 
 function formatDate(dt: Date) {
     const year = dt.getFullYear();
@@ -30,7 +30,7 @@ export default function DateTimePicker({ value, onChange, className }: DateTimeP
             result.setDate(parseInt(day));
             result.setHours(value.getHours());
             result.setMinutes(value.getMinutes());
-            onChange(result);
+            onChange?.(result);
         }
     }
 
@@ -44,7 +44,7 @@ export default function DateTimePicker({ value, onChange, className }: DateTimeP
             const [hours, minutes] = timeText.split(':');
             result.setHours(parseInt(hours));
             result.setMinutes(parseInt(minutes));
-            onChange(result);
+            onChange?.(result);
         }
     }
 

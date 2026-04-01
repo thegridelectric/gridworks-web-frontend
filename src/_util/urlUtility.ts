@@ -1,7 +1,13 @@
 export function parsePathname(pathname: string) {
-    const locationRegexMatch = pathname.match(/^\/([\-A-Za-z0-9]+?)(\/([\-A-Fa-f0-9]+))?\/$/);
-    const pathRoot = locationRegexMatch?.[1];
-    const currentInstallationId = locationRegexMatch?.[3];
- 
-    return { pathRoot, currentInstallationId };
+    const parts = pathname.replace(/\/+$/, '').split('/').filter(Boolean);
+    if (parts.length >= 2) {
+        return {
+            pathRoot: parts[0],
+            currentInstallationId: parts.slice(1).join('/'),
+        };
+    }
+    if (parts.length === 1) {
+        return { pathRoot: parts[0], currentInstallationId: undefined };
+    }
+    return { pathRoot: undefined, currentInstallationId: undefined };
 }

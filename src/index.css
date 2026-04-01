@@ -1,6 +1,5 @@
 :root {
 
-  /* Bootstrap CSS vars */
   --bs-blue: #0d6efd;
   --bs-indigo: #6610f2;
   --bs-purple: #6f42c1;
@@ -33,16 +32,27 @@
   --border-color: rgba(0, 0, 0, 0.1);
   --hover-color: #f1f3f5;
   --card-background: #ffffff;
-  --background-color: var(--bs-body-bg);
-
+  --background-color: #f8f9fa;
+  --bs-body-bg: #f8f9fa;
+  --success-color: #28a745;
+  --danger-color: #ff4444;
+  --table-header-bg: #f8f9fa;
+  --table-row-border: rgba(0, 0, 0, 0.1);
+  --selected-house-bg: rgba(56, 77, 164, 0.1);
+  --primary-hover: #2667cc;
 }
+
 
 @media (prefers-color-scheme: dark) {
   :root {
     --bs-body-bg: #141414;
+    --background-color: #141414;
     --border-color: rgba(47, 47, 47, 0.5);
     --hover-color: rgb(32, 32, 32);
     --card-background: #1b1b1c;
+    --table-header-bg: var(--card-background);
+    --table-row-border: rgba(60, 60, 60, 0.3);
+    --selected-house-bg: rgba(56, 77, 164, 0.2);
   }
 }
 
@@ -63,11 +73,11 @@ body {
 }
 
 .main-container {
-  
+  background-color: var(--background-color);
 }
 
-main {
-  background-color: var(--card-background);
+.main-container main {
+  background-color: var(--background-color);
   margin: 1rem auto 2rem auto;
   padding: 1.5rem;
   flex: 1;
@@ -75,6 +85,37 @@ main {
   max-width: 1000px;
 }
 
+main.header-layout {
+  background-color: var(--background-color);
+}
+
 h1 {
   text-align: center;
+}
+
+.card.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  z-index: 1000;
+  border-radius: 0;
+  overflow-y: auto;
+}
+
+.card.fullscreen .p-4 {
+  border-bottom: solid 1px var(--border-color);
+}
+
+body:has(.card.fullscreen) header.navbar,
+body:has(.card.fullscreen) #sidebarMenu {
+  display: none !important;
+}
+
+body:has(.card.fullscreen) .main-container {
+  width: 100%;
+  max-width: 100%;
+  flex: 0 0 100%;
 }

@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import RealTimeStatusSystemDiagramPipes from "./RealTimeStatusSystemDiagramPipes";
 
 interface RelayStatus {
@@ -27,8 +26,8 @@ export default function RealTimeStatusSystemDiagram({ relays, readings }: RealTi
             <defs>
                 {/* Dynamic gradient for heat pump animation (EWT to LWT) */}
                 <linearGradient id="dashboardHeatGradient" x1="0%" y1="100%" x2="0%" y2="0%">
-                    <stop offset="25%" style={getGradientStopStyle(readings, 'hp-lwt')} />
-                    <stop offset="75%" style={getGradientStopStyle(readings, 'hp-ewt')} />
+                    <stop offset="25%" style={getGradientStopStyle(readings, 'hp-ewt')} />
+                    <stop offset="75%" style={getGradientStopStyle(readings, 'hp-lwt')} />
                 </linearGradient>
 
                 {/* Dynamic gradient for house animation (dist-rwt to dist-swt, left to right) */}
@@ -385,39 +384,7 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
         }
     }
 
-    // Check for zone relay conditions: Failsf relay with state "energized" and Scada ops relay with state "energized"
-    let hasZoneRelayCondition = false;
-    Object.keys(relays).forEach(relayName => {
-        const relay = relays[relayName];
-        if (relay && relay.display_name) {
-            const displayName = relay.display_name.toLowerCase();
-
-            // Check if this is a Failsf relay with state "energized"
-            if (displayName.includes('failsf') && relay.state === 'energized') {
-                // Find the corresponding Scada ops relay for the same zone
-                Object.keys(relays).forEach(otherRelayName => {
-                    const otherRelay = relays[otherRelayName];
-                    if (otherRelay && otherRelay.display_name) {
-                        const otherDisplayName = otherRelay.display_name.toLowerCase();
-
-                        // Check if this is a Scada ops relay for the same zone with state "energized"
-                        if (otherDisplayName.includes('scada ops') && otherRelay.state === 'energized') {
-                            // Extract zone identifier from the beginning of the display name
-                            const zoneFromFailsf = displayName.split(' zone ')[0].trim();
-                            const zoneFromScadaOps = otherDisplayName.split(' zone ')[0].trim();
-
-                            if (zoneFromFailsf === zoneFromScadaOps && zoneFromFailsf !== '') {
-                                hasZoneRelayCondition = true;
-                            }
-                        }
-                    }
-                });
-            }
-        }
-    });
-
-    // Combined condition: dist-flow > 0 //OR zone relay condition
-    const shouldAnimateHouse = hasDistFlow //|| hasZoneRelayCondition;
+    const shouldAnimateHouse = hasDistFlow;
 
 
     // Check relay states to determine system state
@@ -429,10 +396,7 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
     let currentState = null;
 
     if (relay5 && relay6 && relay3 && relay9) {
-        const relay5State = relay5.state;
-        const relay6State = relay6.state;
         const relay3State = relay3.state;
-        const relay9State = relay9.state;
 
         let hpOn = false;
         // if (relay5State === 'energized' && relay6State === 'deenergized' && hpHasPower) {

@@ -1,0 +1,87 @@
+.info-details-grid {
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.detail-item {
+  margin-bottom: -0.25rem;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.detail-value {
+  color: var(--text-color);
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 0.25rem;
+  table-layout: fixed;
+}
+
+.detail-table th,
+.detail-table td {
+  padding: 0.5rem 1rem;
+  text-align: left;
+  font-size: 0.875rem;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.detail-table th {
+  font-weight: 500;
+  color: var(--text-muted);
+  width: 120px;
+  background-color: var(--detail-table-bg, var(--hover-color));
+  border-radius: 4px 0 0 4px;
+}
+
+.detail-table td {
+  color: var(--text-color);
+  background-color: var(--detail-table-bg, var(--hover-color));
+  border-radius: 0 4px 4px 0;
+  width: auto;
+}
+
+.detail-table th::after {
+  content: none !important;
+}
+
+.detail-table tr {
+  margin-bottom: 0.25rem;
+}
+
+.contact-section + .contact-section {
+  margin-top: 2rem;
+}
+
+.detail-label-secondary-contact {
+  margin-top: 2rem;
+}
+
+.info-alert-message {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  padding-top: 1rem;
+}
+
+@media (max-width: 768px) {
+  .detail-table th {
+    width: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .detail-table th {
+    width: 80px;
+  }
+}

@@ -6,16 +6,26 @@ interface RealTimeStatusThermostatTableProps {
 }
 
 export default function RealTimeStatusThermostatTable({ thermostatNames, readings }: RealTimeStatusThermostatTableProps) {
+    const derivedThermostatNames = Object.keys(readings)
+        .map((key) => key.match(/^zone\d+-(.+)-(temp|set|state)$/))
+        .filter((match): match is RegExpMatchArray => Boolean(match))
+        .map((match) => match[1])
+        .filter((name, index, arr) => arr.indexOf(name) === index);
+
+    const resolvedThermostatNames =
+        thermostatNames && thermostatNames.length > 0
+            ? thermostatNames
+            : derivedThermostatNames;
 
     let zoneElements : ReactNode;
-    if (!thermostatNames || !thermostatNames.length) {
+    if (!resolvedThermostatNames.length) {
         zoneElements = <tr>
             <td colSpan={4} className="p-2 text-center">
                 Loading thermostat names...
             </td>
         </tr>
     } else {
-        const zones = thermostatNames.map((name, index) => ({
+        const zones = resolvedThermostatNames.map((name, index) => ({
             key: `zone${index + 1}-${name}`,
             display: `zone${index + 1}-${name}`
         }));
