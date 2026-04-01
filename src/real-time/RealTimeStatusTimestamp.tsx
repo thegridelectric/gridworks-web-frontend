@@ -1,4 +1,7 @@
 import { useEffect, useState } from "react";
+import { DateTime } from "luxon";
+
+import { NEW_YORK_TIME_ZONE } from "../_util/newYorkTime";
 
 interface RealTimeStatusTimestampProps {
     updateTime: Date
@@ -20,16 +23,9 @@ export default function RealTimeStatusTimestamp({ updateTime }: RealTimeStatusTi
     let formattedTime = 'Unknown';
     let isDataFresh = false;
 
-    formattedTime = updateTime.toLocaleString('sv-SE', {
-        timeZone: 'America/New_York',
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    });
+    formattedTime = DateTime.fromJSDate(updateTime)
+        .setZone(NEW_YORK_TIME_ZONE)
+        .toFormat('yyyy-LL-dd HH:mm:ss');
 
     const twoMinutesAgo = new Date(currentTime.getTime() - 2 * 60 * 1000);
     isDataFresh = updateTime > twoMinutesAgo;
