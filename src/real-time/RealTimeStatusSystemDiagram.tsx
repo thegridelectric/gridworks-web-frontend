@@ -7,10 +7,45 @@ interface RelayStatus {
 
 interface RealTimeStatusSystemDiagramProps {
     readings: Record<string, number>,
-    relays: Record<string, RelayStatus>
+    relays: Record<string, RelayStatus>,
+    isSpruce: boolean,
 }
 
-export default function RealTimeStatusSystemDiagram({ relays, readings }: RealTimeStatusSystemDiagramProps) {
+export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce }: RealTimeStatusSystemDiagramProps) {
+    // Layout tweaks (tank/house shift) apply only to Spruce; other homes keep the original 3-tank diagram.
+    const tank1X = isSpruce ? 340 : 460;
+    const tank1TextX = isSpruce ? 400 : 520;
+    const tank1LabelX = isSpruce ? 440 : 560;
+    const storeColdPipeLabelX = (isSpruce ? tank1X : 200) - 55;
+
+    const houseShiftX = isSpruce ? 120 : 0;
+    const houseLeftX = (isSpruce ? 480 : 660) + houseShiftX;
+    const houseWidth = isSpruce ? 170 : 120;
+    const houseTextX = houseLeftX + houseWidth / 2;
+    const houseRoofLeftX = houseLeftX - 3;
+    const houseRoofRightX = houseLeftX + houseWidth + 3;
+    const distSwtX = houseLeftX + houseWidth + 30;
+    const distRwtX = houseLeftX - (isSpruce ? 35 : 30);
+    const distLabelY = isSpruce ? 315 : 405;
+    const floorSwtX = distSwtX;
+    const floorRwtX = distRwtX;
+    const floorLabelY = isSpruce ? 438 : 405;
+
+    const heatPumpHeight = 200;
+    const heatPumpY = 50;
+    const hpPipeTempLabelCenterX = 170;
+    const spruceAuxComponentWidth = 120 / 3;
+    const spruceAuxComponentX = hpPipeTempLabelCenterX + 38 + 10;
+    const hexSecondaryTempLabelX = spruceAuxComponentX + spruceAuxComponentWidth + 18;
+    const spruceHexPlateFill = "#5a5a62";
+    const spruceHexPlateLineStroke = "#3a3a42";
+    const spruceHexPlateLines: number[] = isSpruce
+        ? Array.from({ length: 9 }, (_, i) => {
+            const u = (i + 1) / 10;
+            const inset = 3;
+            return spruceAuxComponentX + inset + u * (spruceAuxComponentWidth - 2 * inset);
+        })
+        : [];
 
     const { currentState, shouldAnimateHouse, hasPrimFlow } = getCurrentState(relays, readings);
 
@@ -203,44 +238,97 @@ export default function RealTimeStatusSystemDiagram({ relays, readings }: RealTi
             <text x="80" y="270" textAnchor="middle" fill="var(--text-color)" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">Heat pump</text>
 
             {/* Buffer */}
-            {renderBufferTank(readings)}
+            {renderBufferTank(readings, isSpruce)}
             {(currentState === 'HpOnStoreOff' || currentState === 'HpOffStoreDischarge' || (currentState === 'HpOffStoreOff' && shouldAnimateHouse)) &&
                 <g id="dashboard-buffer-animation">
                     <rect x="860" y="50" width="120" height="200" rx="10" fill="url(#dashboardBufferHeatLinesTopToBottom)" />
                 </g>
             }
 
-            {renderStaticHouse()}
+            {renderStaticHouse(houseLeftX, houseWidth, houseTextX, houseRoofLeftX, houseRoofRightX)}
 
-            {renderStorageTank3(readings)}
-            {renderStorageTank2(readings)}
-            {renderStorageTank1(readings)}
+            {!isSpruce && renderStorageTank3(readings)}
+            {!isSpruce && renderStorageTank2(readings)}
+            {renderStorageTank1(readings, tank1X, tank1TextX, isSpruce)}
 
             {(currentState === 'HpOffStoreDischarge' || currentState === 'HpOnStoreCharge') &&
                 <>
-                    <g id="dashboard-tank3-animation">
-                        <rect x="200" y="280" width="120" height="200" rx="10" fill={storageTankAnimationColor} />
-                    </g>
+                    {!isSpruce &&
+                        <g id="dashboard-tank3-animation">
+                            <rect x="200" y="280" width="120" height="200" rx="10" fill={storageTankAnimationColor} />
+                        </g>
+                    }
 
-                    <g id="dashboard-tank2-animation">
-                        <rect x="330" y="280" width="120" height="200" rx="10" fill={storageTankAnimationColor} />
-                    </g>
+                    {!isSpruce &&
+                        <g id="dashboard-tank2-animation">
+                            <rect x="330" y="280" width="120" height="200" rx="10" fill={storageTankAnimationColor} />
+                        </g>
+                    }
 
                     <g id="dashboard-tank1-animation">
-                        <rect x="460" y="280" width="120" height="200" rx="10" fill={storageTankAnimationColor} />
+                        <rect x={tank1X} y="280" width="120" height="200" rx="10" fill={storageTankAnimationColor} />
                     </g>
                 </>
             }
 
-            <RealTimeStatusSystemDiagramPipes {...{currentState, shouldAnimateHouse, hasPrimFlow}} />
+            <RealTimeStatusSystemDiagramPipes {...{currentState, shouldAnimateHouse, hasPrimFlow, isSpruce, tank1X, houseLeftX, houseWidth}} />
+
+            {isSpruce &&
+                <>
+                    <defs>
+                        <clipPath id="dashboard-spruce-hex-plate-clip">
+                            <rect
+                                x={spruceAuxComponentX}
+                                y={heatPumpY}
+                                width={spruceAuxComponentWidth}
+                                height={heatPumpHeight}
+                                rx="10"
+                            />
+                        </clipPath>
+                    </defs>
+                    <g id="dashboard-spruce-hex" clipPath="url(#dashboard-spruce-hex-plate-clip)">
+                        <rect
+                            id="dashboard-spruce-hp-aux"
+                            x={spruceAuxComponentX}
+                            y={heatPumpY}
+                            width={spruceAuxComponentWidth}
+                            height={heatPumpHeight}
+                            fill={spruceHexPlateFill}
+                        />
+                        <g id="dashboard-spruce-hex-plates" stroke={spruceHexPlateLineStroke} strokeWidth="1.1" strokeLinecap="square">
+                            {spruceHexPlateLines.map((lineX) => (
+                                <line
+                                    key={lineX}
+                                    x1={lineX}
+                                    x2={lineX}
+                                    y1={heatPumpY}
+                                    y2={heatPumpY + heatPumpHeight}
+                                />
+                            ))}
+                        </g>
+                    </g>
+                    <text
+                        id="dashboard-spruce-hex-label"
+                        x={spruceAuxComponentX + spruceAuxComponentWidth / 2}
+                        y="270"
+                        textAnchor="middle"
+                        fill="var(--text-color)"
+                        fontFamily="Montserrat, sans-serif"
+                        fontSize="14"
+                        fontWeight="600"
+                    >
+                        HEX
+                    </text>
+                </>
+            }
 
             {/* Store hot pipe temperature label (above Tank 1) */}
-            <text x="560" y="260" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+            <text x={tank1LabelX} y="260" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
                 {formatTemp(readings, 'store-hot-pipe')}
             </text>
 
-            {/* Store cold pipe temperature label (left of Tank 3) */}
-            <text x="145" y="430" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+            {/* Store cold pipe temperature label (left of bottom return / Tank 3) */}
+            <text x={storeColdPipeLabelX} y="430" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
                 {formatTemp(readings, 'store-cold-pipe')}
             </text>
 
@@ -254,14 +342,53 @@ export default function RealTimeStatusSystemDiagram({ relays, readings }: RealTi
                 {formatTemp(readings, 'hp-ewt')}
             </text>
 
+            {isSpruce &&
+                <>
+                    <text
+                        id="dashboard-secondary-lwt"
+                        x={hexSecondaryTempLabelX}
+                        y="70"
+                        textAnchor="middle"
+                        fill="#888"
+                        fontFamily="Montserrat, sans-serif"
+                        fontSize="14"
+                        fontWeight="600"
+                    >
+                        {formatTemp(readings, 'secondary-lwt')}
+                    </text>
+                    <text
+                        id="dashboard-secondary-ewt"
+                        x={hexSecondaryTempLabelX}
+                        y="210"
+                        textAnchor="middle"
+                        fill="#888"
+                        fontFamily="Montserrat, sans-serif"
+                        fontSize="14"
+                        fontWeight="600"
+                    >
+                        {formatTemp(readings, 'secondary-ewt')}
+                    </text>
+                </>
+            }
 
             {/* Dist system labels */}
-            <text x="810" y="405" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+            <text x={distSwtX} y={distLabelY} textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
                 {formatTemp(readings, 'dist-swt')}
             </text>
-            <text id="dashboard-dist-rwt" x="630" y="405" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+            <text id="dashboard-dist-rwt" x={distRwtX} y={distLabelY} textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
                 {formatTemp(readings, 'dist-rwt')}
             </text>
+
+            {isSpruce &&
+                <>
+                    <text id="dashboard-floor-rwt" x={floorRwtX} y={floorLabelY} textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+                        {formatTemp(readings, 'floor-rwt')}
+                    </text>
+                    <text id="dashboard-floor-swt" x={floorSwtX} y={floorLabelY} textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+                        {formatTemp(readings, 'floor-swt')}
+                    </text>
+                </>
+            }
 
             {/* Buffer pipe temperature labels */}
             <text id="dashboard-buffer-hot-pipe" x="830" y="70" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
@@ -274,12 +401,12 @@ export default function RealTimeStatusSystemDiagram({ relays, readings }: RealTi
             {/* House animation group (moved to end to ensure visibility) */}
             {shouldAnimateHouse &&
                 <g id="dashboard-house-animation">
-                    <rect x="660" y="335" width="120" height="90" rx="0" fill="url(#dashboardHouseHeatGradient)" />
-                    <polygon points="657,336 783,336 720,290" fill="url(#dashboardHouseHeatGradient)" />
+                    <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="0" fill="url(#dashboardHouseHeatGradient)" />
+                    <polygon points={`${houseRoofLeftX},336 ${houseRoofRightX},336 ${houseTextX},290`} fill="url(#dashboardHouseHeatGradient)" />
                     {/* <rect x="660" y="280" width="120" height="200" rx="10" fill="url(#dashboardHouseHeatGradient)"/> */}
-                    <rect x="660" y="335" width="120" height="90" rx="10" fill="url(#dashboardHouseHeatLinesPattern)" />
-                    <text id="dashboard-house-drop" x="720" y="375" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="16" fontWeight="600">
-                        Drop<tspan x="720" dy="1.2em">{formatTempDelta(readings, 'dist-swt', 'dist-rwt')}</tspan>
+                    <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="10" fill="url(#dashboardHouseHeatLinesPattern)" />
+                    <text id="dashboard-house-drop" x={houseTextX} y="375" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="16" fontWeight="600">
+                        Drop<tspan x={houseTextX} dy="1.2em">{formatTempDelta(readings, 'dist-swt', 'dist-rwt')}</tspan>
                     </text>
                 </g>
             }
@@ -481,13 +608,15 @@ function renderStaticHeatPump() {
     </>
 }
 
-function renderBufferTank(readings: Record<string, number>) {
+function renderBufferTank(readings: Record<string, number>, isSpruce: boolean) {
     return <>
         <rect x="860" y="50" width="120" height="200" rx="10" fill="transparent" />
         {/* Buffer sections */}
         <path fill={getSectionFill(readings, 'buffer-depth1')} d="M 860,60 Q 860,50 870,50 L 970,50 Q 980,50 980,60 L 980,116 L 860,116 Z" />
         <rect fill={getSectionFill(readings, 'buffer-depth2')}  x="860" y="116" width="120" height="66" />
         <path fill={getSectionFill(readings, 'buffer-depth3')}  d="M 860,182 L 980,182 L 980,240 Q 980,250 970,250 L 870,250 Q 860,250 860,240 Z"/>
+        {isSpruce && renderResistiveElement(980, 116)}
+        {isSpruce && renderResistiveElement(980, 182)}
         <text x="920" y="90" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
             {formatTemp(readings, 'buffer-depth1')}
         </text>
@@ -501,13 +630,13 @@ function renderBufferTank(readings: Record<string, number>) {
     </>
 }
 
-function renderStaticHouse() {
+function renderStaticHouse(houseLeftX: number, houseWidth: number, houseTextX: number, houseRoofLeftX: number, houseRoofRightX: number) {
     return <>
         {/* House (bottom right, left of buffer) */}
-        <rect x="660" y="335" width="120" height="90" rx="0" fill="#888" />
+        <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="0" fill="#888" />
         {/* Triangle roof for the house */}
-        <polygon points="657,336 783,336 720,290" fill="#888" />
-        <text x="720" y="450" textAnchor="middle" fill="var(--text-color)" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">House</text>
+        <polygon points={`${houseRoofLeftX},336 ${houseRoofRightX},336 ${houseTextX},290`} fill="#888" />
+        <text x={houseTextX} y="450" textAnchor="middle" fill="var(--text-color)" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">House</text>
         {/* <text id="dashboard-house-drop" x="720" y="375" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="16" fontWeight="600">Drop<tspan x="720" dy="1.2em">-°F</tspan>
                         </text> */}
     </>
@@ -556,23 +685,43 @@ function renderStorageTank2(readings: Record<string, number>) {
     </>
 }
 
-function renderStorageTank1(readings: Record<string, number>) {
+function renderStorageTank1(readings: Record<string, number>, tankX: number, textX: number, isSpruce: boolean) {
+    const leftX = tankX;
+    const innerLeftX = tankX + 10;
+    const innerRightX = tankX + 110;
+    const rightX = tankX + 120;
+
     return <>
         {/* Tank 1 (bottom right) */}
-        <rect x="460" y="280" width="120" height="200" rx="10" fill="transparent" />
+        <rect x={tankX} y="280" width="120" height="200" rx="10" fill="transparent" />
         {/* Tank 1 sections */}
-        <path fill={getSectionFill(readings, 'tank1-depth1')} d="M 460,290 Q 460,280 470,280 L 570,280 Q 580,280 580,290 L 580,346 L 460,346 Z"  />
-        <rect fill={getSectionFill(readings, 'tank1-depth2')} x="460" y="346" width="120" height="66"  />
-        <path fill={getSectionFill(readings, 'tank1-depth3')} d="M 460,412 L 580,412 L 580,470 Q 580,480 570,480 L 470,480 Q 460,480 460,470 Z"  />
-        <text x="520" y="320" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+        <path fill={getSectionFill(readings, 'tank1-depth1')} d={`M ${leftX},290 Q ${leftX},280 ${innerLeftX},280 L ${innerRightX},280 Q ${rightX},280 ${rightX},290 L ${rightX},346 L ${leftX},346 Z`}  />
+        <rect fill={getSectionFill(readings, 'tank1-depth2')} x={tankX} y="346" width="120" height="66"  />
+        <path fill={getSectionFill(readings, 'tank1-depth3')} d={`M ${leftX},412 L ${rightX},412 L ${rightX},470 Q ${rightX},480 ${innerRightX},480 L ${innerLeftX},480 Q ${leftX},480 ${leftX},470 Z`}  />
+        {isSpruce && renderResistiveElement(rightX, 346)}
+        {isSpruce && renderResistiveElement(rightX, 412)}
+        <text x={textX} y="320" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
             {formatTemp(readings, 'tank1-depth1')}
         </text>
-        <text x="520" y="386" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+        <text x={textX} y="386" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
             {formatTemp(readings, 'tank1-depth2')}
         </text>
-        <text x="520" y="452" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+        <text x={textX} y="452" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
             {formatTemp(readings, 'tank1-depth3')}
         </text>
-        <text x="520" y="500" textAnchor="middle" fill="var(--text-color)" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">Tank 1</text>
+        <text x={textX} y="500" textAnchor="middle" fill="var(--text-color)" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">Tank 1</text>
     </>
+}
+
+function renderResistiveElement(rightX: number, boundaryY: number) {
+    return (
+        <path
+            d={`M ${rightX},${boundaryY - 5} L ${rightX - 20},${boundaryY - 5} Q ${rightX - 42},${boundaryY - 5} ${rightX - 42},${boundaryY} Q ${rightX - 42},${boundaryY + 5} ${rightX - 20},${boundaryY + 5} L ${rightX},${boundaryY + 5}`}
+            fill="none"
+            stroke="#d9d9d9"
+            strokeWidth="5"
+            strokeLinecap="butt"
+            strokeLinejoin="round"
+        />
+    );
 }

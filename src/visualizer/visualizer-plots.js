@@ -54,6 +54,23 @@ const STORAGE_TANK_KEYS = [
         }));
     }
 
+    /** HpOn controller-state intervals (heat pump chart only); missing field treated as []. */
+    function hpOnHighlightShapes(periodsMs, toNyLocalIso) {
+        return (periodsMs || []).map(([x0ms, x1ms]) => ({
+            type: 'rect',
+            xref: 'x',
+            yref: 'paper',
+            x0: toNyLocalIso(x0ms),
+            x1: toNyLocalIso(x1ms),
+            y0: 0,
+            y1: 1,
+            fillcolor: 'green',
+            opacity: 0.16,
+            layer: 'below',
+            line: { width: 0 }
+        }));
+    }
+
     function xRangeFromPayload(payload, toNyLocalIso) {
         if (!payload.x_range_ms || payload.x_range_ms.length !== 2) return undefined;
         return [toNyLocalIso(payload.x_range_ms[0]), toNyLocalIso(payload.x_range_ms[1])];
@@ -222,7 +239,12 @@ const STORAGE_TANK_KEYS = [
                 yanchor: 'top',
                 bgcolor: 'rgba(0, 0, 0, 0)'
             },
-            shapes: latePersistenceShapes(payload.late_persistence_periods_ms, toNyLocalIso)
+            shapes: [
+                ...(selectedChannels.includes('hp-on-highlights')
+                    ? hpOnHighlightShapes(payload.hp_on_highlight_periods_ms, toNyLocalIso)
+                    : []),
+                ...latePersistenceShapes(payload.late_persistence_periods_ms, toNyLocalIso)
+            ]
         };
         if (plottingPower && plottingTemperatures) {
             layout.yaxis.title = 'Temperature [F]';

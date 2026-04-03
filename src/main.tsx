@@ -25,7 +25,7 @@ import ParametersPage from './parameters/ParametersPage.tsx';
 
 createRoot(document.getElementById('root')!).render(
 	// <StrictMode>
-		<BrowserRouter>
+		<BrowserRouter basename="/gridworks-web-frontend">
 			<GridWorksApiInterceptor />
 			<App>
 				<Routes>

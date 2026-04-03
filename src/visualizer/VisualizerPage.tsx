@@ -17,6 +17,7 @@ import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
 import VisualizerServerPlots from "./VisualizerServerPlots";
 import type { VisualizerPlotsApiResponse } from "./visualizerApiTypes";
 import { VisualizerOptionsPanel } from "./VisualizerControls";
+import { CLIENT_ONLY_VISUALIZER_CHANNEL_IDS } from "./visualizerChannels";
 import { useVisualizerControls } from "./useVisualizerControls";
 import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 
@@ -70,7 +71,9 @@ export default function VisualizerPage() {
             return;
         }
 
-        const selectedChannels = [...channels].sort();
+        const selectedChannels = [...channels]
+            .sort()
+            .filter((id) => !CLIENT_ONLY_VISUALIZER_CHANNEL_IDS.has(id));
         if (showPoints) {
             selectedChannels.push('show-points');
         }

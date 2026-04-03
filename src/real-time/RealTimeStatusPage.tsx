@@ -56,9 +56,11 @@ type DashboardInbound =
 function RealTimeStatusConnection({
     currentInstallationId,
     houseAlias,
+    isSpruce,
 }: {
     currentInstallationId: string | undefined;
     houseAlias: string;
+    isSpruce: boolean;
 }) {
     const [targetGNode, setTargetGNode] = useState('');
     const [thermostatNames, setThermostatNames] = useState<string[] | null>(null);
@@ -69,6 +71,9 @@ function RealTimeStatusConnection({
     const [err, setErr] = useState<string | null>(null);
 
     const wsRef = useRef<WebSocket | null>(null);
+    const hasLoggedSpruceChannelsRef = useRef(false);
+    const diagramReadings = latestReadings ?? {};
+    const shouldShowLoadingSpinner = isConnected && !latestReadings;
 
     useEffect(() => {
         if (!currentInstallationId || !houseAlias) {
@@ -132,6 +137,13 @@ function RealTimeStatusConnection({
                     }
                 } else if (m.message_type === 'snapshot.spaceheat' && m.payload && typeof m.payload === 'object') {
                     const snapshot = m.payload as SnapshotPayload;
+                    if (isSpruce && !hasLoggedSpruceChannelsRef.current) {
+                        hasLoggedSpruceChannelsRef.current = true;
+                        console.log(
+                            '[spruce] first snapshot.spaceheat channels',
+                            (snapshot.LatestReadingList || []).map((r) => r.ChannelName),
+                        );
+                    }
                     setUpdateTime(new Date(snapshot.SnapshotTimeUnixMs));
                     setLatestReadings(
                         Object.fromEntries(
@@ -152,6 +164,10 @@ function RealTimeStatusConnection({
             }
         };
     }, [currentInstallationId, houseAlias]);
+
+    useEffect(() => {
+        hasLoggedSpruceChannelsRef.current = false;
+    }, [currentInstallationId, houseAlias, isSpruce]);
 
     function requestSnapshot() {
         const ws = wsRef.current;
@@ -187,10 +203,9 @@ function RealTimeStatusConnection({
                 {updateTime &&
                     <RealTimeStatusTimestamp updateTime={updateTime} />
                 }
+                <RealTimeStatusSystemDiagram relays={relays} readings={diagramReadings} isSpruce={isSpruce} />
                 {latestReadings ?
                     <>
-                        <RealTimeStatusSystemDiagram relays={relays} readings={latestReadings} />
-
                         <div id="dashboard-monitoring-tables">
                             <RealTimeStatusThermostatTable thermostatNames={thermostatNames} readings={latestReadings} />
 
@@ -249,9 +264,11 @@ function RealTimeStatusConnection({
                             </div>
                         </div>
                     </> :
-                    <div className="p-3 text-center">
-                        <Spinner />
-                    </div>
+                    shouldShowLoadingSpinner ?
+                        <div className="p-3 text-center">
+                            <Spinner />
+                        </div> :
+                        null
                 }
             </div>
         </div>
@@ -263,6 +280,7 @@ export default function RealTimeStatusPage() {
     const session = useContext(SessionContext);
     const installation = installationForRouteId(session?.installations, currentInstallationId);
     const houseAlias = (installation?.houseAlias?.trim() || '').trim();
+    const isSpruce = houseAlias.toLowerCase().includes('spruce');
 
     const installationUnknown =
         !!currentInstallationId && !!session && !installation;
@@ -308,6 +326,7 @@ export default function RealTimeStatusPage() {
             key={`${currentInstallationId}:${houseAlias}`}
             currentInstallationId={currentInstallationId}
             houseAlias={houseAlias}
+            isSpruce={isSpruce}
         />
     );
 }

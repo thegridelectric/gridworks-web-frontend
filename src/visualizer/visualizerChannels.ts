@@ -19,6 +19,7 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
             { id: 'primary-flow', label: 'Primary pump flow rate' },
             { id: 'primary-pump-pwr', label: 'Primary pump power' },
             { id: 'oil-boiler-pwr', label: 'Oil boiler power' },
+            { id: 'hp-on-highlights', label: 'Highlight HP on times' },
         ],
     },
     {
@@ -64,6 +65,8 @@ const NON_DEFAULT_CHANNELS = new Set([
     'store-hot-pipe',
     'store-cold-pipe',
     'store-energy',
+    /** UI + plot shading only; never send as selected_channels to the plots API. */
+    'hp-on-highlights',
 ]);
 
 export const DEFAULT_CHANNELS = new Set(
@@ -72,3 +75,6 @@ export const DEFAULT_CHANNELS = new Set(
         .map((channel) => channel.id)
         .filter((id) => !NON_DEFAULT_CHANNELS.has(id)),
 );
+
+/** Plot-only; strip from POST /plots `selected_channels`. */
+export const CLIENT_ONLY_VISUALIZER_CHANNEL_IDS = new Set(['hp-on-highlights']);
