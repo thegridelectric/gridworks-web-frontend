@@ -10,7 +10,7 @@ interface RealTimeStatusSystemDiagramPipesProps {
     houseWidth: number,
 }
 
-export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldAnimateHouse, hasPrimFlow, isSpruce, tank1X, houseLeftX, houseWidth }: RealTimeStatusSystemDiagramPipesProps) {
+export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldAnimateHouse, hasPrimFlow, isSpruce, tank1X, houseLeftX, houseWidth: _houseWidth }: RealTimeStatusSystemDiagramPipesProps) {
 
     // Tank1 vertical sits just right of the tank; stub connects tank top to the vertical (matches RealTimeStatusSystemDiagram layout).
     const tank1PipeX = tank1X + 130;
