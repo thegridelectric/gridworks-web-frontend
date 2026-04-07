@@ -24,8 +24,9 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
     const houseTextX = houseLeftX + houseWidth / 2;
     const houseRoofLeftX = houseLeftX - 3;
     const houseRoofRightX = houseLeftX + houseWidth + 3;
-    const distSwtX = houseLeftX + houseWidth + 30;
-    const distRwtX = houseLeftX - (isSpruce ? 35 : 30);
+    // Spruce: nudge dist labels away from the risers (both farther left than the non-Spruce layout).
+    const distSwtX = isSpruce ? houseLeftX + houseWidth + 55 : houseLeftX + houseWidth + 30;
+    const distRwtX = isSpruce ? houseLeftX - 58 : houseLeftX - 30;
     const distLabelY = isSpruce ? 315 : 405;
     const floorSwtX = distSwtX;
     const floorRwtX = distRwtX;
@@ -49,6 +50,12 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
 
     const { currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation } =
         getCurrentState(relays, readings);
+
+    // Spruce + dist-flow: buffer overlay lines move bottom → top; otherwise top → bottom (matches non-Spruce default).
+    const bufferHeatLinesFill =
+        isSpruce && shouldAnimateHouse
+            ? 'url(#dashboardBufferHeatLinesBottomToTop)'
+            : 'url(#dashboardBufferHeatLinesTopToBottom)';
 
     let storageTankAnimationColor;
     if (storageDischargePipeAnimation) {
@@ -241,9 +248,9 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             {/* Buffer */}
             {renderBufferTank(readings, isSpruce)}
             {(currentState === 'HpOnStoreOff' || storageDischargePipeAnimation ||
-                (shouldAnimateHouse && (isSpruce ? currentState === 'HpOffStoreOff' : (currentState === 'HpOffStoreOff' || animateBufferDistLoop)))) &&
+                (shouldAnimateHouse && (currentState === 'HpOffStoreOff' || animateBufferDistLoop))) &&
                 <g id="dashboard-buffer-animation">
-                    <rect x="860" y="50" width="120" height="200" rx="10" fill="url(#dashboardBufferHeatLinesTopToBottom)" />
+                    <rect x="860" y="50" width="120" height="200" rx="10" fill={bufferHeatLinesFill} />
                 </g>
             }
 

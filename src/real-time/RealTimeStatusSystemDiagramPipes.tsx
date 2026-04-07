@@ -124,6 +124,11 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
             if (isSpruce && houseBridgePipeWidth > 0) {
                 activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardFlowPattern)';
             }
+            // Spruce: same dist-loop stubs to buffer as HpOnStoreOff (this branch had verticals only).
+            if (isSpruce) {
+                activePipeColors['dashboard-house-buffer-top-pipe'] = 'url(#dashboardFlowPattern)';
+                activePipeColors['dashboard-house-buffer-bottom-pipe'] = 'url(#dashboardLeftFlowPattern)';
+            }
         }
 
     } else if (currentState === 'HpOnStoreCharge') {
@@ -169,6 +174,12 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
                     if (hasPrimFlow) {
                         activePipeColors['dashboard-hp-buffer-top-pipe'] = 'url(#dashboardFlowPattern)';
                         activePipeColors['dashboard-hp-buffer-bottom-pipe'] = 'url(#dashboardLeftFlowPattern)';
+                    }
+                } else if (animateBufferDistLoop) {
+                    activePipeColors['dashboard-house-buffer-top-pipe'] = 'url(#dashboardLeftFlowPattern)';
+                    activePipeColors['dashboard-house-buffer-bottom-pipe'] = 'url(#dashboardFlowPattern)';
+                    if (houseBridgePipeWidth > 0) {
+                        activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardLeftFlowPattern)';
                     }
                 }
             } else if (animateBufferDistLoop) {
