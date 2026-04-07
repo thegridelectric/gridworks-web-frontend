@@ -4,13 +4,62 @@ interface RealTimeStatusSystemDiagramPipesProps {
     currentState: string | null,
     shouldAnimateHouse: boolean,
     hasPrimFlow: boolean,
+    animateBufferDistLoop: boolean,
+    /** True for HpOffStoreDischarge, or store-flow with HP off when relays are missing (currentState null). */
+    storageDischargePipeAnimation: boolean,
     isSpruce: boolean,
     tank1X: number,
     houseLeftX: number,
     houseWidth: number,
 }
 
-export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldAnimateHouse, hasPrimFlow, isSpruce, tank1X, houseLeftX, houseWidth: _houseWidth }: RealTimeStatusSystemDiagramPipesProps) {
+const HP_BUFFER_OVERLAY_PIPES = ['dashboard-hp-buffer-top-pipe', 'dashboard-hp-buffer-bottom-pipe'] as const;
+
+/** Non-Spruce HpOffStoreDischarge: paint storage riser ↔ buffer horizontals last so house/HP stubs do not cover the animated segment. */
+const STORAGE_BUFFER_HORIZONTAL_OVERLAY_PIPES = [
+    'dashboard-tank1-buffer-horizontal-pipe',
+    'dashboard-tank3-buffer-horizontal-pipe',
+] as const;
+
+/**
+ * Non-Spruce “buffer header” rows — every `<rect>` drawn at y=75 or y=215 (height 15) that reads as the
+ * long horizontals next to the buffer / HP (plus the house stubs on the same row):
+ *
+ * TOP (y=75):
+ *   dashboard-hp-buffer-top-pipe              x=140  w=720   (full HP→buffer bar)
+ *   dashboard-tank1-hp-horizontal-pipe-charge   x=140  (HP side → tank1 riser; charge mode)
+ *   dashboard-tank1-buffer-horizontal-pipe      x=tank1Riser → buffer  (restored — not in hide set)
+ *   dashboard-house-buffer-top-pipe             house riser → buffer (same row; was missing from earlier debug)
+ *
+ * BOTTOM (y=215):
+ *   dashboard-hp-buffer-bottom-pipe
+ *   dashboard-tank3-hp-horizontal-pipe-charge
+ *   dashboard-tank3-buffer-horizontal-pipe      storage riser → buffer  (restored — not in hide set)
+ *   dashboard-house-buffer-bottom-pipe
+ *
+ * Spruce: `isSpruce` when houseAlias includes "spruce" (RealTimeStatusPage) — this hide list is skipped.
+ *
+ * Set false to show pipes again (turn off before merge unless you intend to ship this).
+ */
+const DEBUG_HIDE_NON_SPRUCE_BUFFER_HEADER_ROW_PIPES = false;
+
+const DEBUG_HIDDEN_NON_SPRUCE_HEADER_PIPE_NAMES = new Set<string>([
+    'dashboard-hp-buffer-top-pipe',
+    'dashboard-hp-buffer-bottom-pipe',
+    'dashboard-tank1-hp-horizontal-pipe-charge',
+    'dashboard-tank3-hp-horizontal-pipe-charge',
+    // storage riser ↔ buffer (tank1 top loop, tank3 bottom loop): shown again — add back one-by-one
+    'dashboard-house-buffer-top-pipe',
+    'dashboard-house-buffer-bottom-pipe',
+]);
+
+export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation, isSpruce, tank1X, houseLeftX, houseWidth: _houseWidth }: RealTimeStatusSystemDiagramPipesProps) {
+
+    const hideNonSpruceHeaderRowPipes =
+        DEBUG_HIDE_NON_SPRUCE_BUFFER_HEADER_ROW_PIPES && !isSpruce;
+
+    const hidePipeForHeaderRowDebug = (pipeName: string) =>
+        hideNonSpruceHeaderRowPipes && DEBUG_HIDDEN_NON_SPRUCE_HEADER_PIPE_NAMES.has(pipeName);
 
     // Tank1 vertical sits just right of the tank; stub connects tank top to the vertical (matches RealTimeStatusSystemDiagram layout).
     const tank1PipeX = tank1X + 130;
@@ -57,7 +106,9 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
                 activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardFlowPattern)';
             }
         }
-    } else if (currentState === 'HpOffStoreDischarge') {
+    } else if (storageDischargePipeAnimation) {
+        // Tank1 → buffer (top), buffer → tank3 (bottom); same as HpOffStoreDischarge when relays resolve,
+        // plus when currentState is null but store-flow > 0 and HP is off.
         activePipeColors['dashboard-tank1-hp-vertical-pipe'] = 'url(#dashboardVerticalFlowPattern)';
         activePipeColors['dashboard-tank1-buffer-horizontal-pipe'] = 'url(#dashboardFlowPattern)';
         activePipeColors['dashboard-tank1-connection-pipe'] = 'url(#dashboardFlowPattern)';
@@ -107,19 +158,28 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
                 activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardFlowPattern)';
             }
 
-            // Special logic for HpOffStoreOff: House to Buffer pipes when dist flow is active
-            // (same as HpOnStoreCharge)
-            if (currentState === 'HpOffStoreOff') {
+            // Spruce: original HpOffStoreOff behavior (buffer headers only with primary flow).
+            if (isSpruce) {
+                if (currentState === 'HpOffStoreOff') {
+                    activePipeColors['dashboard-house-buffer-top-pipe'] = 'url(#dashboardLeftFlowPattern)';
+                    activePipeColors['dashboard-house-buffer-bottom-pipe'] = 'url(#dashboardFlowPattern)';
+                    if (houseBridgePipeWidth > 0) {
+                        activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardLeftFlowPattern)';
+                    }
+                    if (hasPrimFlow) {
+                        activePipeColors['dashboard-hp-buffer-top-pipe'] = 'url(#dashboardFlowPattern)';
+                        activePipeColors['dashboard-hp-buffer-bottom-pipe'] = 'url(#dashboardLeftFlowPattern)';
+                    }
+                }
+            } else if (animateBufferDistLoop) {
+                // Other homes: HP off, storage idle, dist on (includes missing-relay / Unknown).
+                // Full-span buffer headers are painted after house pipes so overlapping geometry
+                // does not hide them.
                 activePipeColors['dashboard-house-buffer-top-pipe'] = 'url(#dashboardLeftFlowPattern)';
                 activePipeColors['dashboard-house-buffer-bottom-pipe'] = 'url(#dashboardFlowPattern)';
-                if (isSpruce && houseBridgePipeWidth > 0) {
-                    activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardLeftFlowPattern)';
-                }
 
-                if (hasPrimFlow) {
-                    activePipeColors['dashboard-hp-buffer-top-pipe'] = 'url(#dashboardFlowPattern)';
-                    activePipeColors['dashboard-hp-buffer-bottom-pipe'] = 'url(#dashboardLeftFlowPattern)';
-                }
+                activePipeColors['dashboard-hp-buffer-top-pipe'] = 'url(#dashboardFlowPattern)';
+                activePipeColors['dashboard-hp-buffer-bottom-pipe'] = 'url(#dashboardLeftFlowPattern)';
             }
         } else {
             if (hasPrimFlow) {
@@ -159,15 +219,39 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
     };
 
     const nonHousePipeElements: Record<string, ReactElement> = {
-        'dashboard-hp-buffer-top-pipe': <rect x="140" y="75" width="720" height="15" fill={pipeColors['dashboard-hp-buffer-top-pipe']} />,
-        'dashboard-hp-buffer-bottom-pipe': <rect x="140" y="215" width="720" height="15" fill={pipeColors['dashboard-hp-buffer-bottom-pipe']} />,
-        'dashboard-tank1-hp-horizontal-pipe-charge': <rect x="140" y="75" width={tank1HpHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank1-hp-horizontal-pipe-charge']} />,
-        'dashboard-tank3-hp-horizontal-pipe-charge': <rect x="140" y="215" width={tank3HpHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank3-hp-horizontal-pipe-charge']} />,
+        'dashboard-hp-buffer-top-pipe': hidePipeForHeaderRowDebug('dashboard-hp-buffer-top-pipe') ? (
+            <g data-debug-omit="dashboard-hp-buffer-top-pipe" />
+        ) : (
+            <rect x="140" y="75" width="720" height="15" fill={pipeColors['dashboard-hp-buffer-top-pipe']} />
+        ),
+        'dashboard-hp-buffer-bottom-pipe': hidePipeForHeaderRowDebug('dashboard-hp-buffer-bottom-pipe') ? (
+            <g data-debug-omit="dashboard-hp-buffer-bottom-pipe" />
+        ) : (
+            <rect x="140" y="215" width="720" height="15" fill={pipeColors['dashboard-hp-buffer-bottom-pipe']} />
+        ),
+        'dashboard-tank1-hp-horizontal-pipe-charge': hidePipeForHeaderRowDebug('dashboard-tank1-hp-horizontal-pipe-charge') ? (
+            <g data-debug-omit="dashboard-tank1-hp-horizontal-pipe-charge" />
+        ) : (
+            <rect x="140" y="75" width={tank1HpHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank1-hp-horizontal-pipe-charge']} />
+        ),
+        'dashboard-tank3-hp-horizontal-pipe-charge': hidePipeForHeaderRowDebug('dashboard-tank3-hp-horizontal-pipe-charge') ? (
+            <g data-debug-omit="dashboard-tank3-hp-horizontal-pipe-charge" />
+        ) : (
+            <rect x="140" y="215" width={tank3HpHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank3-hp-horizontal-pipe-charge']} />
+        ),
         'dashboard-tank1-hp-vertical-pipe': <rect x={tank1PipeX} y="90" width="15" height="205" fill={pipeColors['dashboard-tank1-hp-vertical-pipe']} />,
-        'dashboard-tank1-buffer-horizontal-pipe': <rect x={tank1PipeX} y="75" width={tank1BufferHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank1-buffer-horizontal-pipe']} />,
+        'dashboard-tank1-buffer-horizontal-pipe': hidePipeForHeaderRowDebug('dashboard-tank1-buffer-horizontal-pipe') ? (
+            <g data-debug-omit="dashboard-tank1-buffer-horizontal-pipe" />
+        ) : (
+            <rect x={tank1PipeX} y="75" width={tank1BufferHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank1-buffer-horizontal-pipe']} />
+        ),
         'dashboard-tank1-connection-pipe': <rect x={tank1PipeConnectionX} y="295" width="25" height="15" fill={pipeColors['dashboard-tank1-connection-pipe']} />,
         'dashboard-tank3-hp-vertical-pipe': <rect x={storeReturnPipeX} y="220" width="15" height="220" fill={pipeColors['dashboard-tank3-hp-vertical-pipe']} />,
-        'dashboard-tank3-buffer-horizontal-pipe': <rect x={storeReturnPipeX} y="215" width={tank3BufferHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank3-buffer-horizontal-pipe']} />,
+        'dashboard-tank3-buffer-horizontal-pipe': hidePipeForHeaderRowDebug('dashboard-tank3-buffer-horizontal-pipe') ? (
+            <g data-debug-omit="dashboard-tank3-buffer-horizontal-pipe" />
+        ) : (
+            <rect x={storeReturnPipeX} y="215" width={tank3BufferHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank3-buffer-horizontal-pipe']} />
+        ),
         'dashboard-tank3-connection-pipe': <rect x={storeReturnPipeConnectionX} y="440" width="25" height="15" fill={pipeColors['dashboard-tank3-connection-pipe']} />,
         'dashboard-tank1-hp-vertical-pipe-charge': <rect x={tank1PipeX} y="90" width="15" height="205" fill={pipeColors['dashboard-tank1-hp-vertical-pipe-charge']} />,
         'dashboard-tank3-hp-vertical-pipe-charge': <rect x={storeReturnPipeX} y="220" width="15" height="220" fill={pipeColors['dashboard-tank3-hp-vertical-pipe-charge']} />,
@@ -181,8 +265,16 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
         'dashboard-house-connection-pipe': <rect x={houseStubRightX} y="370" width="25" height="15" fill={pipeColors['dashboard-house-connection-pipe']} />,
         'dashboard-house-hp-vertical-pipe-bottom': <rect x={houseRiserLeftX} y="230" width="15" height={houseHpVerticalPipeBottomHeight} fill={pipeColors['dashboard-house-hp-vertical-pipe-bottom']} />,
         'dashboard-house-connection-pipe-bottom': <rect x={houseRiserLeftX} y="370" width="25" height="15" fill={pipeColors['dashboard-house-connection-pipe-bottom']} />,
-        'dashboard-house-buffer-top-pipe': <rect x={houseRiserRightX} y="75" width={houseBufferTopPipeWidth} height="15" fill={pipeColors['dashboard-house-buffer-top-pipe']} />,
-        'dashboard-house-buffer-bottom-pipe': <rect x={houseRiserLeftX} y="215" width={houseBufferBottomPipeWidth} height="15" fill={pipeColors['dashboard-house-buffer-bottom-pipe']} />,
+        'dashboard-house-buffer-top-pipe': hidePipeForHeaderRowDebug('dashboard-house-buffer-top-pipe') ? (
+            <g data-debug-omit="dashboard-house-buffer-top-pipe" />
+        ) : (
+            <rect x={houseRiserRightX} y="75" width={houseBufferTopPipeWidth} height="15" fill={pipeColors['dashboard-house-buffer-top-pipe']} />
+        ),
+        'dashboard-house-buffer-bottom-pipe': hidePipeForHeaderRowDebug('dashboard-house-buffer-bottom-pipe') ? (
+            <g data-debug-omit="dashboard-house-buffer-bottom-pipe" />
+        ) : (
+            <rect x={houseRiserLeftX} y="215" width={houseBufferBottomPipeWidth} height="15" fill={pipeColors['dashboard-house-buffer-bottom-pipe']} />
+        ),
         'dashboard-house-bridge-pipe': houseBridgePipeWidth > 0
             ? <rect x={houseBridgePipeX} y={houseBridgePipeY} width={houseBridgePipeWidth} height="15" fill={pipeColors['dashboard-house-bridge-pipe']} />
             : <></>,
@@ -217,6 +309,10 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
 
     const housePipeGroupTransform = `translate(${houseGroupDx}, 0)`;
 
+    /** Spruce keeps the original paint order; other layouts defer HP–buffer horizontals above house pipes. */
+    const deferHpBufferOverlay = !isSpruce;
+    const deferStorageBufferHorizontalOverlay = !isSpruce && storageDischargePipeAnimation;
+
     const elementsInOrder: ReactElement[] = [];
 
     for (const name of nonHousePipeOrder) {
@@ -232,7 +328,16 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
         </g>,
     );
     for (const name of nonHousePipeOrder) {
-        if (activePipeColors[name]) {
+        if (
+            activePipeColors[name] &&
+            !(deferHpBufferOverlay && HP_BUFFER_OVERLAY_PIPES.includes(name as (typeof HP_BUFFER_OVERLAY_PIPES)[number])) &&
+            !(
+                deferStorageBufferHorizontalOverlay &&
+                STORAGE_BUFFER_HORIZONTAL_OVERLAY_PIPES.includes(
+                    name as (typeof STORAGE_BUFFER_HORIZONTAL_OVERLAY_PIPES)[number],
+                )
+            )
+        ) {
             elementsInOrder.push(nonHousePipeElements[name]);
         }
     }
@@ -243,5 +348,19 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
             )}
         </g>,
     );
+    if (deferHpBufferOverlay) {
+        for (const name of HP_BUFFER_OVERLAY_PIPES) {
+            if (activePipeColors[name]) {
+                elementsInOrder.push(nonHousePipeElements[name]);
+            }
+        }
+    }
+    if (deferStorageBufferHorizontalOverlay) {
+        for (const name of STORAGE_BUFFER_HORIZONTAL_OVERLAY_PIPES) {
+            if (activePipeColors[name]) {
+                elementsInOrder.push(nonHousePipeElements[name]);
+            }
+        }
+    }
     return <>{elementsInOrder}</>;
 }
