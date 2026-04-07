@@ -51,6 +51,12 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
     const { currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation } =
         getCurrentState(relays, readings);
 
+    // Spruce + dist-flow: buffer overlay lines move bottom → top; otherwise top → bottom (matches non-Spruce default).
+    const bufferHeatLinesFill =
+        isSpruce && shouldAnimateHouse
+            ? 'url(#dashboardBufferHeatLinesBottomToTop)'
+            : 'url(#dashboardBufferHeatLinesTopToBottom)';
+
     let storageTankAnimationColor;
     if (storageDischargePipeAnimation) {
         storageTankAnimationColor = 'url(#dashboardTankHeatLinesBottomToTop)'
@@ -242,9 +248,9 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             {/* Buffer */}
             {renderBufferTank(readings, isSpruce)}
             {(currentState === 'HpOnStoreOff' || storageDischargePipeAnimation ||
-                (shouldAnimateHouse && (isSpruce ? currentState === 'HpOffStoreOff' : (currentState === 'HpOffStoreOff' || animateBufferDistLoop)))) &&
+                (shouldAnimateHouse && (currentState === 'HpOffStoreOff' || animateBufferDistLoop))) &&
                 <g id="dashboard-buffer-animation">
-                    <rect x="860" y="50" width="120" height="200" rx="10" fill="url(#dashboardBufferHeatLinesTopToBottom)" />
+                    <rect x="860" y="50" width="120" height="200" rx="10" fill={bufferHeatLinesFill} />
                 </g>
             }
 
