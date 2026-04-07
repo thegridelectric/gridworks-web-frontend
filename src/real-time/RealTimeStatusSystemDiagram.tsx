@@ -47,10 +47,11 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
         })
         : [];
 
-    const { currentState, shouldAnimateHouse, hasPrimFlow } = getCurrentState(relays, readings);
+    const { currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation } =
+        getCurrentState(relays, readings);
 
     let storageTankAnimationColor;
-    if (currentState === 'HpOffStoreDischarge') {
+    if (storageDischargePipeAnimation) {
         storageTankAnimationColor = 'url(#dashboardTankHeatLinesBottomToTop)'
     } else if (currentState === 'HpOnStoreCharge') {
         storageTankAnimationColor = 'url(#dashboardTankHeatLinesTopToBottom)'
@@ -239,7 +240,8 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
 
             {/* Buffer */}
             {renderBufferTank(readings, isSpruce)}
-            {(currentState === 'HpOnStoreOff' || currentState === 'HpOffStoreDischarge' || (currentState === 'HpOffStoreOff' && shouldAnimateHouse)) &&
+            {(currentState === 'HpOnStoreOff' || storageDischargePipeAnimation ||
+                (shouldAnimateHouse && (isSpruce ? currentState === 'HpOffStoreOff' : (currentState === 'HpOffStoreOff' || animateBufferDistLoop)))) &&
                 <g id="dashboard-buffer-animation">
                     <rect x="860" y="50" width="120" height="200" rx="10" fill="url(#dashboardBufferHeatLinesTopToBottom)" />
                 </g>
@@ -251,7 +253,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             {!isSpruce && renderStorageTank2(readings)}
             {renderStorageTank1(readings, tank1X, tank1TextX, isSpruce)}
 
-            {(currentState === 'HpOffStoreDischarge' || currentState === 'HpOnStoreCharge') &&
+            {(storageDischargePipeAnimation || currentState === 'HpOnStoreCharge') &&
                 <>
                     {!isSpruce &&
                         <g id="dashboard-tank3-animation">
@@ -271,7 +273,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                 </>
             }
 
-            <RealTimeStatusSystemDiagramPipes {...{currentState, shouldAnimateHouse, hasPrimFlow, isSpruce, tank1X, houseLeftX, houseWidth}} />
+            <RealTimeStatusSystemDiagramPipes {...{currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation, isSpruce, tank1X, houseLeftX, houseWidth}} />
 
             {isSpruce &&
                 <>
@@ -513,6 +515,9 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
 
     const shouldAnimateHouse = hasDistFlow;
 
+    // Buffer↔house distribution loop with HP off and no storage discharge: same plumbing as HpOffStoreOff,
+    // but detectable even when relay payload is missing or maps to "Unknown".
+    const animateBufferDistLoop = hasDistFlow && !hpHasPower && !hasStoreFlow;
 
     // Check relay states to determine system state
     const relay5 = relays['relay5'];
@@ -553,7 +558,13 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
         }
     }
 
-    return { currentState, shouldAnimateHouse, hasPrimFlow };
+    // Pipes/tanks: same discharge layout as HpOffStoreDischarge when relays are missing but store pump is moving water.
+    const storageDischargePipeAnimation =
+        hasStoreFlow &&
+        !hpHasPower &&
+        (currentState === 'HpOffStoreDischarge' || currentState === null);
+
+    return { currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation };
 }
 
 function renderStaticHeatPump() {
