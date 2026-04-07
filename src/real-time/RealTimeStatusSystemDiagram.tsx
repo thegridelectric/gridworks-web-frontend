@@ -24,8 +24,9 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
     const houseTextX = houseLeftX + houseWidth / 2;
     const houseRoofLeftX = houseLeftX - 3;
     const houseRoofRightX = houseLeftX + houseWidth + 3;
-    const distSwtX = houseLeftX + houseWidth + 30;
-    const distRwtX = houseLeftX - (isSpruce ? 35 : 30);
+    // Spruce: nudge dist labels away from the risers (both farther left than the non-Spruce layout).
+    const distSwtX = isSpruce ? houseLeftX + houseWidth + 55 : houseLeftX + houseWidth + 30;
+    const distRwtX = isSpruce ? houseLeftX - 58 : houseLeftX - 30;
     const distLabelY = isSpruce ? 315 : 405;
     const floorSwtX = distSwtX;
     const floorRwtX = distRwtX;
