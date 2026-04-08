@@ -1,14 +1,30 @@
 import { useEffect, useRef, useState } from 'react';
 
 import GridworksApi from '../_util/GridWorksApi';
-import type { Session } from '../_util/SessionContext';
-import { getAuthToken, getDisplayUserName } from './auth';
+import type { BasicInstallationInfo, Session } from '../_util/SessionContext';
+import { getAuthToken, getAuthUserInstallations, getDisplayUserName, isAdminUser } from './auth';
 import { fetchFallbackInstallations } from './fetchFallbackInstallations';
 
 interface UseAppSessionResult {
     isLoadingSession: boolean;
     session: Session | null;
     hasResolvedSession: boolean;
+}
+
+function filterInstallationsForCurrentUser(
+    installations: BasicInstallationInfo[],
+): BasicInstallationInfo[] {
+    if (isAdminUser()) {
+        return installations;
+    }
+    const allowedAliases = new Set(getAuthUserInstallations());
+    if (allowedAliases.size === 0) {
+        return [];
+    }
+    return installations.filter((installation) => {
+        const alias = (installation.houseAlias || installation.displayName || '').trim().toLowerCase();
+        return alias !== '' && allowedAliases.has(alias);
+    });
 }
 
 export function useAppSession(loadSession: boolean): UseAppSessionResult {
@@ -53,6 +69,7 @@ export function useAppSession(loadSession: boolean): UseAppSessionResult {
                         }
                     }
                 }
+                installations = filterInstallationsForCurrentUser(installations);
 
                 if (!cancelled) {
                     setSession({
@@ -73,9 +90,10 @@ export function useAppSession(loadSession: boolean): UseAppSessionResult {
                 try {
                     const installationsFromFallback = await fetchFallbackInstallations(token);
                     if (!cancelled) {
+                        const visibleInstallations = filterInstallationsForCurrentUser(installationsFromFallback);
                         setSession({
                             userName: getDisplayUserName(),
-                            installations: installationsFromFallback,
+                            installations: visibleInstallations,
                             homesError: null,
                         });
                     }

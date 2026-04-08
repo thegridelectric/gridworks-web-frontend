@@ -1,11 +1,11 @@
 import { DateTime } from 'luxon';
 
-import { isAdminUser } from '../auth/auth';
+import { isViewerUser } from '../auth/auth';
 
 export const NEW_YORK_TIME_ZONE = 'America/New_York';
 
 export function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boolean {
-    if (isAdminUser()) {
+    if (!isViewerUser()) {
         return true;
     }
     const cutoff = DateTime.now()

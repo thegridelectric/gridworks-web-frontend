@@ -507,7 +507,7 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
     const hasPrimFlow = !!(primFlowReading && primFlowReading > 0);
 
     const storeFlowReading = readings['store-flow'];
-    const hasStoreFlow = storeFlowReading && storeFlowReading > 0;
+    const hasStoreFlow = !!(storeFlowReading && storeFlowReading > 0);
 
     const hpIduReading = readings['hp-idu-pwr'];
     const hpOduReading = readings['hp-odu-pwr'];
@@ -627,14 +627,18 @@ function renderStaticHeatPump() {
 }
 
 function renderBufferTank(readings: Record<string, number>, isSpruce: boolean) {
+    const BUFFER_ELEMENT_ACTIVE_POWER_W = 3000;
+    const bufferTopElementOn = (readings['elt-buffer-top-pwr'] ?? 0) > BUFFER_ELEMENT_ACTIVE_POWER_W;
+    const bufferBottomElementOn = (readings['elt-buffer-bottom-pwr'] ?? 0) > BUFFER_ELEMENT_ACTIVE_POWER_W;
+
     return <>
         <rect x="860" y="50" width="120" height="200" rx="10" fill="transparent" />
         {/* Buffer sections */}
         <path fill={getSectionFill(readings, 'buffer-depth1')} d="M 860,60 Q 860,50 870,50 L 970,50 Q 980,50 980,60 L 980,116 L 860,116 Z" />
         <rect fill={getSectionFill(readings, 'buffer-depth2')}  x="860" y="116" width="120" height="66" />
         <path fill={getSectionFill(readings, 'buffer-depth3')}  d="M 860,182 L 980,182 L 980,240 Q 980,250 970,250 L 870,250 Q 860,250 860,240 Z"/>
-        {isSpruce && renderResistiveElement(980, 116)}
-        {isSpruce && renderResistiveElement(980, 182)}
+        {isSpruce && renderResistiveElement(980, 116, bufferTopElementOn)}
+        {isSpruce && renderResistiveElement(980, 182, bufferBottomElementOn)}
         <text x="920" y="90" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
             {formatTemp(readings, 'buffer-depth1')}
         </text>
@@ -709,6 +713,10 @@ function renderStorageTank1(readings: Record<string, number>, tankX: number, tex
     const innerRightX = tankX + 110;
     const rightX = tankX + 120;
 
+    const STORE_ELEMENT_ACTIVE_POWER_W = 3000;
+    const storeTopElementOn = (readings['elt-store-top-pwr'] ?? 0) > STORE_ELEMENT_ACTIVE_POWER_W;
+    const storeBottomElementOn = (readings['elt-store-bottom-pwr'] ?? 0) > STORE_ELEMENT_ACTIVE_POWER_W;
+
     return <>
         {/* Tank 1 (bottom right) */}
         <rect x={tankX} y="280" width="120" height="200" rx="10" fill="transparent" />
@@ -716,8 +724,8 @@ function renderStorageTank1(readings: Record<string, number>, tankX: number, tex
         <path fill={getSectionFill(readings, 'tank1-depth1')} d={`M ${leftX},290 Q ${leftX},280 ${innerLeftX},280 L ${innerRightX},280 Q ${rightX},280 ${rightX},290 L ${rightX},346 L ${leftX},346 Z`}  />
         <rect fill={getSectionFill(readings, 'tank1-depth2')} x={tankX} y="346" width="120" height="66"  />
         <path fill={getSectionFill(readings, 'tank1-depth3')} d={`M ${leftX},412 L ${rightX},412 L ${rightX},470 Q ${rightX},480 ${innerRightX},480 L ${innerLeftX},480 Q ${leftX},480 ${leftX},470 Z`}  />
-        {isSpruce && renderResistiveElement(rightX, 346)}
-        {isSpruce && renderResistiveElement(rightX, 412)}
+        {isSpruce && renderResistiveElement(rightX, 346, storeTopElementOn)}
+        {isSpruce && renderResistiveElement(rightX, 412, storeBottomElementOn)}
         <text x={textX} y="320" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
             {formatTemp(readings, 'tank1-depth1')}
         </text>
@@ -731,12 +739,12 @@ function renderStorageTank1(readings: Record<string, number>, tankX: number, tex
     </>
 }
 
-function renderResistiveElement(rightX: number, boundaryY: number) {
+function renderResistiveElement(rightX: number, boundaryY: number, isOn = false) {
     return (
         <path
             d={`M ${rightX},${boundaryY - 5} L ${rightX - 20},${boundaryY - 5} Q ${rightX - 42},${boundaryY - 5} ${rightX - 42},${boundaryY} Q ${rightX - 42},${boundaryY + 5} ${rightX - 20},${boundaryY + 5} L ${rightX},${boundaryY + 5}`}
             fill="none"
-            stroke="#d9d9d9"
+            stroke={isOn ? '#ff0000' : '#d9d9d9'}
             strokeWidth="5"
             strokeLinecap="butt"
             strokeLinejoin="round"

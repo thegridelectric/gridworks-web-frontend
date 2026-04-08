@@ -2,6 +2,7 @@ import { BarChart, List, Table, Settings, Sun, Clock, Info } from 'feather-icons
 import { NavLink as ReactRouterNavLink } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 import { useContext } from 'react';
+import { getAuthUserType, isAdminUser } from '../auth/auth';
 import SessionContext, { installationForRouteId } from '../_util/SessionContext';
 import { useRouteInfo } from '../_util/useRouteInfo';
 
@@ -27,6 +28,8 @@ export default function SidebarNav() {
         ? `${installationName.charAt(0).toUpperCase()}${installationName.slice(1)}`
         : null;
     const installationUrlSuffix = currentInstallationId ? `${currentInstallationId}/` : '';
+    const isAdmin = isAdminUser();
+    const isViewer = getAuthUserType() === 'viewer';
 
     return <nav id="sidebarMenu" className="col-md-3 col-lg-2 d-md-block sidebar collapse">
         <div className="position-sticky pt-3">
@@ -34,31 +37,43 @@ export default function SidebarNav() {
                 <li className="nav-item">
                     <Nav.Link as={ReactRouterNavLink} to="/installations/"><List />Installations</Nav.Link>
                 </li>
-                <li className="nav-item">
-                    <Nav.Link as={ReactRouterNavLink} to="/morning-report/"><Sun />Morning Report</Nav.Link>
-                </li>
+                {isAdmin && (
+                    <li className="nav-item">
+                        <Nav.Link as={ReactRouterNavLink} to="/morning-report/"><Sun />Morning Report</Nav.Link>
+                    </li>
+                )}
                 <hr />
                 {installationHeading &&
                     <h4 className="sidebar-heading px-3 mt-1 mb-2 text-muted">{installationHeading}</h4>
                 }
-                <li className="nav-item">
-                    <Nav.Link as={ReactRouterNavLink} to={`/real-time/${installationUrlSuffix}`}><Clock />Real-Time Status</Nav.Link>
-                </li>
+                {!isViewer && (
+                    <li className="nav-item">
+                        <Nav.Link as={ReactRouterNavLink} to={`/real-time/${installationUrlSuffix}`}><Clock />Real-Time Status</Nav.Link>
+                    </li>
+                )}
                 <li className="nav-item">
                     <Nav.Link as={ReactRouterNavLink} to={`/visualizer/${installationUrlSuffix}`}><BarChart />Visualizer</Nav.Link>
                 </li>
-                <li className="nav-item">
-                    <Nav.Link as={ReactRouterNavLink} to={`/data-export-channel/${installationUrlSuffix}`}><Table />Channel data export</Nav.Link>
-                </li>
-                <li className="nav-item">
-                    <Nav.Link as={ReactRouterNavLink} to={`/data-export-hourly/${installationUrlSuffix}`}><Table />Hourly data export</Nav.Link>
-                </li>
-                <li className="nav-item">
-                    <Nav.Link as={ReactRouterNavLink} to={`/information/${installationUrlSuffix}`}><Info />Information</Nav.Link>
-                </li>
-                <li className="nav-item">
-                    <Nav.Link as={ReactRouterNavLink} to={`/parameters/${installationUrlSuffix}`}><Settings />Parameters</Nav.Link>
-                </li>
+                {isAdmin && (
+                    <li className="nav-item">
+                        <Nav.Link as={ReactRouterNavLink} to={`/data-export-channel/${installationUrlSuffix}`}><Table />Channel data export</Nav.Link>
+                    </li>
+                )}
+                {isAdmin && (
+                    <li className="nav-item">
+                        <Nav.Link as={ReactRouterNavLink} to={`/data-export-hourly/${installationUrlSuffix}`}><Table />Hourly data export</Nav.Link>
+                    </li>
+                )}
+                {isAdmin && (
+                    <li className="nav-item">
+                        <Nav.Link as={ReactRouterNavLink} to={`/information/${installationUrlSuffix}`}><Info />Information</Nav.Link>
+                    </li>
+                )}
+                {isAdmin && (
+                    <li className="nav-item">
+                        <Nav.Link as={ReactRouterNavLink} to={`/parameters/${installationUrlSuffix}`}><Settings />Parameters</Nav.Link>
+                    </li>
+                )}
 
 
 {/* 
