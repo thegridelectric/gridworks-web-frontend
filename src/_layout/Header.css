@@ -49,6 +49,7 @@ header .header-menu-icon {
 @media (max-width: 767.98px) {
     header.navbar {
         position: relative;
+        min-height: 56px;
     }
 
     header .navbar-brand {

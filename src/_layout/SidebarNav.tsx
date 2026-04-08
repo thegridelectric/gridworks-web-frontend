@@ -31,7 +31,28 @@ export default function SidebarNav() {
     const isAdmin = isAdminUser();
     const isViewer = getAuthUserType() === 'viewer';
 
-    return <nav id="sidebarMenu" className="col-md-3 col-lg-2 d-md-block sidebar collapse">
+    function onSidebarClick(event: React.MouseEvent<HTMLElement>) {
+        if (!window.matchMedia('(max-width: 767.98px)').matches) {
+            return;
+        }
+        const target = event.target as HTMLElement | null;
+        if (!target?.closest('a')) {
+            return;
+        }
+        const sidebar = document.getElementById('sidebarMenu');
+        if (sidebar?.classList.contains('show')) {
+            sidebar.classList.remove('show');
+        }
+        const toggler = document.querySelector<HTMLButtonElement>(
+            '.navbar-toggler[aria-controls="sidebarMenu"]',
+        );
+        if (toggler) {
+            toggler.classList.add('collapsed');
+            toggler.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    return <nav id="sidebarMenu" className="col-md-3 col-lg-2 d-md-block sidebar collapse" onClick={onSidebarClick}>
         <div className="position-sticky pt-3">
             <ul className="nav flex-column">
                 <li className="nav-item">
