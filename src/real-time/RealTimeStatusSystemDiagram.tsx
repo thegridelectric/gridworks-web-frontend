@@ -331,15 +331,17 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                 </>
             }
 
-            {/* Store hot pipe temperature label (above Tank 1) */}
-            <text x={tank1LabelX} y="260" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
-                {formatTemp(readings, 'store-hot-pipe')}
-            </text>
-
-            {/* Store cold pipe temperature label (left of bottom return / Tank 3) */}
-            <text x={storeColdPipeLabelX} y="430" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
-                {formatTemp(readings, 'store-cold-pipe')}
-            </text>
+            {/* Store pipe temperature labels */}
+            {!isSpruce && (
+                <>
+                    <text x={tank1LabelX} y="260" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+                        {formatTemp(readings, 'store-hot-pipe')}
+                    </text>
+                    <text x={storeColdPipeLabelX} y="430" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+                        {formatTemp(readings, 'store-cold-pipe')}
+                    </text>
+                </>
+            )}
 
             {/* Top pipe (from top of heat pump to top of buffer) temperature label */}
             <text x="170" y="70" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
@@ -400,12 +402,16 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             }
 
             {/* Buffer pipe temperature labels */}
-            <text id="dashboard-buffer-hot-pipe" x="830" y="70" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
-                {formatTemp(readings, 'buffer-hot-pipe')}
-            </text>
-            <text id="dashboard-buffer-cold-pipe" x="830" y="210" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
-                {formatTemp(readings, 'buffer-cold-pipe')}
-            </text>
+            {!isSpruce && (
+                <>
+                    <text id="dashboard-buffer-hot-pipe" x="830" y="70" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+                        {formatTemp(readings, 'buffer-hot-pipe')}
+                    </text>
+                    <text id="dashboard-buffer-cold-pipe" x="830" y="210" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+                        {formatTemp(readings, 'buffer-cold-pipe')}
+                    </text>
+                </>
+            )}
 
             {/* House animation group (moved to end to ensure visibility) */}
             {shouldAnimateHouse &&
@@ -489,8 +495,13 @@ function tempValueToFahrenheit(channelName: string, rawValue: number | null | un
 
     const isDepthChannel =
         /^(buffer|tank\d+)-depth\d+$/.test(channelName);
+    const isFloorTempChannel =
+        channelName === 'floor-swt' || channelName === 'floor-rwt';
 
     if (isDepthChannel) {
+        return (rawValue / 100);
+    }
+    if (isFloorTempChannel) {
         return (rawValue / 100);
     }
 
