@@ -8,6 +8,8 @@ interface RealTimeStatusSystemDiagramPipesProps {
     /** True for HpOffStoreDischarge, or store-flow with HP off when relays are missing (currentState null). */
     storageDischargePipeAnimation: boolean,
     isSpruce: boolean,
+    animateSpruceFloorLoop: boolean,
+    animateSpruceUpstairsLoop: boolean,
     tank1X: number,
     houseLeftX: number,
     houseWidth: number,
@@ -53,7 +55,7 @@ const DEBUG_HIDDEN_NON_SPRUCE_HEADER_PIPE_NAMES = new Set<string>([
     'dashboard-house-buffer-bottom-pipe',
 ]);
 
-export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation, isSpruce, tank1X, houseLeftX, houseWidth: _houseWidth }: RealTimeStatusSystemDiagramPipesProps) {
+export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation, isSpruce, animateSpruceFloorLoop, animateSpruceUpstairsLoop, tank1X, houseLeftX, houseWidth: _houseWidth }: RealTimeStatusSystemDiagramPipesProps) {
 
     const hideNonSpruceHeaderRowPipes =
         DEBUG_HIDE_NON_SPRUCE_BUFFER_HEADER_ROW_PIPES && !isSpruce;
@@ -79,6 +81,10 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
     const houseRiserRightX = isSpruce ? 660 : 790;
     const houseStubRightX = isSpruce ? 650 : 780;
     const houseRiserLeftX = isSpruce ? 455 : 635;
+    const houseConnectionPipeRightX = isSpruce ? houseStubRightX : houseStubRightX;
+    const houseConnectionPipeRightWidth = isSpruce ? 10 : 25;
+    const houseConnectionPipeLeftX = isSpruce ? houseRiserLeftX + 15 : houseRiserLeftX;
+    const houseConnectionPipeLeftWidth = isSpruce ? 10 : 25;
     const houseBufferTopPipeWidth = 860 - houseRiserRightX - houseGroupDx;
     const houseBufferBottomPipeWidth = 860 - houseRiserLeftX - houseGroupDx;
     const houseHpVerticalPipeHeight = isSpruce ? 335 : 280;
@@ -99,11 +105,13 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
         if (shouldAnimateHouse) {
             activePipeColors['dashboard-house-hp-vertical-pipe'] = 'url(#dashboardVerticalDownFlowPattern)';
             activePipeColors['dashboard-house-hp-vertical-pipe-bottom'] = 'url(#dashboardVerticalFlowPattern)';
-            activePipeColors['dashboard-house-connection-pipe'] = 'url(#dashboardLeftFlowPattern)';
-            activePipeColors['dashboard-house-connection-pipe-bottom'] = 'url(#dashboardLeftFlowPattern)';
+            if (!isSpruce || animateSpruceUpstairsLoop) {
+                activePipeColors['dashboard-house-connection-pipe'] = 'url(#dashboardLeftFlowPattern)';
+                activePipeColors['dashboard-house-connection-pipe-bottom'] = 'url(#dashboardLeftFlowPattern)';
+            }
             activePipeColors['dashboard-house-buffer-top-pipe'] = 'url(#dashboardFlowPattern)';
             activePipeColors['dashboard-house-buffer-bottom-pipe'] = 'url(#dashboardLeftFlowPattern)';
-            if (isSpruce && houseBridgePipeWidth > 0) {
+            if (isSpruce && animateSpruceFloorLoop && houseBridgePipeWidth > 0) {
                 activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardFlowPattern)';
             }
         }
@@ -120,9 +128,11 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
         if (shouldAnimateHouse) {
             activePipeColors['dashboard-house-hp-vertical-pipe'] = 'url(#dashboardVerticalDownFlowPattern)';
             activePipeColors['dashboard-house-hp-vertical-pipe-bottom'] = 'url(#dashboardVerticalFlowPattern)';
-            activePipeColors['dashboard-house-connection-pipe'] = 'url(#dashboardLeftFlowPattern)';
-            activePipeColors['dashboard-house-connection-pipe-bottom'] = 'url(#dashboardLeftFlowPattern)';
-            if (isSpruce && houseBridgePipeWidth > 0) {
+            if (!isSpruce || animateSpruceUpstairsLoop) {
+                activePipeColors['dashboard-house-connection-pipe'] = 'url(#dashboardLeftFlowPattern)';
+                activePipeColors['dashboard-house-connection-pipe-bottom'] = 'url(#dashboardLeftFlowPattern)';
+            }
+            if (isSpruce && animateSpruceFloorLoop && houseBridgePipeWidth > 0) {
                 activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardFlowPattern)';
             }
             // Spruce: same dist-loop stubs to buffer as HpOnStoreOff (this branch had verticals only).
@@ -144,11 +154,13 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
         if (shouldAnimateHouse) {
             activePipeColors['dashboard-house-hp-vertical-pipe'] = 'url(#dashboardVerticalDownFlowPattern)';
             activePipeColors['dashboard-house-hp-vertical-pipe-bottom'] = 'url(#dashboardLeftFlowPattern)';
-            activePipeColors['dashboard-house-connection-pipe'] = 'url(#dashboardLeftFlowPattern)';
-            activePipeColors['dashboard-house-connection-pipe-bottom'] = 'url(#dashboardLeftFlowPattern)';
+            if (!isSpruce || animateSpruceUpstairsLoop) {
+                activePipeColors['dashboard-house-connection-pipe'] = 'url(#dashboardLeftFlowPattern)';
+                activePipeColors['dashboard-house-connection-pipe-bottom'] = 'url(#dashboardLeftFlowPattern)';
+            }
             activePipeColors['dashboard-house-buffer-top-pipe'] = 'url(#dashboardLeftFlowPattern)';
             activePipeColors['dashboard-house-buffer-bottom-pipe'] = 'url(#dashboardFlowPattern)';
-            if (isSpruce && houseBridgePipeWidth > 0) {
+            if (isSpruce && animateSpruceFloorLoop && houseBridgePipeWidth > 0) {
                 activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardLeftFlowPattern)';
             }
         }
@@ -158,8 +170,10 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
 
             activePipeColors['dashboard-house-hp-vertical-pipe'] = 'url(#dashboardVerticalDownFlowPattern)';
             activePipeColors['dashboard-house-hp-vertical-pipe-bottom'] = 'url(#dashboardVerticalFlowPattern)';
-            activePipeColors['dashboard-house-connection-pipe'] = 'url(#dashboardLeftFlowPattern)';
-            activePipeColors['dashboard-house-connection-pipe-bottom'] = 'url(#dashboardLeftFlowPattern)';
+            if (!isSpruce || animateSpruceUpstairsLoop) {
+                activePipeColors['dashboard-house-connection-pipe'] = 'url(#dashboardLeftFlowPattern)';
+                activePipeColors['dashboard-house-connection-pipe-bottom'] = 'url(#dashboardLeftFlowPattern)';
+            }
             if (isSpruce && houseBridgePipeWidth > 0) {
                 activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardFlowPattern)';
             }
@@ -169,7 +183,7 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
                 if (currentState === 'HpOffStoreOff') {
                     activePipeColors['dashboard-house-buffer-top-pipe'] = 'url(#dashboardLeftFlowPattern)';
                     activePipeColors['dashboard-house-buffer-bottom-pipe'] = 'url(#dashboardFlowPattern)';
-                    if (houseBridgePipeWidth > 0) {
+                    if (animateSpruceFloorLoop && houseBridgePipeWidth > 0) {
                         activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardLeftFlowPattern)';
                     }
                     if (hasPrimFlow) {
@@ -179,7 +193,7 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
                 } else if (animateBufferDistLoop) {
                     activePipeColors['dashboard-house-buffer-top-pipe'] = 'url(#dashboardLeftFlowPattern)';
                     activePipeColors['dashboard-house-buffer-bottom-pipe'] = 'url(#dashboardFlowPattern)';
-                    if (houseBridgePipeWidth > 0) {
+                    if (animateSpruceFloorLoop && houseBridgePipeWidth > 0) {
                         activePipeColors['dashboard-house-bridge-pipe'] = 'url(#dashboardLeftFlowPattern)';
                     }
                 }
@@ -274,9 +288,9 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
     // Base layout coords inside translate(houseGroupDx): same as original diagram at houseLeft = 480 / 660.
     const housePipeElements: Record<string, ReactElement> = {
         'dashboard-house-hp-vertical-pipe': <rect x={houseRiserRightX} y="90" width="15" height={houseHpVerticalPipeHeight} fill={pipeColors['dashboard-house-hp-vertical-pipe']} />,
-        'dashboard-house-connection-pipe': <rect x={houseStubRightX} y={houseConnectionPipeY} width="25" height="15" fill={pipeColors['dashboard-house-connection-pipe']} />,
+        'dashboard-house-connection-pipe': <rect x={houseConnectionPipeRightX} y={houseConnectionPipeY} width={houseConnectionPipeRightWidth} height="15" fill={pipeColors['dashboard-house-connection-pipe']} />,
         'dashboard-house-hp-vertical-pipe-bottom': <rect x={houseRiserLeftX} y="230" width="15" height={houseHpVerticalPipeBottomHeight} fill={pipeColors['dashboard-house-hp-vertical-pipe-bottom']} />,
-        'dashboard-house-connection-pipe-bottom': <rect x={houseRiserLeftX} y={houseConnectionPipeY} width="25" height="15" fill={pipeColors['dashboard-house-connection-pipe-bottom']} />,
+        'dashboard-house-connection-pipe-bottom': <rect x={houseConnectionPipeLeftX} y={houseConnectionPipeY} width={houseConnectionPipeLeftWidth} height="15" fill={pipeColors['dashboard-house-connection-pipe-bottom']} />,
         'dashboard-house-buffer-top-pipe': hidePipeForHeaderRowDebug('dashboard-house-buffer-top-pipe') ? (
             <g data-debug-omit="dashboard-house-buffer-top-pipe" />
         ) : (

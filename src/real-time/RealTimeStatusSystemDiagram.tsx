@@ -50,6 +50,8 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
 
     const { currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation } =
         getCurrentState(relays, readings);
+    const animateSpruceFloorLoop = isSpruce ? shouldAnimateSpruceFloorLoop(readings) : false;
+    const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
 
     // Spruce + dist-flow: buffer overlay lines move bottom → top; otherwise top → bottom (matches non-Spruce default).
     const bufferHeatLinesFill =
@@ -280,7 +282,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                 </>
             }
 
-            <RealTimeStatusSystemDiagramPipes {...{currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation, isSpruce, tank1X, houseLeftX, houseWidth}} />
+            <RealTimeStatusSystemDiagramPipes {...{currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation, isSpruce, animateSpruceFloorLoop, animateSpruceUpstairsLoop, tank1X, houseLeftX, houseWidth}} />
 
             {isSpruce &&
                 <>
@@ -444,6 +446,21 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                     <polygon points={`${houseRoofLeftX},336 ${houseRoofRightX},336 ${houseTextX},290`} fill="url(#dashboardHouseHeatGradient)" />
                     {/* <rect x="660" y="280" width="120" height="200" rx="10" fill="url(#dashboardHouseHeatGradient)"/> */}
                     <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="10" fill="url(#dashboardHouseHeatLinesPattern)" />
+                    {isSpruce && !animateSpruceFloorLoop && (
+                        <>
+                            {/* Keep only the outside floor branch segments visually static when no eligible zone is heating. */}
+                            <rect x={houseLeftX - 10} y="410" width="10" height="15" fill="#888" />
+                            <rect x={houseLeftX + houseWidth} y="410" width="10" height="15" fill="#888" />
+                            {/* Neutralize residual animation visible through the in-house floor band. */}
+                            <rect x={houseLeftX} y="410" width={houseWidth} height="15" fill="#888" />
+                            {/* Keep house animation visible above that in-house floor segment. */}
+                            <rect x={houseLeftX} y="410" width={houseWidth} height="15" fill="url(#dashboardHouseHeatGradient)" />
+                            <rect x={houseLeftX} y="410" width={houseWidth} height="15" fill="url(#dashboardHouseHeatLinesPattern)" />
+                            {/* Also freeze only the lower portions of the two risers (below the small horizontal stubs). */}
+                            <rect x={houseLeftX - 25} y="375" width="15" height="50" fill="#888" />
+                            <rect x={houseLeftX + houseWidth + 10} y="375" width="15" height="50" fill="#888" />
+                        </>
+                    )}
                     <text id="dashboard-house-drop" x={houseTextX} y="375" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="16" fontWeight="600">
                         Drop<tspan x={houseTextX} dy="1.2em">{formatTempDelta(readings, 'dist-swt', 'dist-rwt')}</tspan>
                     </text>
@@ -607,6 +624,38 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
         (currentState === 'HpOffStoreDischarge' || currentState === null);
 
     return { currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation };
+}
+
+function shouldAnimateSpruceFloorLoop(readings: Record<string, number>): boolean {
+    const floorZoneKeywords = ['garage', 'living-rm', 'bedroom'];
+    for (const [channelName, value] of Object.entries(readings)) {
+        const loweredName = channelName.toLowerCase();
+        const isZoneHeatCall = loweredName.includes('zone') && loweredName.includes('heat-call');
+        if (!isZoneHeatCall) {
+            continue;
+        }
+        if (value !== 1) {
+            continue;
+        }
+        if (floorZoneKeywords.some((keyword) => loweredName.includes(keyword))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function shouldAnimateSpruceUpstairsLoop(readings: Record<string, number>): boolean {
+    for (const [channelName, value] of Object.entries(readings)) {
+        const loweredName = channelName.toLowerCase();
+        const isUpstairsHeatCall =
+            loweredName.includes('zone') &&
+            loweredName.includes('heat-call') &&
+            loweredName.includes('upstairs');
+        if (isUpstairsHeatCall && value === 1) {
+            return true;
+        }
+    }
+    return false;
 }
 
 function renderStaticHeatPump() {
