@@ -12,7 +12,9 @@ export default function RealTimeStatusThermostatTable({ thermostatNames, reading
             if (value === undefined || Number.isNaN(value)) {
                 return '-';
             }
-            return `${(value / 100).toFixed(1)}°F`;
+            const tempC = value / 100;
+            const tempF = (tempC * 9 / 5) + 32;
+            return `${tempF.toFixed(1)}°F`;
         }
 
         function formatState(value: number | undefined): string {
@@ -38,8 +40,8 @@ export default function RealTimeStatusThermostatTable({ thermostatNames, reading
             }
             const zoneKey = zoneMatch[1];
             const existing = spruceZoneRows.get(zoneKey) ?? {};
-            if (lowered.includes('floor-temp')) {
-                existing.zoneLabel = channelName.replace(/-floor-temp$/i, '');
+            if (lowered.includes('gw-temp')) {
+                existing.zoneLabel = channelName.replace(/-gw-temp$/i, '');
                 existing.temperature = readings[channelName];
             }
             if (lowered.includes('heat-call')) {
@@ -69,7 +71,7 @@ export default function RealTimeStatusThermostatTable({ thermostatNames, reading
                         {rows.length === 0 ? (
                             <tr>
                                 <td colSpan={3} className="p-2 text-center">
-                                    No zone floor-temp or heat-call channels.
+                                    No zone gw-temp or heat-call channels.
                                 </td>
                             </tr>
                         ) : (

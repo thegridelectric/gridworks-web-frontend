@@ -156,11 +156,23 @@ function RealTimeStatusConnection({
                         );
                     }
                     setUpdateTime(new Date(snapshot.SnapshotTimeUnixMs));
-                    setLatestReadings(
-                        Object.fromEntries(
+                    setLatestReadings((previous) => {
+                        const next = Object.fromEntries(
                             (snapshot.LatestReadingList || []).map((r) => [r.ChannelName, r.Value]),
-                        ),
-                    );
+                        ) as Record<string, number>;
+                        if (!previous) {
+                            return next;
+                        }
+                        for (const [channelName, value] of Object.entries(previous)) {
+                            const lowered = channelName.toLowerCase();
+                            const isZoneHeatCall =
+                                lowered.includes('zone') && lowered.includes('heat-call');
+                            if (isZoneHeatCall && !(channelName in next)) {
+                                next[channelName] = value;
+                            }
+                        }
+                        return next;
+                    });
                 }
             } else if (data.type === 'error') {
                 const e = data as DashboardErrorMessage;
