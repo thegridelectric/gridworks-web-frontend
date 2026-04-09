@@ -86,7 +86,16 @@
     border: 1px solid var(--border-color); border-collapse: collapse; border-radius: 0.25rem; background-color: var(--card-background); margin: 0 auto; font-size: 0.8rem; color: var(--text-muted);
 }
 
+#dashboard-resistive-table {
+    border: 1px solid var(--border-color); border-collapse: collapse; border-radius: 0.25rem; background-color: var(--card-background); margin: 0 auto; font-size: 0.8rem; color: var(--text-muted);
+}
+
 #dashboard-pump-table th{
+    border: 1px solid var(--border-color); padding: 6px; text-align: left; font-weight: bold; font-size: 0.8rem; color: var(--text-muted);
+    background-color: var(--hover-color);
+}
+
+#dashboard-resistive-table th{
     border: 1px solid var(--border-color); padding: 6px; text-align: left; font-weight: bold; font-size: 0.8rem; color: var(--text-muted);
     background-color: var(--hover-color);
 }
@@ -95,12 +104,18 @@
     border: 1px solid var(--border-color); padding: 6px; font-size: 0.8rem; color: var(--text-muted);
 }
 
+#dashboard-resistive-tbody td {
+    border: 1px solid var(--border-color); padding: 6px; font-size: 0.8rem; color: var(--text-muted);
+}
+
 #dashboard-hp-power-tbody tr,
+#dashboard-resistive-tbody tr,
 #dashboard-pump-tbody tr {
     background-color: var(--card-background);
 }
 
 [data-bs-theme="dark"] #dashboard-hp-power-tbody tr,
+[data-bs-theme="dark"] #dashboard-resistive-tbody tr,
 [data-bs-theme="dark"] #dashboard-pump-tbody tr {
     background-color: var(--card-background);
 }

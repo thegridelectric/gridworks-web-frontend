@@ -62,6 +62,17 @@ function RealTimeStatusConnection({
     houseAlias: string;
     isSpruce: boolean;
 }) {
+    function getSpruceResistiveElements(readings: Record<string, number>) {
+        return Object.entries(readings)
+            .filter(([channelName]) => channelName.startsWith('elt-') && channelName.endsWith('-pwr'))
+            .sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
+            .map(([channelName, value]) => ({
+                key: channelName,
+                label: channelName.replace(/^elt-/, '').replace(/-pwr$/, ''),
+                kw: value / 1000,
+            }));
+    }
+
     const [targetGNode, setTargetGNode] = useState('');
     const [thermostatNames, setThermostatNames] = useState<string[] | null>(null);
     const [relays, setRelays] = useState<Record<string, RelayInfo>>({});
@@ -233,6 +244,27 @@ function RealTimeStatusConnection({
                                     </tbody>
                                 </table>
                             </div>
+
+                            {isSpruce && (
+                                <div>
+                                    <table id="dashboard-resistive-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Resistive element</th>
+                                                <th>kW</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dashboard-resistive-tbody">
+                                            {getSpruceResistiveElements(latestReadings).map((element) => (
+                                                <tr key={element.key}>
+                                                    <td>{element.label}</td>
+                                                    <td>{element.kw.toFixed(1)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
 
                             <div>
                                 <table id="dashboard-pump-table">
