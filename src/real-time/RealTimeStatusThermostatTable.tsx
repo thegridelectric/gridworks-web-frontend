@@ -8,76 +8,82 @@ interface RealTimeStatusThermostatTableProps {
 
 export default function RealTimeStatusThermostatTable({ thermostatNames, readings, isSpruce }: RealTimeStatusThermostatTableProps) {
     if (isSpruce) {
+        function formatTemperature(value: number | undefined): string {
+            if (value === undefined || Number.isNaN(value)) {
+                return '-';
+            }
+            return `${(value / 100).toFixed(1)}°F`;
+        }
+
+        function formatState(value: number | undefined): string {
+            if (value === undefined || Number.isNaN(value)) {
+                return '-';
+            }
+            if (value === 0) {
+                return 'idle';
+            }
+            if (value === 1) {
+                return 'heating';
+            }
+            return String(value);
+        }
+
         const channelNames = Object.keys(readings);
-        const zoneTempChannels = channelNames
-            .filter((name) => {
-                const lowered = name.toLowerCase();
-                return lowered.includes('zone') && lowered.includes('floor-temp');
-            })
-            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-        const zoneHeatcallChannels = channelNames
-            .filter((name) => {
-                const lowered = name.toLowerCase();
-                return lowered.includes('zone') && lowered.includes('heat-call');
-            })
-            .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        const spruceZoneRows = new Map<string, { zoneLabel?: string; temperature?: number; state?: number }>();
+        for (const channelName of channelNames) {
+            const lowered = channelName.toLowerCase();
+            const zoneMatch = lowered.match(/^(zone[1-9]\d*)/);
+            if (!zoneMatch) {
+                continue;
+            }
+            const zoneKey = zoneMatch[1];
+            const existing = spruceZoneRows.get(zoneKey) ?? {};
+            if (lowered.includes('floor-temp')) {
+                existing.zoneLabel = channelName.replace(/-floor-temp$/i, '');
+                existing.temperature = readings[channelName];
+            }
+            if (lowered.includes('heat-call')) {
+                existing.state = readings[channelName];
+            }
+            spruceZoneRows.set(zoneKey, existing);
+        }
+        const rows = Array.from(spruceZoneRows.entries())
+            .filter(([, row]) => row.temperature !== undefined || row.state !== undefined)
+            .sort((a, b) => {
+                const aIndex = Number(a[0].replace('zone', ''));
+                const bIndex = Number(b[0].replace('zone', ''));
+                return aIndex - bIndex;
+            });
 
         return (
-            <>
-                <div>
-                    <table className="dashboard-zone-table">
-                        <thead>
+            <div>
+                <table className="dashboard-zone-table">
+                    <thead>
+                        <tr>
+                            <th>Zone</th>
+                            <th>Temperature</th>
+                            <th>State</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {rows.length === 0 ? (
                             <tr>
-                                <th>Zone</th>
-                                <th>Temperature</th>
+                                <td colSpan={3} className="p-2 text-center">
+                                    No zone floor-temp or heat-call channels.
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {zoneTempChannels.length === 0 ? (
-                                <tr>
-                                    <td colSpan={2} className="p-2 text-center">
-                                        No zone temperature channels.
-                                    </td>
+                        ) : (
+                            rows.map(([zoneKey, row]) => (
+                                <tr key={zoneKey}>
+                                    <td>{row.zoneLabel ?? zoneKey}</td>
+                                    <td>{formatTemperature(row.temperature)}</td>
+                                    <td>{formatState(row.state)}</td>
                                 </tr>
-                            ) : (
-                                zoneTempChannels.map((channelName) => (
-                                    <tr key={channelName}>
-                                        <td>{channelName}</td>
-                                        <td>{readings[channelName]}</td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                <div>
-                    <table className="dashboard-zone-table">
-                        <thead>
-                            <tr>
-                                <th>Zone</th>
-                                <th>State</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {zoneHeatcallChannels.length === 0 ? (
-                                <tr>
-                                    <td colSpan={2} className="p-2 text-center">
-                                        No zone heatcall channels.
-                                    </td>
-                                </tr>
-                            ) : (
-                                zoneHeatcallChannels.map((channelName) => (
-                                    <tr key={channelName}>
-                                        <td>{channelName}</td>
-                                        <td>{readings[channelName]}</td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
         );
     }
 
