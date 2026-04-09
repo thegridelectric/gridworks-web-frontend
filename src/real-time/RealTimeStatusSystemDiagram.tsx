@@ -25,12 +25,12 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
     const houseRoofLeftX = houseLeftX - 3;
     const houseRoofRightX = houseLeftX + houseWidth + 3;
     // Spruce: nudge dist labels away from the risers (both farther left than the non-Spruce layout).
-    const distSwtX = isSpruce ? houseLeftX + houseWidth + 55 : houseLeftX + houseWidth + 30;
+    const distSwtX = isSpruce ? houseLeftX + houseWidth + 65 : houseLeftX + houseWidth + 30;
     const distRwtX = isSpruce ? houseLeftX - 58 : houseLeftX - 30;
-    const distLabelY = isSpruce ? 315 : 405;
-    const floorSwtX = distSwtX;
-    const floorRwtX = distRwtX;
-    const floorLabelY = isSpruce ? 438 : 405;
+    const distLabelY = isSpruce ? 300 : 405;
+    const floorSwtX = distSwtX - 40;
+    const floorRwtX = distRwtX + 40;
+    const floorLabelY = isSpruce ? 450 : 405;
 
     const heatPumpHeight = 200;
     const heatPumpY = 50;
@@ -392,6 +392,30 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
 
             {isSpruce &&
                 <>
+                    <text
+                        id="dashboard-fcu-label"
+                        x={houseLeftX + houseWidth + 35}
+                        y="372"
+                        textAnchor="start"
+                        fill="#888"
+                        fontFamily="Montserrat, sans-serif"
+                        fontSize="14"
+                        fontWeight="600"
+                    >
+                        FCU
+                    </text>
+                    <text
+                        id="dashboard-floor-label"
+                        x={houseLeftX + houseWidth + 35}
+                        y="422"
+                        textAnchor="start"
+                        fill="#888"
+                        fontFamily="Montserrat, sans-serif"
+                        fontSize="14"
+                        fontWeight="600"
+                    >
+                        Floor
+                    </text>
                     <text id="dashboard-floor-rwt" x={floorRwtX} y={floorLabelY} textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
                         {formatTemp(readings, 'floor-rwt')}
                     </text>

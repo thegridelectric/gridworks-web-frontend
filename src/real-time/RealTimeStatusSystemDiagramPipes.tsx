@@ -83,6 +83,7 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
     const houseBufferBottomPipeWidth = 860 - houseRiserLeftX - houseGroupDx;
     const houseHpVerticalPipeHeight = isSpruce ? 335 : 280;
     const houseHpVerticalPipeBottomHeight = isSpruce ? 195 : 140;
+    const houseConnectionPipeY = isSpruce ? 360 : 370;
     const houseBridgePipeX = isSpruce ? houseRiserLeftX + 15 : 0;
     const houseBridgePipeY = 410;
     const houseBridgePipeWidth = isSpruce ? houseRiserRightX - houseBridgePipeX : 0;
@@ -273,9 +274,9 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
     // Base layout coords inside translate(houseGroupDx): same as original diagram at houseLeft = 480 / 660.
     const housePipeElements: Record<string, ReactElement> = {
         'dashboard-house-hp-vertical-pipe': <rect x={houseRiserRightX} y="90" width="15" height={houseHpVerticalPipeHeight} fill={pipeColors['dashboard-house-hp-vertical-pipe']} />,
-        'dashboard-house-connection-pipe': <rect x={houseStubRightX} y="370" width="25" height="15" fill={pipeColors['dashboard-house-connection-pipe']} />,
+        'dashboard-house-connection-pipe': <rect x={houseStubRightX} y={houseConnectionPipeY} width="25" height="15" fill={pipeColors['dashboard-house-connection-pipe']} />,
         'dashboard-house-hp-vertical-pipe-bottom': <rect x={houseRiserLeftX} y="230" width="15" height={houseHpVerticalPipeBottomHeight} fill={pipeColors['dashboard-house-hp-vertical-pipe-bottom']} />,
-        'dashboard-house-connection-pipe-bottom': <rect x={houseRiserLeftX} y="370" width="25" height="15" fill={pipeColors['dashboard-house-connection-pipe-bottom']} />,
+        'dashboard-house-connection-pipe-bottom': <rect x={houseRiserLeftX} y={houseConnectionPipeY} width="25" height="15" fill={pipeColors['dashboard-house-connection-pipe-bottom']} />,
         'dashboard-house-buffer-top-pipe': hidePipeForHeaderRowDebug('dashboard-house-buffer-top-pipe') ? (
             <g data-debug-omit="dashboard-house-buffer-top-pipe" />
         ) : (
