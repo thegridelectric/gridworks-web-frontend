@@ -207,7 +207,7 @@ function RealTimeStatusConnection({
                 {latestReadings ?
                     <>
                         <div id="dashboard-monitoring-tables">
-                            <RealTimeStatusThermostatTable thermostatNames={thermostatNames} readings={latestReadings} />
+                            <RealTimeStatusThermostatTable thermostatNames={thermostatNames} readings={latestReadings} isSpruce={isSpruce} />
 
                             <div>
                                 <table id="dashboard-hp-power-table">

@@ -48,12 +48,25 @@
     border: 1px solid var(--border-color); border-collapse: collapse; border-radius: 0.25rem; background-color: var(--card-background); margin: 0 auto; font-size: 0.75rem; color: var(--text-muted);
 }
 
+.dashboard-zone-table {
+    border: 1px solid var(--border-color); border-collapse: collapse; border-radius: 0.25rem; background-color: var(--card-background); margin: 0 auto; font-size: 0.75rem; color: var(--text-muted);
+}
+
 #dashboard-thermostat-table th {
     border: 1px solid var(--border-color); padding: 6px; text-align: left; font-weight: bold; font-size: 0.75rem; color: var(--text-muted);
     background-color: var(--hover-color);
 }
 
+.dashboard-zone-table th {
+    border: 1px solid var(--border-color); padding: 6px; text-align: left; font-weight: bold; font-size: 0.75rem; color: var(--text-muted);
+    background-color: var(--hover-color);
+}
+
 #dashboard-thermostat-tbody td {
+    border: 1px solid var(--border-color); padding: 6px; font-size: 0.8rem; color: var(--text-muted);
+}
+
+.dashboard-zone-table td {
     border: 1px solid var(--border-color); padding: 6px; font-size: 0.8rem; color: var(--text-muted);
 }
 
