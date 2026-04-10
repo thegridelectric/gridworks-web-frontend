@@ -66,7 +66,7 @@ export default function VisualizerPage() {
         const startMs = wallDateTimeToUtcMs(startDt);
         const endMs = wallDateTimeToUtcMs(endDt);
 
-        if (!isEndDateOldEnough(endMs, 10)) {
+        if (!isEndDateOldEnough(endMs, 10, houseAlias)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
@@ -178,7 +178,7 @@ export default function VisualizerPage() {
         }
 
         const endMs = wallDateTimeToUtcMs(endDateTime);
-        if (!isEndDateOldEnough(endMs, 10)) {
+        if (!isEndDateOldEnough(endMs, 10, houseAlias)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }

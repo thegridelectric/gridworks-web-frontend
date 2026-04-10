@@ -10,6 +10,7 @@ import InstallationPicker from "../_shared/InstallationPicker";
 import SessionContext, { installationForRouteId } from "../_util/SessionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketUrl } from "../_util/visualizerApi";
+import { hasRealTimeAccessForInstallationAlias } from "../auth/auth";
 
 interface RelayInfo {
     name: string;
@@ -331,6 +332,8 @@ export default function RealTimeStatusPage() {
     const houseAliasMissing =
         !!currentInstallationId && !!installation && !houseAlias;
     const showConnectedContent = Boolean(currentInstallationId && houseAlias);
+    const realTimeNotPermittedForAlias =
+        showConnectedContent && !hasRealTimeAccessForInstallationAlias(houseAlias);
 
     if (!showConnectedContent) {
         return (
@@ -360,6 +363,36 @@ export default function RealTimeStatusPage() {
                     {houseAliasMissing &&
                         <p className="text-danger mb-0">Real-time needs a short house alias for this installation (the Alias column from the installations table / backoffice homes list).</p>
                     }
+                </div>
+            </div>
+        );
+    }
+
+    if (realTimeNotPermittedForAlias) {
+        return (
+            <div className="card visualizer-card mb-4">
+                <div className="card-header d-flex justify-content-between align-items-center">
+                    <h5 className="card-title mb-0">Real-time</h5>
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        title="Request snapshot"
+                        aria-label="Request snapshot"
+                        disabled
+                    >
+                        Snapshot
+                    </button>
+                </div>
+                <div className="p-4">
+                    <div className="mb-4">
+                        <label className="form-label">Selected House</label>
+                        <div className="selected-house-picker">
+                            <InstallationPicker />
+                        </div>
+                    </div>
+                    <p className="text-danger mb-0">
+                        Real-time status is not available for this installation with your current access (viewer-only houses do not include live dashboard).
+                    </p>
                 </div>
             </div>
         );

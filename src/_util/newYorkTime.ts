@@ -1,11 +1,39 @@
 import { DateTime } from 'luxon';
 
-import { isViewerUser } from '../auth/auth';
+import {
+    isAdminUser,
+    isViewerDateRestrictionForInstallationAlias,
+    isViewerUser,
+} from '../auth/auth';
 
 export const NEW_YORK_TIME_ZONE = 'America/New_York';
 
-export function isEndDateOldEnough(endUnixMs: number, lookbackDays: number): boolean {
-    if (!isViewerUser()) {
+function normalizeAliasList(aliases?: string | string[]): string[] {
+    if (aliases === undefined || aliases === null) {
+        return [];
+    }
+    const arr = Array.isArray(aliases) ? aliases : [aliases];
+    return arr.map((s) => s.trim().toLowerCase()).filter((a) => a.length > 0);
+}
+
+function shouldEnforceViewerLookback(installationAliases?: string | string[]): boolean {
+    if (isAdminUser()) {
+        return false;
+    }
+    const list = normalizeAliasList(installationAliases);
+    if (list.length === 0) {
+        return isViewerUser();
+    }
+    return list.some((alias) => isViewerDateRestrictionForInstallationAlias(alias));
+}
+
+/** When `installationAliases` is set, 10-day lookback applies if any alias is viewer-scoped. */
+export function isEndDateOldEnough(
+    endUnixMs: number,
+    lookbackDays: number,
+    installationAliases?: string | string[],
+): boolean {
+    if (!shouldEnforceViewerLookback(installationAliases)) {
         return true;
     }
     const cutoff = DateTime.now()

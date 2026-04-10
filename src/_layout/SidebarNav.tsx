@@ -2,7 +2,7 @@ import { BarChart, List, Table, Settings, Sun, Clock, Info } from 'feather-icons
 import { NavLink as ReactRouterNavLink } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 import { useContext } from 'react';
-import { isAdminUser, isViewerUser } from '../auth/auth';
+import { hasAnyRealTimeEligibleRole, isAdminUser } from '../auth/auth';
 import SessionContext, { installationForRouteId } from '../_util/SessionContext';
 import { useRouteInfo } from '../_util/useRouteInfo';
 
@@ -29,7 +29,7 @@ export default function SidebarNav() {
         : null;
     const installationUrlSuffix = currentInstallationId ? `${currentInstallationId}/` : '';
     const isAdmin = isAdminUser();
-    const isViewer = isViewerUser();
+    const showRealTimeNav = hasAnyRealTimeEligibleRole();
 
     function onSidebarClick(event: React.MouseEvent<HTMLElement>) {
         if (!window.matchMedia('(max-width: 767.98px)').matches) {
@@ -67,7 +67,7 @@ export default function SidebarNav() {
                 {installationHeading &&
                     <h4 className="sidebar-heading px-3 mt-1 mb-2 text-muted">{installationHeading}</h4>
                 }
-                {!isViewer && (
+                {showRealTimeNav && (
                     <li className="nav-item">
                         <Nav.Link as={ReactRouterNavLink} to={`/real-time/${installationUrlSuffix}`}><Clock />Real-Time Status</Nav.Link>
                     </li>

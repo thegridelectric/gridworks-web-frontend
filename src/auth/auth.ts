@@ -7,6 +7,9 @@ const AUTH_ROLES_KEY = 'auth_roles';
 
 export type AuthRolesMap = Record<string, string>;
 
+/** Only these role keys are accepted; any other keys from the API are ignored. */
+const ALLOWED_ROLE_NAMES = new Set(['admin', 'viewer', 'owner']);
+
 /** Successful POST /login JSON (Gridworks visualizer API). */
 export interface LoginResponseBody {
     username: string;
@@ -26,7 +29,7 @@ function parseRoles(value: unknown): AuthRolesMap | null {
         }
         const role = k.trim().toLowerCase();
         const installation = v.trim();
-        if (!role) {
+        if (!role || !ALLOWED_ROLE_NAMES.has(role)) {
             continue;
         }
         out[role] = installation;
@@ -126,11 +129,73 @@ export function isAdminUser(): boolean {
 }
 
 /**
- * Viewer-only: has viewer role but not owner or admin.
- * Used for 10-day visualizer restriction and hiding real-time (owner/admin see more).
+ * Account has only viewer roles (no owner, no admin). Used when no installation
+ * context is available for date lookback (fallback: apply viewer restriction).
  */
 export function isViewerUser(): boolean {
     return hasRole('viewer') && !hasRole('owner') && !hasRole('admin');
+}
+
+export function normalizeInstallationAlias(alias: string): string {
+    return alias.trim().toLowerCase();
+}
+
+/**
+ * Effective access for a house alias from the role → installation map.
+ * If both `owner` and `viewer` map to the same alias, owner wins.
+ */
+export function getAccessLevelForInstallationAlias(alias: string): 'admin' | 'owner' | 'viewer' | null {
+    const n = normalizeInstallationAlias(alias);
+    if (!n) {
+        return null;
+    }
+    if (isAdminUser()) {
+        return 'admin';
+    }
+    const roles = getAuthRoles();
+    let matchedOwner = false;
+    let matchedViewer = false;
+    for (const [role, inst] of Object.entries(roles)) {
+        if (role === 'admin') {
+            continue;
+        }
+        if (normalizeInstallationAlias(inst) !== n) {
+            continue;
+        }
+        if (role === 'owner') {
+            matchedOwner = true;
+        }
+        if (role === 'viewer') {
+            matchedViewer = true;
+        }
+    }
+    if (matchedOwner) {
+        return 'owner';
+    }
+    if (matchedViewer) {
+        return 'viewer';
+    }
+    return null;
+}
+
+/** Real-time dashboard: owner or admin for that installation. */
+export function hasRealTimeAccessForInstallationAlias(alias: string): boolean {
+    const level = getAccessLevelForInstallationAlias(alias);
+    return level === 'admin' || level === 'owner';
+}
+
+/** Apply 10-day end-date rule for queries scoped to this installation. */
+export function isViewerDateRestrictionForInstallationAlias(alias: string): boolean {
+    return getAccessLevelForInstallationAlias(alias) === 'viewer';
+}
+
+/** True if the user can open real-time for at least one installation (admin or any owner-scoped house). */
+export function hasAnyRealTimeEligibleRole(): boolean {
+    if (isAdminUser()) {
+        return true;
+    }
+    const roles = getAuthRoles();
+    return Boolean(roles.owner && roles.owner.trim() !== '');
 }
 
 /** Installation aliases the user may access (all non-admin role values). Admins ignore this list. */

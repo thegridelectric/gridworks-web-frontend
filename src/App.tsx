@@ -3,7 +3,7 @@ import { Spinner } from "react-bootstrap";
 
 import SessionContext from "./_util/SessionContext";
 import HeaderLayout from "./_layout/HeaderLayout";
-import { getAuthToken, isAdminUser, isViewerUser } from "./auth/auth";
+import { getAuthToken, hasAnyRealTimeEligibleRole, isAdminUser } from "./auth/auth";
 import { useAppSession } from "./auth/useAppSession";
 
 
@@ -26,7 +26,7 @@ export default function App({ children }: React.PropsWithChildren) {
     if (loadSession && !isAdminUser()) {
         const isAllowedPath =
             location.pathname.startsWith('/installations/') ||
-            (!isViewerUser() && location.pathname.startsWith('/real-time/')) ||
+            (hasAnyRealTimeEligibleRole() && location.pathname.startsWith('/real-time/')) ||
             location.pathname.startsWith('/visualizer/');
         if (!isAllowedPath) {
             return <Navigate to="/installations/" replace />;

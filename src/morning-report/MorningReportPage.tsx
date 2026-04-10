@@ -110,6 +110,15 @@ function MorningReportPageContent() {
         [selectedInstallationIds, installations],
     );
 
+    const aliasesForDateLookback = useMemo(() => {
+        if (houseAliasParam.trim()) {
+            return houseAliasParam.split(',').map((s) => s.trim()).filter((s) => s.length > 0);
+        }
+        return installations
+            .map((i) => (i.houseAlias || i.displayName || '').trim())
+            .filter((s) => s.length > 0);
+    }, [houseAliasParam, installations]);
+
     function setNowEnd() {
         const nyDate = getNowInNewYork();
         nyDate.setMinutes(nyDate.getMinutes() + 1);
@@ -141,8 +150,8 @@ function MorningReportPageContent() {
 
         const startMs = wallDateTimeToUtcMs(startDateTime);
         const endMs = wallDateTimeToUtcMs(endDateTime);
-        if (!isEndDateOldEnough(endMs, 10)) {
-            setError('End time must be at least 10 days in the past (unless you are admin).');
+        if (!isEndDateOldEnough(endMs, 10, aliasesForDateLookback)) {
+            setError('End time must be at least 10 days in the past when viewer access applies to any selected installation.');
             return;
         }
 

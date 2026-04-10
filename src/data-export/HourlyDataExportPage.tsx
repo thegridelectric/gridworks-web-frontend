@@ -140,8 +140,8 @@ export default function HourlyDataExportPage() {
     }
     const startMs = wallDateTimeToUtcMs(hourlyStart);
     const endMs = wallDateTimeToUtcMs(hourlyEnd);
-    if (!isEndDateOldEnough(endMs, 10)) {
-      setError('End time must be at least 10 days in the past (unless you are admin).');
+    if (!isEndDateOldEnough(endMs, 10, hourlyAliases)) {
+      setError('End time must be at least 10 days in the past when viewer access applies to any selected installation.');
       return;
     }
 
@@ -169,8 +169,8 @@ export default function HourlyDataExportPage() {
     }
     const startMs = wallDateTimeToUtcMs(hourlyStart);
     const endMs = wallDateTimeToUtcMs(hourlyEnd);
-    if (!isEndDateOldEnough(endMs, 10)) {
-      setError('End time must be at least 10 days in the past (unless you are admin).');
+    if (!isEndDateOldEnough(endMs, 10, hourlyAliases)) {
+      setError('End time must be at least 10 days in the past when viewer access applies to any selected installation.');
       return;
     }
 

@@ -79,8 +79,8 @@ export default function ChannelDataExportPage() {
     }
     const startMs = wallDateTimeToUtcMs(channelStart);
     const endMs = wallDateTimeToUtcMs(channelEnd);
-    if (!isEndDateOldEnough(endMs, 10)) {
-      setError('End time must be at least 10 days in the past (unless you are admin).');
+    if (!isEndDateOldEnough(endMs, 10, houseAliasForCsv)) {
+      setError('End time must be at least 10 days in the past for viewer access to this installation.');
       return;
     }
 
