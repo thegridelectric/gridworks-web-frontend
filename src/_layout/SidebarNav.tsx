@@ -2,7 +2,7 @@ import { BarChart, List, Table, Settings, Sun, Clock, Info } from 'feather-icons
 import { NavLink as ReactRouterNavLink } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 import { useContext } from 'react';
-import { getAuthUserType, isAdminUser } from '../auth/auth';
+import { isAdminUser, isViewerUser } from '../auth/auth';
 import SessionContext, { installationForRouteId } from '../_util/SessionContext';
 import { useRouteInfo } from '../_util/useRouteInfo';
 
@@ -29,7 +29,7 @@ export default function SidebarNav() {
         : null;
     const installationUrlSuffix = currentInstallationId ? `${currentInstallationId}/` : '';
     const isAdmin = isAdminUser();
-    const isViewer = getAuthUserType() === 'viewer';
+    const isViewer = isViewerUser();
 
     function onSidebarClick(event: React.MouseEvent<HTMLElement>) {
         if (!window.matchMedia('(max-width: 767.98px)').matches) {

@@ -2,29 +2,39 @@ import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 
 const AUTH_TOKEN_KEY = 'token';
 const AUTH_USERNAME_KEY = 'username';
-const AUTH_USER_TYPE_KEY = 'user_type';
-const AUTH_USER_INSTALLATIONS_KEY = 'user_installations';
+/** Persisted from POST /login only — GET /me does not include roles. */
+const AUTH_ROLES_KEY = 'auth_roles';
 
-const ALLOWED_USER_TYPES = new Set(['admin', 'viewer', 'owner'] as const);
-type UserType = 'admin' | 'viewer' | 'owner';
+export type AuthRolesMap = Record<string, string>;
 
-function parseUserType(value: unknown): UserType | null {
-    if (typeof value !== 'string') {
-        return null;
-    }
-    const normalized = value.trim().toLowerCase();
-    return ALLOWED_USER_TYPES.has(normalized as UserType) ? (normalized as UserType) : null;
+/** Successful POST /login JSON (Gridworks visualizer API). */
+export interface LoginResponseBody {
+    username: string;
+    roles: AuthRolesMap;
+    access_token: string;
+    token_type: string;
 }
 
-function parseUserInstallations(value: unknown): string[] {
-    if (!Array.isArray(value)) {
-        return [];
+function parseRoles(value: unknown): AuthRolesMap | null {
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        return null;
     }
-    const normalized = value
-        .filter((entry): entry is string => typeof entry === 'string')
-        .map((entry) => entry.trim().toLowerCase())
-        .filter((entry) => entry.length > 0);
-    return Array.from(new Set(normalized));
+    const out: AuthRolesMap = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+        if (typeof k !== 'string' || typeof v !== 'string') {
+            continue;
+        }
+        const role = k.trim().toLowerCase();
+        const installation = v.trim();
+        if (!role) {
+            continue;
+        }
+        out[role] = installation;
+    }
+    if (Object.keys(out).length === 0) {
+        return null;
+    }
+    return out;
 }
 
 export async function login(username: string, password: string): Promise<void> {
@@ -45,41 +55,30 @@ export async function login(username: string, password: string): Promise<void> {
         throw new Error('Invalid username or password');
     }
 
-    const rawBody = await res.text();
-    console.log('[auth] Login request URL:', loginUrl);
-    console.log('[auth] Login response status:', res.status);
-    console.log('[auth] Login response raw body:', rawBody);
-
-    const data = JSON.parse(rawBody) as {
-        access_token?: string;
-        user_type?: unknown;
-        username?: unknown;
-        user_installations?: unknown;
-        token_type?: unknown;
-    };
-    console.log('[auth] Login response payload:', data);
-    console.log('[auth] Login response keys:', Object.keys(data));
+    const data = JSON.parse(await res.text()) as Partial<LoginResponseBody>;
     if (!data.access_token) {
         throw new Error('Login response did not include access_token');
     }
-    const userType = parseUserType(data.user_type);
-    if (!userType) {
+    const roles = parseRoles(data.roles);
+    if (!roles) {
         clearAuth();
         throw new Error('Your account is not permitted to sign in.');
     }
-    const userInstallations = parseUserInstallations(data.user_installations);
+
+    const resolvedUsername =
+        typeof data.username === 'string' && data.username.trim() !== ''
+            ? data.username.trim()
+            : username.trim();
 
     localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
-    localStorage.setItem(AUTH_USERNAME_KEY, username.trim());
-    localStorage.setItem(AUTH_USER_TYPE_KEY, userType);
-    localStorage.setItem(AUTH_USER_INSTALLATIONS_KEY, JSON.stringify(userInstallations));
+    localStorage.setItem(AUTH_USERNAME_KEY, resolvedUsername);
+    localStorage.setItem(AUTH_ROLES_KEY, JSON.stringify(roles));
 }
 
 export function clearAuth(): void {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USERNAME_KEY);
-    localStorage.removeItem(AUTH_USER_TYPE_KEY);
-    localStorage.removeItem(AUTH_USER_INSTALLATIONS_KEY);
+    localStorage.removeItem(AUTH_ROLES_KEY);
 }
 
 export function getAuthToken(): string | null {
@@ -102,26 +101,50 @@ export function getDisplayUserName(): string {
     return getAuthUsername() || 'Visualizer user';
 }
 
-export function getAuthUserType(): UserType | null {
-    return parseUserType(localStorage.getItem(AUTH_USER_TYPE_KEY));
-}
-
-export function getAuthUserInstallations(): string[] {
-    const raw = localStorage.getItem(AUTH_USER_INSTALLATIONS_KEY);
+/** Roles from login only (persisted). Keys are role names, values are installation strings. */
+export function getAuthRoles(): AuthRolesMap {
+    const raw = localStorage.getItem(AUTH_ROLES_KEY);
     if (!raw) {
-        return [];
+        return {};
     }
     try {
-        return parseUserInstallations(JSON.parse(raw));
+        const parsed = JSON.parse(raw) as unknown;
+        const roles = parseRoles(parsed);
+        return roles ?? {};
     } catch {
-        return [];
+        return {};
     }
+}
+
+function hasRole(roleName: string): boolean {
+    const key = roleName.trim().toLowerCase();
+    return Object.prototype.hasOwnProperty.call(getAuthRoles(), key);
 }
 
 export function isAdminUser(): boolean {
-    return getAuthUserType() === 'admin';
+    return hasRole('admin');
 }
 
+/**
+ * Viewer-only: has viewer role but not owner or admin.
+ * Used for 10-day visualizer restriction and hiding real-time (owner/admin see more).
+ */
 export function isViewerUser(): boolean {
-    return getAuthUserType() === 'viewer';
+    return hasRole('viewer') && !hasRole('owner') && !hasRole('admin');
+}
+
+/** Installation aliases the user may access (all non-admin role values). Admins ignore this list. */
+export function getAuthUserInstallations(): string[] {
+    const roles = getAuthRoles();
+    const set = new Set<string>();
+    for (const [role, inst] of Object.entries(roles)) {
+        if (role === 'admin') {
+            continue;
+        }
+        const a = inst.trim().toLowerCase();
+        if (a) {
+            set.add(a);
+        }
+    }
+    return Array.from(set);
 }
