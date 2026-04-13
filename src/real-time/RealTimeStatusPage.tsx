@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 
 import './RealTimeStatusPage.css';
 import RealTimeStatusHeader from "./RealTimeStatusHeader";
@@ -54,6 +54,30 @@ type DashboardInbound =
     | DashboardErrorMessage
     | { type: string };
 
+/**
+ * Milliseconds until the next local snapshot tick on the minute grid: offsets i·x seconds from
+ * each minute start for i ≥ 0 while i·x ≤ 60. The next tick is strictly after `fromMs`.
+ */
+function msUntilNextSnapshotGridTick(fromMs: number, xSeconds: number): number {
+    const periodMs = xSeconds * 1000;
+    const d = new Date(fromMs);
+    d.setMilliseconds(0);
+    d.setSeconds(0);
+    let baseMs = d.getTime();
+    for (let guard = 0; guard < 4; guard++) {
+        for (let i = 0; i * xSeconds <= 60; i++) {
+            const t = baseMs + i * periodMs;
+            if (t > fromMs) {
+                return t - fromMs;
+            }
+        }
+        baseMs += 60_000;
+    }
+    return periodMs;
+}
+
+const DEFAULT_SNAPSHOT_INTERVAL_SEC = 2;
+
 function RealTimeStatusConnection({
     currentInstallationId,
     houseAlias,
@@ -81,6 +105,8 @@ function RealTimeStatusConnection({
     const [latestReadings, setLatestReadings] = useState<Record<string, number> | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [err, setErr] = useState<string | null>(null);
+    const [snapshotIntervalSec, setSnapshotIntervalSec] = useState<number | ''>(DEFAULT_SNAPSHOT_INTERVAL_SEC);
+    const [autoSnapshotEnabled, setAutoSnapshotEnabled] = useState(false);
 
     const wsRef = useRef<WebSocket | null>(null);
     const hasLoggedSpruceChannelsRef = useRef(false);
@@ -193,28 +219,148 @@ function RealTimeStatusConnection({
         hasLoggedSpruceChannelsRef.current = false;
     }, [currentInstallationId, houseAlias, isSpruce]);
 
-    function requestSnapshot() {
+    const requestSnapshot = useCallback(() => {
         const ws = wsRef.current;
         if (!ws || ws.readyState !== WebSocket.OPEN) {
             return;
         }
         ws.send(JSON.stringify({ type: 'request_snapshot', data: {} }));
-    }
+    }, []);
+
+    useEffect(() => {
+        if (!autoSnapshotEnabled || !isConnected || snapshotIntervalSec === '') {
+            return;
+        }
+        const sec = snapshotIntervalSec;
+        if (sec < 1 || sec > 30) {
+            return;
+        }
+        let cancelled = false;
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+        const scheduleNext = () => {
+            if (cancelled) {
+                return;
+            }
+            const delay = msUntilNextSnapshotGridTick(Date.now(), sec);
+            timeoutId = window.setTimeout(() => {
+                if (cancelled) {
+                    return;
+                }
+                requestSnapshot();
+                scheduleNext();
+            }, delay);
+        };
+
+        scheduleNext();
+        return () => {
+            cancelled = true;
+            if (timeoutId !== undefined) {
+                window.clearTimeout(timeoutId);
+            }
+        };
+    }, [autoSnapshotEnabled, isConnected, snapshotIntervalSec, requestSnapshot]);
+
+    useEffect(() => {
+        if (autoSnapshotEnabled && snapshotIntervalSec === '') {
+            setSnapshotIntervalSec(DEFAULT_SNAPSHOT_INTERVAL_SEC);
+        }
+    }, [autoSnapshotEnabled, snapshotIntervalSec]);
+
+    useEffect(() => {
+        const disableAutoSnapshot = () => {
+            setAutoSnapshotEnabled(false);
+        };
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                disableAutoSnapshot();
+            }
+        };
+        // `visibilitychange` covers switching tabs / minimizing; it does not fire when another
+        // browser window is focused on top while this tab stays "visible" in the background window.
+        document.addEventListener('visibilitychange', onVisibilityChange);
+        window.addEventListener('blur', disableAutoSnapshot);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            window.removeEventListener('blur', disableAutoSnapshot);
+        };
+    }, []);
 
     return (
         <div className="card visualizer-card mb-4">
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0">Real-time</h5>
-                <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    title="Request snapshot"
-                    aria-label="Request snapshot"
-                    disabled={!isConnected}
-                    onClick={requestSnapshot}
-                >
-                    Snapshot
-                </button>
+                <div className="d-flex align-items-center gap-2">
+                    <input
+                        type="checkbox"
+                        className="form-check-input m-0 flex-shrink-0"
+                        id="realtime-auto-snapshot"
+                        checked={autoSnapshotEnabled}
+                        onChange={(e) => {
+                            const next = e.target.checked;
+                            setAutoSnapshotEnabled(next);
+                            if (next && snapshotIntervalSec === '') {
+                                setSnapshotIntervalSec(DEFAULT_SNAPSHOT_INTERVAL_SEC);
+                            }
+                        }}
+                        disabled={!isConnected}
+                        title="When checked, request snapshots automatically on the interval grid. Unchecks when this tab is hidden, or when this browser window loses focus (e.g. another window or tab is on top)."
+                        aria-label="Automatically request snapshots on an interval; turns off when the page is hidden or the window loses focus"
+                    />
+                    <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                        <span className="small text-muted mb-0 text-nowrap">Every</span>
+                        <input
+                            id="realtime-snapshot-interval"
+                            type="number"
+                            className="form-control form-control-sm"
+                            style={{ width: '4.25rem' }}
+                            min={1}
+                            max={30}
+                            step={1}
+                            value={snapshotIntervalSec === '' ? '' : snapshotIntervalSec}
+                            onChange={(e) => {
+                                const raw = e.target.value;
+                                if (raw === '') {
+                                    if (autoSnapshotEnabled) {
+                                        setSnapshotIntervalSec(DEFAULT_SNAPSHOT_INTERVAL_SEC);
+                                    } else {
+                                        setSnapshotIntervalSec('');
+                                    }
+                                    return;
+                                }
+                                const n = Number.parseInt(raw, 10);
+                                if (Number.isNaN(n)) {
+                                    return;
+                                }
+                                setSnapshotIntervalSec(Math.min(30, Math.max(1, n)));
+                            }}
+                            onBlur={() => {
+                                setSnapshotIntervalSec((prev) => {
+                                    if (prev === '') {
+                                        return autoSnapshotEnabled ? DEFAULT_SNAPSHOT_INTERVAL_SEC : '';
+                                    }
+                                    return Math.min(30, Math.max(1, prev));
+                                });
+                            }}
+                            title="Snapshots on minute grid at 0, N, 2N, … seconds while i·N≤60 (1–30). With auto snapshots on, the step defaults to 2 if empty."
+                            aria-label="Snapshot step in seconds on the minute grid, 1 to 30; with auto snapshots enabled, empty becomes 2"
+                            disabled={!isConnected}
+                        />
+                        <span className="small text-muted mb-0 text-nowrap">seconds</span>
+                    </div>
+                    {/* Manual snapshot button — restore when needed
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary"
+                        title="Request snapshot"
+                        aria-label="Request snapshot"
+                        disabled={!isConnected}
+                        onClick={requestSnapshot}
+                    >
+                        Snapshot
+                    </button>
+                    */}
+                </div>
             </div>
             <div className="p-4">
                 <div className="mb-4">
@@ -225,7 +371,11 @@ function RealTimeStatusConnection({
                 </div>
                 <RealTimeStatusHeader err={err} isConnected={isConnected} targetGNode={targetGNode} />
                 {updateTime &&
-                    <RealTimeStatusTimestamp updateTime={updateTime} />
+                    <RealTimeStatusTimestamp
+                        updateTime={updateTime}
+                        autoSnapshotEnabled={autoSnapshotEnabled}
+                        snapshotStepSeconds={typeof snapshotIntervalSec === 'number' ? snapshotIntervalSec : DEFAULT_SNAPSHOT_INTERVAL_SEC}
+                    />
                 }
                 <RealTimeStatusSystemDiagram relays={relays} readings={diagramReadings} isSpruce={isSpruce} />
                 {latestReadings ?
@@ -340,15 +490,36 @@ export default function RealTimeStatusPage() {
             <div className="card visualizer-card mb-4">
                 <div className="card-header d-flex justify-content-between align-items-center">
                     <h5 className="card-title mb-0">Real-time</h5>
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary"
-                        title="Request snapshot"
-                        aria-label="Request snapshot"
-                        disabled
-                    >
-                        Snapshot
-                    </button>
+                    <div className="d-flex align-items-center gap-2">
+                        <input
+                            type="checkbox"
+                            className="form-check-input m-0 flex-shrink-0"
+                            disabled
+                            aria-hidden
+                            tabIndex={-1}
+                        />
+                        <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                            <span className="small text-muted mb-0 text-nowrap">Every</span>
+                            <input
+                                type="number"
+                                className="form-control form-control-sm"
+                                style={{ width: '4.25rem' }}
+                                disabled
+                                aria-hidden
+                                tabIndex={-1}
+                            />
+                            <span className="small text-muted mb-0 text-nowrap">seconds</span>
+                        </div>
+                        {/* <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            title="Request snapshot"
+                            aria-label="Request snapshot"
+                            disabled
+                        >
+                            Snapshot
+                        </button> */}
+                    </div>
                 </div>
                 <div className="p-4">
                     <div className="mb-4">
@@ -373,15 +544,36 @@ export default function RealTimeStatusPage() {
             <div className="card visualizer-card mb-4">
                 <div className="card-header d-flex justify-content-between align-items-center">
                     <h5 className="card-title mb-0">Real-time</h5>
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary"
-                        title="Request snapshot"
-                        aria-label="Request snapshot"
-                        disabled
-                    >
-                        Snapshot
-                    </button>
+                    <div className="d-flex align-items-center gap-2">
+                        <input
+                            type="checkbox"
+                            className="form-check-input m-0 flex-shrink-0"
+                            disabled
+                            aria-hidden
+                            tabIndex={-1}
+                        />
+                        <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                            <span className="small text-muted mb-0 text-nowrap">Every</span>
+                            <input
+                                type="number"
+                                className="form-control form-control-sm"
+                                style={{ width: '4.25rem' }}
+                                disabled
+                                aria-hidden
+                                tabIndex={-1}
+                            />
+                            <span className="small text-muted mb-0 text-nowrap">seconds</span>
+                        </div>
+                        {/* <button
+                            type="button"
+                            className="btn btn-sm btn-outline-secondary"
+                            title="Request snapshot"
+                            aria-label="Request snapshot"
+                            disabled
+                        >
+                            Snapshot
+                        </button> */}
+                    </div>
                 </div>
                 <div className="p-4">
                     <div className="mb-4">
