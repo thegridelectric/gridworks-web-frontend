@@ -236,7 +236,8 @@ function RealTimeStatusConnection({
             return;
         }
         let cancelled = false;
-        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        /** DOM timers use numeric handles; avoids Node `Timeout` vs `number` mismatch under `tsc -b`. */
+        let timeoutId: number | undefined;
 
         const scheduleNext = () => {
             if (cancelled) {
