@@ -87,9 +87,15 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
     } else if (currentState === 'HpOnStoreCharge') {
         storageTankAnimationColor = 'url(#dashboardTankHeatLinesTopToBottom)'
     }
+
+    /** Extra space on the left so shifted HP (translate) is not clipped; wider box also scales content slightly to fit the card. */
+    const SIEG_LOOP_VIEWBOX_PAD_LEFT = 36;
+    const diagramViewBox = siegLoop
+        ? `-${SIEG_LOOP_VIEWBOX_PAD_LEFT} 0 ${1000 + SIEG_LOOP_VIEWBOX_PAD_LEFT} 500`
+        : '0 0 1000 500';
     
     return <div id="dashboard-system-diagram">
-        <svg id="dashboard-diagram-svg" viewBox="0 0 1000 500">
+        <svg id="dashboard-diagram-svg" viewBox={diagramViewBox} preserveAspectRatio="xMidYMid meet">
             <defs>
                 {/* Dynamic gradient for heat pump animation (EWT to LWT) */}
                 <linearGradient id="dashboardHeatGradient" x1="0%" y1="100%" x2="0%" y2="0%">
