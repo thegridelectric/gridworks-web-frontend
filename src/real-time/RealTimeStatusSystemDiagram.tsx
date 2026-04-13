@@ -73,7 +73,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
 
     /** Same threshold idea as `dist-flow` in `getCurrentState` (raw reading > 0). */
     const animateSiegLoopDown =
-        siegLoop && (readings['sieg-flow'] ?? 0) > 0;
+        siegLoop && (readings['sieg-flow'] ?? 0) > 0.5;
 
     // Spruce + dist-flow: buffer overlay lines move bottom → top; otherwise top → bottom (matches non-Spruce default).
     const bufferHeatLinesFill =
