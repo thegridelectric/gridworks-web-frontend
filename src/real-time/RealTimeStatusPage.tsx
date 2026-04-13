@@ -78,14 +78,42 @@ function msUntilNextSnapshotGridTick(fromMs: number, xSeconds: number): number {
 
 const DEFAULT_SNAPSHOT_INTERVAL_SEC = 2;
 
+/** True when `hardware_layout` has `"sieg": true` (JSON string or already-parsed object). */
+function hardwareLayoutHasSiegEnabled(hardwareLayout: unknown): boolean {
+    if (hardwareLayout == null) {
+        return false;
+    }
+    if (typeof hardwareLayout === 'object' && !Array.isArray(hardwareLayout)) {
+        return (hardwareLayout as Record<string, unknown>).sieg === true;
+    }
+    if (typeof hardwareLayout !== 'string') {
+        return false;
+    }
+    const trimmed = hardwareLayout.trim();
+    if (!trimmed) {
+        return false;
+    }
+    try {
+        const parsed: unknown = JSON.parse(trimmed);
+        if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            return (parsed as Record<string, unknown>).sieg === true;
+        }
+    } catch {
+        return false;
+    }
+    return false;
+}
+
 function RealTimeStatusConnection({
     currentInstallationId,
     houseAlias,
     isSpruce,
+    defaultSiegLoop,
 }: {
     currentInstallationId: string | undefined;
     houseAlias: string;
     isSpruce: boolean;
+    defaultSiegLoop: boolean;
 }) {
     function getSpruceResistiveElements(readings: Record<string, number>) {
         return Object.entries(readings)
@@ -107,7 +135,8 @@ function RealTimeStatusConnection({
     const [err, setErr] = useState<string | null>(null);
     const [snapshotIntervalSec, setSnapshotIntervalSec] = useState<number | ''>(DEFAULT_SNAPSHOT_INTERVAL_SEC);
     const [autoSnapshotEnabled, setAutoSnapshotEnabled] = useState(false);
-    const [siegLoopEnabled, setSiegLoopEnabled] = useState(false);
+    /** Sieg loop is driven only by `hardware_layout` (no UI toggle). */
+    const siegLoopEnabled = defaultSiegLoop;
 
     const wsRef = useRef<WebSocket | null>(null);
     const hasLoggedSpruceChannelsRef = useRef(false);
@@ -293,23 +322,6 @@ function RealTimeStatusConnection({
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0">Real-time</h5>
                 <div className="d-flex align-items-center gap-2">
-                    <div className="d-flex align-items-center gap-1 flex-shrink-0">
-                        <input
-                            type="checkbox"
-                            className="form-check-input m-0 flex-shrink-0"
-                            id="realtime-sieg-loop"
-                            checked={siegLoopEnabled}
-                            onChange={(e) => {
-                                setSiegLoopEnabled(e.target.checked);
-                            }}
-                            disabled={!isConnected}
-                            title="Show Sieg loop: vertical pipe between HP–buffer horizontals next to the heat pump"
-                            aria-label="Sieg loop"
-                        />
-                        <label htmlFor="realtime-sieg-loop" className="small text-muted mb-0 text-nowrap user-select-none">
-                            Sieg loop
-                        </label>
-                    </div>
                     <input
                         type="checkbox"
                         className="form-check-input m-0 flex-shrink-0"
@@ -516,22 +528,14 @@ export default function RealTimeStatusPage() {
     const realTimeNotPermittedForAlias =
         showConnectedContent && !hasRealTimeAccessForInstallationAlias(houseAlias);
 
+    const defaultSiegLoop = hardwareLayoutHasSiegEnabled(installation?.hardwareLayout);
+
     if (!showConnectedContent) {
         return (
             <div className="card visualizer-card mb-4">
                 <div className="card-header d-flex justify-content-between align-items-center">
                     <h5 className="card-title mb-0">Real-time</h5>
                     <div className="d-flex align-items-center gap-2">
-                        <div className="d-flex align-items-center gap-1 flex-shrink-0">
-                            <input
-                                type="checkbox"
-                                className="form-check-input m-0 flex-shrink-0"
-                                disabled
-                                aria-hidden
-                                tabIndex={-1}
-                            />
-                            <span className="small text-muted mb-0 text-nowrap">Sieg loop</span>
-                        </div>
                         <input
                             type="checkbox"
                             className="form-check-input m-0 flex-shrink-0"
@@ -586,16 +590,6 @@ export default function RealTimeStatusPage() {
                 <div className="card-header d-flex justify-content-between align-items-center">
                     <h5 className="card-title mb-0">Real-time</h5>
                     <div className="d-flex align-items-center gap-2">
-                        <div className="d-flex align-items-center gap-1 flex-shrink-0">
-                            <input
-                                type="checkbox"
-                                className="form-check-input m-0 flex-shrink-0"
-                                disabled
-                                aria-hidden
-                                tabIndex={-1}
-                            />
-                            <span className="small text-muted mb-0 text-nowrap">Sieg loop</span>
-                        </div>
                         <input
                             type="checkbox"
                             className="form-check-input m-0 flex-shrink-0"
@@ -647,6 +641,7 @@ export default function RealTimeStatusPage() {
             currentInstallationId={currentInstallationId}
             houseAlias={houseAlias}
             isSpruce={isSpruce}
+            defaultSiegLoop={defaultSiegLoop}
         />
     );
 }
