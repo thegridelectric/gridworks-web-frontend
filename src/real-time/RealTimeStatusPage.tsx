@@ -107,6 +107,7 @@ function RealTimeStatusConnection({
     const [err, setErr] = useState<string | null>(null);
     const [snapshotIntervalSec, setSnapshotIntervalSec] = useState<number | ''>(DEFAULT_SNAPSHOT_INTERVAL_SEC);
     const [autoSnapshotEnabled, setAutoSnapshotEnabled] = useState(false);
+    const [siegLoopEnabled, setSiegLoopEnabled] = useState(false);
 
     const wsRef = useRef<WebSocket | null>(null);
     const hasLoggedSpruceChannelsRef = useRef(false);
@@ -292,6 +293,23 @@ function RealTimeStatusConnection({
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0">Real-time</h5>
                 <div className="d-flex align-items-center gap-2">
+                    <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                        <input
+                            type="checkbox"
+                            className="form-check-input m-0 flex-shrink-0"
+                            id="realtime-sieg-loop"
+                            checked={siegLoopEnabled}
+                            onChange={(e) => {
+                                setSiegLoopEnabled(e.target.checked);
+                            }}
+                            disabled={!isConnected}
+                            title="Show Sieg loop: vertical pipe between HP–buffer horizontals next to the heat pump"
+                            aria-label="Sieg loop"
+                        />
+                        <label htmlFor="realtime-sieg-loop" className="small text-muted mb-0 text-nowrap user-select-none">
+                            Sieg loop
+                        </label>
+                    </div>
                     <input
                         type="checkbox"
                         className="form-check-input m-0 flex-shrink-0"
@@ -378,7 +396,12 @@ function RealTimeStatusConnection({
                         snapshotStepSeconds={typeof snapshotIntervalSec === 'number' ? snapshotIntervalSec : DEFAULT_SNAPSHOT_INTERVAL_SEC}
                     />
                 }
-                <RealTimeStatusSystemDiagram relays={relays} readings={diagramReadings} isSpruce={isSpruce} />
+                <RealTimeStatusSystemDiagram
+                    relays={relays}
+                    readings={diagramReadings}
+                    isSpruce={isSpruce}
+                    siegLoop={siegLoopEnabled}
+                />
                 {latestReadings ?
                     <>
                         <div id="dashboard-monitoring-tables">
@@ -455,6 +478,13 @@ function RealTimeStatusConnection({
                                             <td>{((latestReadings['store-flow'] ?? 0) / 100).toFixed(1)}</td>
                                             <td>{Math.max(0, (latestReadings['store-pump-pwr'] ?? 0)).toFixed(1)}</td>
                                         </tr>
+                                        {siegLoopEnabled &&
+                                            <tr>
+                                                <td>Sieg Loop</td>
+                                                <td>{((latestReadings['sieg-flow'] ?? 0) / 100).toFixed(1)}</td>
+                                                <td>-</td>
+                                            </tr>
+                                        }
                                     </tbody>
                                 </table>
                             </div>
@@ -492,6 +522,16 @@ export default function RealTimeStatusPage() {
                 <div className="card-header d-flex justify-content-between align-items-center">
                     <h5 className="card-title mb-0">Real-time</h5>
                     <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                            <input
+                                type="checkbox"
+                                className="form-check-input m-0 flex-shrink-0"
+                                disabled
+                                aria-hidden
+                                tabIndex={-1}
+                            />
+                            <span className="small text-muted mb-0 text-nowrap">Sieg loop</span>
+                        </div>
                         <input
                             type="checkbox"
                             className="form-check-input m-0 flex-shrink-0"
@@ -546,6 +586,16 @@ export default function RealTimeStatusPage() {
                 <div className="card-header d-flex justify-content-between align-items-center">
                     <h5 className="card-title mb-0">Real-time</h5>
                     <div className="d-flex align-items-center gap-2">
+                        <div className="d-flex align-items-center gap-1 flex-shrink-0">
+                            <input
+                                type="checkbox"
+                                className="form-check-input m-0 flex-shrink-0"
+                                disabled
+                                aria-hidden
+                                tabIndex={-1}
+                            />
+                            <span className="small text-muted mb-0 text-nowrap">Sieg loop</span>
+                        </div>
                         <input
                             type="checkbox"
                             className="form-check-input m-0 flex-shrink-0"

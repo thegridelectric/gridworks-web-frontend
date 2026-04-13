@@ -13,6 +13,8 @@ interface RealTimeStatusSystemDiagramPipesProps {
     tank1X: number,
     houseLeftX: number,
     houseWidth: number,
+    /** Negative when Sieg loop shifts the heat pump left; HP-side header horizontals extend from 140 + this. */
+    siegHpShiftX: number,
 }
 
 const HP_BUFFER_OVERLAY_PIPES = ['dashboard-hp-buffer-top-pipe', 'dashboard-hp-buffer-bottom-pipe'] as const;
@@ -55,7 +57,23 @@ const DEBUG_HIDDEN_NON_SPRUCE_HEADER_PIPE_NAMES = new Set<string>([
     'dashboard-house-buffer-bottom-pipe',
 ]);
 
-export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation, isSpruce, animateSpruceFloorLoop, animateSpruceUpstairsLoop, tank1X, houseLeftX, houseWidth: _houseWidth }: RealTimeStatusSystemDiagramPipesProps) {
+export default function RealTimeStatusSystemDiagramPipes({
+    currentState,
+    shouldAnimateHouse,
+    hasPrimFlow,
+    animateBufferDistLoop,
+    storageDischargePipeAnimation,
+    isSpruce,
+    animateSpruceFloorLoop,
+    animateSpruceUpstairsLoop,
+    tank1X,
+    houseLeftX,
+    houseWidth: _houseWidth,
+    siegHpShiftX,
+}: RealTimeStatusSystemDiagramPipesProps) {
+    /** Left end of HP-buffer header rows (default 140); moves with shifted heat pump. Right end stays at 860. */
+    const hpHeaderLeft = 140 + siegHpShiftX;
+    const hpBufferFullSpanWidth = 720 - siegHpShiftX;
 
     const hideNonSpruceHeaderRowPipes =
         DEBUG_HIDE_NON_SPRUCE_BUFFER_HEADER_ROW_PIPES && !isSpruce;
@@ -66,13 +84,13 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
     // Tank1 vertical sits just right of the tank; stub connects tank top to the vertical (matches RealTimeStatusSystemDiagram layout).
     const tank1PipeX = tank1X + 130;
     const tank1PipeConnectionX = tank1X + 120;
-    const tank1HpHorizontalPipeWidth = tank1PipeX + 15 - 140;
+    const tank1HpHorizontalPipeWidth = tank1PipeX + 15 - hpHeaderLeft;
     const tank1BufferHorizontalPipeWidth = 860 - tank1PipeX;
     // Bottom storage return (labeled tank3 in DOM): fixed for 3-tank layout; in Spruce only Tank1 exists so this loop attaches to Tank1's bottom-left.
     const tank3LeftX = 200;
     const storeReturnPipeX = isSpruce ? tank1X - 25 : tank3LeftX - 25;
     const storeReturnPipeConnectionX = storeReturnPipeX;
-    const tank3HpHorizontalPipeWidth = storeReturnPipeX + 15 - 140;
+    const tank3HpHorizontalPipeWidth = storeReturnPipeX + 15 - hpHeaderLeft;
     const tank3BufferHorizontalPipeWidth = 860 - storeReturnPipeX;
 
     // House pipes use unshifted "base" coordinates inside a translated group so they always move with the house.
@@ -248,22 +266,22 @@ export default function RealTimeStatusSystemDiagramPipes({ currentState, shouldA
         'dashboard-hp-buffer-top-pipe': hidePipeForHeaderRowDebug('dashboard-hp-buffer-top-pipe') ? (
             <g data-debug-omit="dashboard-hp-buffer-top-pipe" />
         ) : (
-            <rect x="140" y="75" width="720" height="15" fill={pipeColors['dashboard-hp-buffer-top-pipe']} />
+            <rect x={hpHeaderLeft} y="75" width={hpBufferFullSpanWidth} height="15" fill={pipeColors['dashboard-hp-buffer-top-pipe']} />
         ),
         'dashboard-hp-buffer-bottom-pipe': hidePipeForHeaderRowDebug('dashboard-hp-buffer-bottom-pipe') ? (
             <g data-debug-omit="dashboard-hp-buffer-bottom-pipe" />
         ) : (
-            <rect x="140" y="215" width="720" height="15" fill={pipeColors['dashboard-hp-buffer-bottom-pipe']} />
+            <rect x={hpHeaderLeft} y="215" width={hpBufferFullSpanWidth} height="15" fill={pipeColors['dashboard-hp-buffer-bottom-pipe']} />
         ),
         'dashboard-tank1-hp-horizontal-pipe-charge': hidePipeForHeaderRowDebug('dashboard-tank1-hp-horizontal-pipe-charge') ? (
             <g data-debug-omit="dashboard-tank1-hp-horizontal-pipe-charge" />
         ) : (
-            <rect x="140" y="75" width={tank1HpHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank1-hp-horizontal-pipe-charge']} />
+            <rect x={hpHeaderLeft} y="75" width={tank1HpHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank1-hp-horizontal-pipe-charge']} />
         ),
         'dashboard-tank3-hp-horizontal-pipe-charge': hidePipeForHeaderRowDebug('dashboard-tank3-hp-horizontal-pipe-charge') ? (
             <g data-debug-omit="dashboard-tank3-hp-horizontal-pipe-charge" />
         ) : (
-            <rect x="140" y="215" width={tank3HpHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank3-hp-horizontal-pipe-charge']} />
+            <rect x={hpHeaderLeft} y="215" width={tank3HpHorizontalPipeWidth} height="15" fill={pipeColors['dashboard-tank3-hp-horizontal-pipe-charge']} />
         ),
         'dashboard-tank1-hp-vertical-pipe': <rect x={tank1PipeX} y="90" width="15" height="205" fill={pipeColors['dashboard-tank1-hp-vertical-pipe']} />,
         'dashboard-tank1-buffer-horizontal-pipe': hidePipeForHeaderRowDebug('dashboard-tank1-buffer-horizontal-pipe') ? (

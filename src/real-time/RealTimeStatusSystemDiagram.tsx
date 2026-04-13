@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import RealTimeStatusSystemDiagramPipes from "./RealTimeStatusSystemDiagramPipes";
 
 interface RelayStatus {
@@ -9,9 +11,26 @@ interface RealTimeStatusSystemDiagramProps {
     readings: Record<string, number>,
     relays: Record<string, RelayStatus>,
     isSpruce: boolean,
+    /** Extra vertical between HP→buffer top and bottom horizontals, just east of the heat pump. */
+    siegLoop?: boolean,
 }
 
-export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce }: RealTimeStatusSystemDiagramProps) {
+/** Sieg vertical: between HP-buffer horizontals (y=90 … y=215); x nudged right of the HP run. */
+const SIEG_LOOP_PIPE_Y = 90;
+const SIEG_LOOP_PIPE_W = 15;
+const SIEG_LOOP_PIPE_H = 125;
+
+export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce, siegLoop = false }: RealTimeStatusSystemDiagramProps) {
+    useEffect(() => {
+        console.log("[real-time diagram] sieg-cold (raw channel value):", readings["sieg-cold"]);
+    }, [readings["sieg-cold"]]);
+
+    /** When Sieg loop is shown, shift the heat pump graphic left; HP–buffer horizontals extend to match (`RealTimeStatusSystemDiagramPipes`). */
+    const siegHpShiftX = siegLoop ? -28 : 0;
+    /** HP supply/return labels & Spruce HEX column follow this (matches shifted HP when `siegLoop`). */
+    const hpPipeTempLabelCenterX = 170 + siegHpShiftX;
+    /** Sieg vertical: a little into the header span from the HP-side connection. */
+    const siegLoopPipeX = 140 + siegHpShiftX + 22;
     // Layout tweaks (tank/house shift) apply only to Spruce; other homes keep the original 3-tank diagram.
     const tank1X = isSpruce ? 340 : 460;
     const tank1TextX = isSpruce ? 400 : 520;
@@ -34,7 +53,6 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
 
     const heatPumpHeight = 200;
     const heatPumpY = 50;
-    const hpPipeTempLabelCenterX = 170;
     const spruceAuxComponentWidth = 120 / 3;
     const spruceAuxComponentX = hpPipeTempLabelCenterX + 38 + 10;
     const hexSecondaryTempLabelX = spruceAuxComponentX + spruceAuxComponentWidth + 18;
@@ -52,6 +70,10 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
         getCurrentState(relays, readings);
     const animateSpruceFloorLoop = isSpruce ? shouldAnimateSpruceFloorLoop(readings) : false;
     const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
+
+    /** Same threshold idea as `dist-flow` in `getCurrentState` (raw reading > 0). */
+    const animateSiegLoopDown =
+        siegLoop && (readings['sieg-flow'] ?? 0) > 0;
 
     // Spruce + dist-flow: buffer overlay lines move bottom → top; otherwise top → bottom (matches non-Spruce default).
     const bufferHeatLinesFill =
@@ -234,18 +256,20 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                 </pattern>
             </defs>
 
-            {/* Heat pump */}
-            {renderStaticHeatPump()}
-            {(currentState === 'HpOnStoreOff' || currentState === 'HpOnStoreCharge') &&
-                <g id="dashboard-hp-animation">
-                    <rect x="20" y="50" width="120" height="200" rx="10" fill="url(#dashboardHeatGradient)" />
-                    <rect x="20" y="50" width="120" height="200" rx="10" fill="url(#dashboardHeatLinesPattern)" />
-                    <text id="dashboard-hp-lift" x="80" y="150" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="16" fontWeight="600">
-                        Lift<tspan x="80" dy="1.2em">{formatTempDelta(readings, 'hp-lwt', 'hp-ewt')}</tspan>
-                    </text>
-                </g>
-            }
-            <text x="80" y="270" textAnchor="middle" fill="var(--text-color)" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">Heat pump</text>
+            {/* Heat pump (shift left when Sieg loop is on) */}
+            <g id="dashboard-heat-pump-shift" transform={`translate(${siegHpShiftX}, 0)`}>
+                {renderStaticHeatPump()}
+                {(currentState === 'HpOnStoreOff' || currentState === 'HpOnStoreCharge') &&
+                    <g id="dashboard-hp-animation">
+                        <rect x="20" y="50" width="120" height="200" rx="10" fill="url(#dashboardHeatGradient)" />
+                        <rect x="20" y="50" width="120" height="200" rx="10" fill="url(#dashboardHeatLinesPattern)" />
+                        <text id="dashboard-hp-lift" x="80" y="150" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="16" fontWeight="600">
+                            Lift<tspan x="80" dy="1.2em">{formatTempDelta(readings, 'hp-lwt', 'hp-ewt')}</tspan>
+                        </text>
+                    </g>
+                }
+                <text x="80" y="270" textAnchor="middle" fill="var(--text-color)" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">Heat pump</text>
+            </g>
 
             {/* Buffer */}
             {renderBufferTank(readings, isSpruce)}
@@ -282,7 +306,59 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                 </>
             }
 
-            <RealTimeStatusSystemDiagramPipes {...{currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation, isSpruce, animateSpruceFloorLoop, animateSpruceUpstairsLoop, tank1X, houseLeftX, houseWidth}} />
+            <RealTimeStatusSystemDiagramPipes
+                {...{
+                    currentState,
+                    shouldAnimateHouse,
+                    hasPrimFlow,
+                    animateBufferDistLoop,
+                    storageDischargePipeAnimation,
+                    isSpruce,
+                    animateSpruceFloorLoop,
+                    animateSpruceUpstairsLoop,
+                    tank1X,
+                    houseLeftX,
+                    houseWidth,
+                    siegHpShiftX,
+                }}
+            />
+
+            {siegLoop && (
+                <g id="dashboard-sieg-loop-pipe">
+                    <rect
+                        x={siegLoopPipeX}
+                        y={SIEG_LOOP_PIPE_Y}
+                        width={SIEG_LOOP_PIPE_W}
+                        height={SIEG_LOOP_PIPE_H}
+                        fill={animateSiegLoopDown ? 'url(#dashboardVerticalDownFlowPattern)' : '#888'}
+                    />
+                    <text
+                        id="dashboard-sieg-hot"
+                        x={siegLoopPipeX + SIEG_LOOP_PIPE_W + 8}
+                        y={SIEG_LOOP_PIPE_Y + SIEG_LOOP_PIPE_H / 2}
+                        dominantBaseline="middle"
+                        textAnchor="start"
+                        fill="#888"
+                        fontFamily="Montserrat, sans-serif"
+                        fontSize="14"
+                        fontWeight="600"
+                    >
+                        {formatTemp(readings, 'sieg-hot')}
+                    </text>
+                    <text
+                        id="dashboard-sieg-cold"
+                        x={siegLoopPipeX + SIEG_LOOP_PIPE_W + 8}
+                        y={SIEG_LOOP_PIPE_Y + SIEG_LOOP_PIPE_H - 4}
+                        textAnchor="start"
+                        fill="#888"
+                        fontFamily="Montserrat, sans-serif"
+                        fontSize="14"
+                        fontWeight="600"
+                    >
+                        {formatTemp(readings, 'sieg-cold')}
+                    </text>
+                </g>
+            )}
 
             {isSpruce &&
                 <>
@@ -346,12 +422,20 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             )}
 
             {/* Top pipe (from top of heat pump to top of buffer) temperature label */}
-            <text x="170" y="70" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+            <text x={hpPipeTempLabelCenterX} y="70" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
                 {formatTemp(readings, 'hp-lwt')}
             </text>
 
-            {/* Bottom pipe (from bottom of heat pump to bottom of buffer) temperature label */}
-            <text x="170" y="210" textAnchor="middle" fill="#888" fontFamily="Montserrat, sans-serif" fontSize="14" fontWeight="600">
+            {/* Bottom pipe (hp-ewt): above the bar by default; below when Sieg loop clears space above the lower header. */}
+            <text
+                x={hpPipeTempLabelCenterX-7}
+                y={siegLoop ? 248 : 210}
+                textAnchor="middle"
+                fill="#888"
+                fontFamily="Montserrat, sans-serif"
+                fontSize="14"
+                fontWeight="600"
+            >
                 {formatTemp(readings, 'hp-ewt')}
             </text>
 
