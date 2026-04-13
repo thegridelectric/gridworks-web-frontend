@@ -60,11 +60,14 @@ export default function RealTimeStatusTimestamp({
     const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
     useEffect(() => {
-        const interval = setInterval(() => {
+        let rafId = 0;
+        const loop = () => {
             setCurrentTime(new Date());
-        }, 100);
+            rafId = requestAnimationFrame(loop);
+        };
+        rafId = requestAnimationFrame(loop);
         return () => {
-            clearInterval(interval);
+            cancelAnimationFrame(rafId);
         };
     }, []);
 
