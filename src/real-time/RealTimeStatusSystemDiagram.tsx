@@ -66,18 +66,23 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
         })
         : [];
 
-    const { currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation } =
-        getCurrentState(relays, readings);
+    const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow } = getCurrentState(relays, readings);
+    const animateBufferDistLoop =
+        hasDistFlow && !hasHpPower && !hasStoreFlow;
+    const storageDischargePipeAnimation =
+        hasStoreFlow &&
+        !hasHpPower &&
+        (currentState === 'HpOffStoreDischarge' || currentState === null);
     const animateSpruceFloorLoop = isSpruce ? shouldAnimateSpruceFloorLoop(readings) : false;
     const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
 
     /** Same threshold idea as `dist-flow` in `getCurrentState` (raw reading > 0). */
-    const animateSiegLoopDown =
+    const hasSiegFlow =
         siegLoop && (readings['sieg-flow'] ?? 0) > 0.5;
 
     // Spruce + dist-flow: buffer overlay lines move bottom → top; otherwise top → bottom (matches non-Spruce default).
     const bufferHeatLinesFill =
-        isSpruce && shouldAnimateHouse
+        isSpruce && hasDistFlow
             ? 'url(#dashboardBufferHeatLinesBottomToTop)'
             : 'url(#dashboardBufferHeatLinesTopToBottom)';
 
@@ -110,7 +115,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                 </linearGradient>
 
                 {/* Flow pattern for HpOffStoreDischarge top horizontal pipe */}
-                <pattern id="dashboardFlowPattern" x="0" y="0" width="90" height="15" patternUnits="userSpaceOnUse">
+                <pattern id="dashboardRightFlowPattern" x="0" y="0" width="90" height="15" patternUnits="userSpaceOnUse">
                     <rect width="90" height="15" fill="#4CAF50" />
                     <rect x="0" y="0" width="15" height="15" fill="#66BB6A" />
                     <rect x="30" y="0" width="15" height="15" fill="#66BB6A" />
@@ -124,7 +129,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                 </pattern>
 
                 {/* Flow pattern for HpOffStoreDischarge vertical pipe (upward flow) */}
-                <pattern id="dashboardVerticalFlowPattern" x="0" y="0" width="15" height="90" patternUnits="userSpaceOnUse">
+                <pattern id="dashboardUpFlowPattern" x="0" y="0" width="15" height="90" patternUnits="userSpaceOnUse">
                     <rect width="15" height="90" fill="#4CAF50" />
                     <rect x="0" y="0" width="15" height="15" fill="#66BB6A" />
                     <rect x="0" y="30" width="15" height="15" fill="#66BB6A" />
@@ -138,7 +143,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                 </pattern>
 
                 {/* Flow pattern for HpOffStoreDischarge vertical pipe (downward flow) */}
-                <pattern id="dashboardVerticalDownFlowPattern" x="0" y="0" width="15" height="90" patternUnits="userSpaceOnUse">
+                <pattern id="dashboardDownFlowPattern" x="0" y="0" width="15" height="90" patternUnits="userSpaceOnUse">
                     <rect width="15" height="90" fill="#4CAF50" />
                     <rect x="0" y="0" width="15" height="15" fill="#66BB6A" />
                     <rect x="0" y="30" width="15" height="15" fill="#66BB6A" />
@@ -280,7 +285,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             {/* Buffer */}
             {renderBufferTank(readings, isSpruce)}
             {(currentState === 'HpOnStoreOff' || storageDischargePipeAnimation ||
-                (shouldAnimateHouse && (currentState === 'HpOffStoreOff' || animateBufferDistLoop))) &&
+                (hasDistFlow && (currentState === 'HpOffStoreOff' || animateBufferDistLoop))) &&
                 <g id="dashboard-buffer-animation">
                     <rect x="860" y="50" width="120" height="200" rx="10" fill={bufferHeatLinesFill} />
                 </g>
@@ -315,13 +320,14 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             <RealTimeStatusSystemDiagramPipes
                 {...{
                     currentState,
-                    shouldAnimateHouse,
+                    hasDistFlow,
                     hasPrimFlow,
-                    animateBufferDistLoop,
-                    storageDischargePipeAnimation,
+                    hasHpPower,
+                    hasStoreFlow,
                     isSpruce,
                     animateSpruceFloorLoop,
                     animateSpruceUpstairsLoop,
+                    hasSiegFlow,
                     tank1X,
                     houseLeftX,
                     houseWidth,
@@ -336,7 +342,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                         y={SIEG_LOOP_PIPE_Y}
                         width={SIEG_LOOP_PIPE_W}
                         height={SIEG_LOOP_PIPE_H}
-                        fill={animateSiegLoopDown ? 'url(#dashboardVerticalDownFlowPattern)' : '#888'}
+                        fill={hasSiegFlow ? 'url(#dashboardDownFlowPattern)' : '#888'}
                     />
                     <text
                         id="dashboard-sieg-hot"
@@ -530,7 +536,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             )}
 
             {/* House animation group (moved to end to ensure visibility) */}
-            {shouldAnimateHouse &&
+            {hasDistFlow &&
                 <g id="dashboard-house-animation">
                     <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="0" fill="url(#dashboardHouseHeatGradient)" />
                     <polygon points={`${houseRoofLeftX},336 ${houseRoofRightX},336 ${houseTextX},290`} fill="url(#dashboardHouseHeatGradient)" />
@@ -654,19 +660,13 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
     const hpIduReading = readings['hp-idu-pwr'];
     const hpOduReading = readings['hp-odu-pwr'];
     const hasHpPowerReading = hpIduReading && hpOduReading;
-    let hpHasPower = false;
+    let hasHpPower = false;
     if (hasHpPowerReading) {
         const totalHpKw = hpIduReading / 1000 + hpOduReading / 1000;
         if (totalHpKw > 0.5) {
-            hpHasPower = true;
+            hasHpPower = true;
         }
     }
-
-    const shouldAnimateHouse = hasDistFlow;
-
-    // Buffer↔house distribution loop with HP off and no storage discharge: same plumbing as HpOffStoreOff,
-    // but detectable even when relay payload is missing or maps to "Unknown".
-    const animateBufferDistLoop = hasDistFlow && !hpHasPower && !hasStoreFlow;
 
     // Check relay states to determine system state
     const relay5 = relays['relay5'];
@@ -680,8 +680,8 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
         const relay3State = relay3.state;
 
         let hpOn = false;
-        // if (relay5State === 'energized' && relay6State === 'deenergized' && hpHasPower) {
-        if (hpHasPower) {
+        // if (relay5State === 'energized' && relay6State === 'deenergized' && hasHpPower) {
+        if (hasHpPower) {
             hpOn = true;
         }
 
@@ -707,13 +707,7 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
         }
     }
 
-    // Pipes/tanks: same discharge layout as HpOffStoreDischarge when relays are missing but store pump is moving water.
-    const storageDischargePipeAnimation =
-        hasStoreFlow &&
-        !hpHasPower &&
-        (currentState === 'HpOffStoreDischarge' || currentState === null);
-
-    return { currentState, shouldAnimateHouse, hasPrimFlow, animateBufferDistLoop, storageDischargePipeAnimation };
+    return { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow };
 }
 
 function shouldAnimateSpruceFloorLoop(readings: Record<string, number>): boolean {
