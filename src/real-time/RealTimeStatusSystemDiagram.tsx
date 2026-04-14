@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import RealTimeStatusSystemDiagramPipes from "./RealTimeStatusSystemDiagramPipes";
+import { resolveAnimatedComponents } from "./realTimeStatusSystemDiagramPipeAnimation";
 
 interface RelayStatus {
     state: string,
@@ -67,12 +68,6 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
         : [];
 
     const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow } = getCurrentState(relays, readings);
-    const animateBufferDistLoop =
-        hasDistFlow && !hasHpPower && !hasStoreFlow;
-    const storageDischargePipeAnimation =
-        hasStoreFlow &&
-        !hasHpPower &&
-        (currentState === 'HpOffStoreDischarge' || currentState === null);
     const animateSpruceFloorLoop = isSpruce ? shouldAnimateSpruceFloorLoop(readings) : false;
     const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
 
@@ -80,18 +75,17 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
     const hasSiegFlow =
         siegLoop && (readings['sieg-flow'] ?? 0) > 0.5;
 
-    // Spruce + dist-flow: buffer overlay lines move bottom → top; otherwise top → bottom (matches non-Spruce default).
-    const bufferHeatLinesFill =
-        isSpruce && hasDistFlow
-            ? 'url(#dashboardBufferHeatLinesBottomToTop)'
-            : 'url(#dashboardBufferHeatLinesTopToBottom)';
-
-    let storageTankAnimationColor;
-    if (storageDischargePipeAnimation) {
-        storageTankAnimationColor = 'url(#dashboardTankHeatLinesBottomToTop)'
-    } else if (currentState === 'HpOnStoreCharge') {
-        storageTankAnimationColor = 'url(#dashboardTankHeatLinesTopToBottom)'
-    }
+    const animated = resolveAnimatedComponents({
+        currentState,
+        hasPrimFlow,
+        hasDistFlow,
+        hasStoreFlow,
+        hasSiegFlow,
+        hasHpPower,
+        isSpruce,
+        animateSpruceFloorLoop,
+        animateSpruceUpstairsLoop,
+    });
 
     /** Extra space on the left so shifted HP (translate) is not clipped; wider box also scales content slightly to fit the card. */
     const SIEG_LOOP_VIEWBOX_PAD_LEFT = 36;
@@ -270,7 +264,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             {/* Heat pump (shift left when Sieg loop is on) */}
             <g id="dashboard-heat-pump-shift" transform={`translate(${siegHpShiftX}, 0)`}>
                 {renderStaticHeatPump()}
-                {(currentState === 'HpOnStoreOff' || currentState === 'HpOnStoreCharge') &&
+                {animated.showHeatPumpAnimation &&
                     <g id="dashboard-hp-animation">
                         <rect x="20" y="50" width="120" height="200" rx="10" fill="url(#dashboardHeatGradient)" />
                         <rect x="20" y="50" width="120" height="200" rx="10" fill="url(#dashboardHeatLinesPattern)" />
@@ -284,10 +278,9 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
 
             {/* Buffer */}
             {renderBufferTank(readings, isSpruce)}
-            {(currentState === 'HpOnStoreOff' || storageDischargePipeAnimation ||
-                (hasDistFlow && (currentState === 'HpOffStoreOff' || animateBufferDistLoop))) &&
+            {animated.showBufferHeatLinesOverlay &&
                 <g id="dashboard-buffer-animation">
-                    <rect x="860" y="50" width="120" height="200" rx="10" fill={bufferHeatLinesFill} />
+                    <rect x="860" y="50" width="120" height="200" rx="10" fill={animated.bufferHeatLinesFill} />
                 </g>
             }
 
@@ -297,22 +290,22 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             {!isSpruce && renderStorageTank2(readings)}
             {renderStorageTank1(readings, tank1X, tank1TextX, isSpruce)}
 
-            {(storageDischargePipeAnimation || currentState === 'HpOnStoreCharge') &&
+            {animated.showStorageTankOverlay &&
                 <>
                     {!isSpruce &&
                         <g id="dashboard-tank3-animation">
-                            <rect x="200" y="280" width="120" height="200" rx="10" fill={storageTankAnimationColor} />
+                            <rect x="200" y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
                         </g>
                     }
 
                     {!isSpruce &&
                         <g id="dashboard-tank2-animation">
-                            <rect x="330" y="280" width="120" height="200" rx="10" fill={storageTankAnimationColor} />
+                            <rect x="330" y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
                         </g>
                     }
 
                     <g id="dashboard-tank1-animation">
-                        <rect x={tank1X} y="280" width="120" height="200" rx="10" fill={storageTankAnimationColor} />
+                        <rect x={tank1X} y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
                     </g>
                 </>
             }
@@ -536,13 +529,13 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             )}
 
             {/* House animation group (moved to end to ensure visibility) */}
-            {hasDistFlow &&
+            {animated.showHouseAnimation &&
                 <g id="dashboard-house-animation">
                     <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="0" fill="url(#dashboardHouseHeatGradient)" />
                     <polygon points={`${houseRoofLeftX},336 ${houseRoofRightX},336 ${houseTextX},290`} fill="url(#dashboardHouseHeatGradient)" />
                     {/* <rect x="660" y="280" width="120" height="200" rx="10" fill="url(#dashboardHouseHeatGradient)"/> */}
                     <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="10" fill="url(#dashboardHouseHeatLinesPattern)" />
-                    {isSpruce && !animateSpruceFloorLoop && (
+                    {animated.spruceHouseFloorStaticMask && (
                         <>
                             {/* Keep only the outside floor branch segments visually static when no eligible zone is heating. */}
                             <rect x={houseLeftX - 10} y="410" width="10" height="15" fill="#888" />

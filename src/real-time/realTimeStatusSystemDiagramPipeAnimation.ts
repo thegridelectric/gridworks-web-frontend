@@ -3,6 +3,33 @@
  * Keep in sync with SVG pattern ids in `RealTimeStatusSystemDiagram.tsx`.
  */
 
+// ---------------------------------------
+// PIPE ANIMATIONS
+// ---------------------------------------
+
+/**
+ * Primitive inputs for pipe fill logic. Buffer↔dist and storage-discharge pipe layouts use the same
+ * booleans as `getCurrentState` / `RealTimeStatusSystemDiagram` (see `resolveActivePipeFills` body).
+ */
+export interface DiagramPipeAnimationInput {
+    currentState: string | null;
+    hasPrimFlow: boolean;
+    hasDistFlow: boolean;
+    hasStoreFlow: boolean;
+    hasSiegFlow: boolean;
+    hasHpPower: boolean;
+    isSpruce: boolean;
+    animateSpruceFloorLoop: boolean;
+    animateSpruceUpstairsLoop: boolean;
+}
+
+const RIGHT = 'url(#dashboardRightFlowPattern)';
+const LEFT = 'url(#dashboardLeftFlowPattern)';
+const UP = 'url(#dashboardUpFlowPattern)';
+const DOWN = 'url(#dashboardDownFlowPattern)';
+
+export type PipeSegmentId = (typeof PIPE_SEGMENT_IDS)[number];
+
 export const PIPE_SEGMENT_IDS = [
     // Heat pump to and from buffer
     'dashboard-hp-buffer-top-pipe',
@@ -44,29 +71,6 @@ export const PIPE_SEGMENT_IDS = [
     
     
 ] as const;
-
-export type PipeSegmentId = (typeof PIPE_SEGMENT_IDS)[number];
-
-/**
- * Primitive inputs for pipe fill logic. Buffer↔dist and storage-discharge pipe layouts use the same
- * booleans as `getCurrentState` / `RealTimeStatusSystemDiagram` (see `resolveActivePipeFills` body).
- */
-export interface DiagramPipeAnimationInput {
-    currentState: string | null;
-    hasPrimFlow: boolean;
-    hasDistFlow: boolean;
-    hasStoreFlow: boolean;
-    hasSiegFlow: boolean;
-    hasHpPower: boolean;
-    isSpruce: boolean;
-    animateSpruceFloorLoop: boolean;
-    animateSpruceUpstairsLoop: boolean;
-}
-
-const RIGHT = 'url(#dashboardRightFlowPattern)';
-const LEFT = 'url(#dashboardLeftFlowPattern)';
-const UP = 'url(#dashboardUpFlowPattern)';
-const DOWN = 'url(#dashboardDownFlowPattern)';
 
 /**
  * Returns SVG `fill` values for pipes that should animate. Omitted keys stay static (`#888` in the component).
@@ -208,10 +212,90 @@ export function resolveActivePipeFills(input: DiagramPipeAnimationInput): Partia
     return activePipeColors;
 }
 
-/** Per-segment booleans: true iff that pipe uses an animated pattern (not static gray). */
-export function getPipeAnimationActive(input: DiagramPipeAnimationInput): Record<PipeSegmentId, boolean> {
-    const fills = resolveActivePipeFills(input);
-    return Object.fromEntries(
-        PIPE_SEGMENT_IDS.map((id) => [id, fills[id] !== undefined]),
-    ) as Record<PipeSegmentId, boolean>;
+// ---------------------------------------
+// COMPONENT ANIMATIONS
+// ---------------------------------------
+
+const BUFFER_HEAT_LINES_TOP_TO_BOTTOM = 'url(#dashboardBufferHeatLinesTopToBottom)';
+const BUFFER_HEAT_LINES_BOTTOM_TO_TOP = 'url(#dashboardBufferHeatLinesBottomToTop)';
+const TANK_HEAT_LINES_TOP_TO_BOTTOM = 'url(#dashboardTankHeatLinesTopToBottom)';
+const TANK_HEAT_LINES_BOTTOM_TO_TOP = 'url(#dashboardTankHeatLinesBottomToTop)';
+
+/** Shared by `resolveAnimatedComponents` only (pipe fills keep their own locals in `resolveActivePipeFills`). */
+function getDerivedFlowFlags(input: DiagramPipeAnimationInput) {
+    const { currentState, hasDistFlow, hasStoreFlow, hasHpPower } = input;
+    const animateBufferDistLoop =
+        hasDistFlow && !hasHpPower && !hasStoreFlow;
+    const storageDischargePipeAnimation =
+        hasStoreFlow &&
+        !hasHpPower &&
+        (currentState === 'HpOffStoreDischarge' || currentState === null);
+    return { animateBufferDistLoop, storageDischargePipeAnimation };
+}
+
+/** Overlay / volume animation decisions for `RealTimeStatusSystemDiagram` (buffer, tanks, house, HP). */
+export interface DiagramAnimatedComponents {
+    animateBufferDistLoop: boolean;
+    storageDischargePipeAnimation: boolean;
+    showHeatPumpAnimation: boolean;
+    showBufferHeatLinesOverlay: boolean;
+    bufferHeatLinesFill: string;
+    showStorageTankOverlay: boolean;
+    /** Set when `showStorageTankOverlay`; discharge vs charge pick different tank line patterns. */
+    storageTankAnimationFill: string;
+    showHouseAnimation: boolean;
+    /** Spruce: extra static rects over floor band when no floor-zone heating animation. */
+    spruceHouseFloorStaticMask: boolean;
+}
+
+/**
+ * Buffer/tank/house/HP animated overlays — same rules as the previous inline logic in
+ * `RealTimeStatusSystemDiagram.tsx`.
+ */
+export function resolveAnimatedComponents(input: DiagramPipeAnimationInput): DiagramAnimatedComponents {
+    const {
+        currentState,
+        hasDistFlow,
+        isSpruce,
+        animateSpruceFloorLoop,
+    } = input;
+
+    const { animateBufferDistLoop, storageDischargePipeAnimation } = getDerivedFlowFlags(input);
+
+    const showHeatPumpAnimation =
+        currentState === 'HpOnStoreOff' || currentState === 'HpOnStoreCharge';
+
+    const showBufferHeatLinesOverlay =
+        currentState === 'HpOnStoreOff' ||
+        storageDischargePipeAnimation ||
+        (hasDistFlow && (currentState === 'HpOffStoreOff' || animateBufferDistLoop));
+
+    const bufferHeatLinesFill =
+        isSpruce && hasDistFlow ? BUFFER_HEAT_LINES_BOTTOM_TO_TOP : BUFFER_HEAT_LINES_TOP_TO_BOTTOM;
+
+    const showStorageTankOverlay =
+        storageDischargePipeAnimation || currentState === 'HpOnStoreCharge';
+
+    let storageTankAnimationFill = TANK_HEAT_LINES_TOP_TO_BOTTOM;
+    if (storageDischargePipeAnimation) {
+        storageTankAnimationFill = TANK_HEAT_LINES_BOTTOM_TO_TOP;
+    } else if (currentState === 'HpOnStoreCharge') {
+        storageTankAnimationFill = TANK_HEAT_LINES_TOP_TO_BOTTOM;
+    }
+
+    const showHouseAnimation = hasDistFlow;
+
+    const spruceHouseFloorStaticMask = isSpruce && !animateSpruceFloorLoop;
+
+    return {
+        animateBufferDistLoop,
+        storageDischargePipeAnimation,
+        showHeatPumpAnimation,
+        showBufferHeatLinesOverlay,
+        bufferHeatLinesFill,
+        showStorageTankOverlay,
+        storageTankAnimationFill,
+        showHouseAnimation,
+        spruceHouseFloorStaticMask,
+    };
 }
