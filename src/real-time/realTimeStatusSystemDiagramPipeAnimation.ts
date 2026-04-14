@@ -235,8 +235,6 @@ function getDerivedFlowFlags(input: DiagramPipeAnimationInput) {
 
 /** Overlay / volume animation decisions for `RealTimeStatusSystemDiagram` (buffer, tanks, house, HP). */
 export interface DiagramAnimatedComponents {
-    animateBufferDistLoop: boolean;
-    storageDischargePipeAnimation: boolean;
     showHeatPumpAnimation: boolean;
     showBufferHeatLinesOverlay: boolean;
     bufferHeatLinesFill: string;
@@ -288,8 +286,6 @@ export function resolveAnimatedComponents(input: DiagramPipeAnimationInput): Dia
     const spruceHouseFloorStaticMask = isSpruce && !animateSpruceFloorLoop;
 
     return {
-        animateBufferDistLoop,
-        storageDischargePipeAnimation,
         showHeatPumpAnimation,
         showBufferHeatLinesOverlay,
         bufferHeatLinesFill,
