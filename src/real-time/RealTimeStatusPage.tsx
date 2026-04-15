@@ -520,6 +520,13 @@ function RealTimeStatusConnection({
                                                 <td>-</td>
                                             </tr>
                                         }
+                                        {siegLoopEnabled &&
+                                            <tr>
+                                                <td>Sieg Send</td>
+                                                <td>{((latestReadings['sieg-send'] ?? 0) / 100).toFixed(1)}</td>
+                                                <td>-</td>
+                                            </tr>
+                                        }
                                     </tbody>
                                 </table>
                             </div>
