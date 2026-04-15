@@ -234,10 +234,6 @@ function RealTimeStatusConnection({
                     const snapshot = m.payload as SnapshotPayload;
                     if (isSpruce && !hasLoggedSpruceChannelsRef.current) {
                         hasLoggedSpruceChannelsRef.current = true;
-                        console.log(
-                            '[spruce] first snapshot.spaceheat channels',
-                            (snapshot.LatestReadingList || []).map((r) => r.ChannelName),
-                        );
                     }
                     setUpdateTime(new Date(snapshot.SnapshotTimeUnixMs));
                     setLatestReadings((previous) => {
