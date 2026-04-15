@@ -28,49 +28,58 @@ const LEFT = 'url(#dashboardLeftFlowPattern)';
 const UP = 'url(#dashboardUpFlowPattern)';
 const DOWN = 'url(#dashboardDownFlowPattern)';
 
-export type PipeSegmentId = (typeof PIPE_SEGMENT_IDS)[number];
+export const PIPES_HEAT_PUMP_BUFFER = {
+    'dashboard-hp-buffer-top-pipe': RIGHT,
+    'dashboard-hp-buffer-bottom-pipe': LEFT,
+} as const;
+export const PIPES_CHARGE = {
+    'dashboard-tank1-hp-horizontal-pipe-charge': RIGHT,
+    'dashboard-tank1-hp-vertical-pipe-charge': DOWN,
+    'dashboard-tank1-connection-pipe-charge': LEFT,
+    'dashboard-tank3-connection-pipe-charge': LEFT,
+    'dashboard-tank3-hp-vertical-pipe-charge': UP,
+    'dashboard-tank3-hp-horizontal-pipe-charge': LEFT,
+} as const;
+export const PIPES_DISCHARGE = {
+    'dashboard-tank1-connection-pipe-discharge': RIGHT,
+    'dashboard-tank1-hp-vertical-pipe-discharge': UP,
+    'dashboard-tank1-buffer-horizontal-pipe-discharge': RIGHT,
+    'dashboard-tank3-hp-vertical-pipe-discharge': DOWN,
+    'dashboard-tank3-buffer-horizontal-pipe-discharge': LEFT,
+    'dashboard-tank3-connection-pipe-discharge': RIGHT,
+} as const;
+export const PIPES_DIST = {
+    'dashboard-house-right-hp-vertical-pipe': DOWN,
+    'dashboard-house-right-connection-pipe': LEFT,
+    'dashboard-house-left-connection-pipe': LEFT,
+    'dashboard-house-left-hp-vertical-pipe': UP,
+} as const;
+export const PIPES_DIST_FROM_BUFFER = {
+    'dashboard-house-buffer-bottom-pipe': LEFT,
+    'dashboard-house-buffer-top-pipe': RIGHT,
+} as const;
+export const PIPES_SPRUCE_FLOOR = {
+    'dashboard-house-bridge-pipe': RIGHT,
+} as const;
+export const PIPES_SIEG_LOOP = {
+    'dashboard-sieg-loop-pipe': DOWN,
+} as const;
 
-export const PIPE_SEGMENT_IDS = [
-    // Heat pump to and from buffer
-    'dashboard-hp-buffer-top-pipe',
-    'dashboard-hp-buffer-bottom-pipe',
+const PIPE_SEGMENT_DEFAULT_DIRECTION_BY_ID = {
+    ...PIPES_HEAT_PUMP_BUFFER,
+    ...PIPES_CHARGE,
+    ...PIPES_DISCHARGE,
+    ...PIPES_DIST,
+    ...PIPES_DIST_FROM_BUFFER,
+    ...PIPES_SPRUCE_FLOOR,
+    ...PIPES_SIEG_LOOP,
+} as const;
 
-    // Tank1
-    // [Charge] Heat pump to tank1
-    'dashboard-tank1-hp-horizontal-pipe-charge',
-    'dashboard-tank1-hp-vertical-pipe-charge',
-    'dashboard-tank1-connection-pipe-charge',
-    // [Discharge] Tank1 to buffer
-    'dashboard-tank1-connection-pipe-discharge',
-    'dashboard-tank1-hp-vertical-pipe-discharge',
-    'dashboard-tank1-buffer-horizontal-pipe-discharge',
+export type PipeSegmentId = keyof typeof PIPE_SEGMENT_DEFAULT_DIRECTION_BY_ID;
 
-    // Tank3
-    // [Charge] Tank3 to heat pump
-    'dashboard-tank3-connection-pipe-charge',
-    'dashboard-tank3-hp-vertical-pipe-charge',
-    'dashboard-tank3-hp-horizontal-pipe-charge',
-    // [Discharge] Tank3 to buffer
-    'dashboard-tank3-hp-vertical-pipe-discharge',
-    'dashboard-tank3-buffer-horizontal-pipe-discharge',
-    'dashboard-tank3-connection-pipe-discharge',
-
-    // House distribution
-    'dashboard-house-right-hp-vertical-pipe',
-    'dashboard-house-right-connection-pipe',
-    'dashboard-house-left-connection-pipe',
-    'dashboard-house-left-hp-vertical-pipe',
-    'dashboard-house-buffer-bottom-pipe',
-    'dashboard-house-buffer-top-pipe',
-
-    // Spruce only
-    'dashboard-house-bridge-pipe',
-
-    // Sieg loop
-    'dashboard-sieg-loop-pipe',
-    
-    
-] as const;
+export const PIPE_SEGMENT_IDS = Object.keys(
+    PIPE_SEGMENT_DEFAULT_DIRECTION_BY_ID,
+) as PipeSegmentId[];
 
 /**
  * Returns SVG `fill` values for pipes that should animate. Omitted keys stay static (`#888` in the component).
@@ -80,134 +89,190 @@ export function resolveActivePipeFills(input: DiagramPipeAnimationInput): Partia
         currentState,
         hasPrimFlow,
         hasDistFlow,
-        hasStoreFlow,
         hasSiegFlow,
-        hasHpPower,
-        isSpruce,
-        animateSpruceFloorLoop,
-        animateSpruceUpstairsLoop,
+        // hasStoreFlow,
+        // hasHpPower,
+        // isSpruce,
+        // animateSpruceFloorLoop,
+        // animateSpruceUpstairsLoop,
     } = input;
-
-    const animateBufferDistLoop =
-        hasDistFlow && !hasHpPower && !hasStoreFlow;
-    const storageDischargePipeAnimation =
-        hasStoreFlow &&
-        !hasHpPower &&
-        (currentState === 'HpOffStoreDischarge' || currentState === null);
-
-    const bridgeOk = hasSiegFlow;
 
     const activePipeColors: Partial<Record<PipeSegmentId, string>> = {};
 
-    if (currentState === 'HpOnStoreOff') {
-        activePipeColors['dashboard-hp-buffer-top-pipe'] = RIGHT;
-        activePipeColors['dashboard-hp-buffer-bottom-pipe'] = LEFT;
+    console.log(currentState)
 
-        if (hasDistFlow) {
-            activePipeColors['dashboard-house-right-hp-vertical-pipe'] = DOWN;
-            activePipeColors['dashboard-house-left-hp-vertical-pipe'] = UP;
-            if (!isSpruce || animateSpruceUpstairsLoop) {
-                activePipeColors['dashboard-house-right-connection-pipe'] = LEFT;
-                activePipeColors['dashboard-house-left-connection-pipe'] = LEFT;
-            }
-            activePipeColors['dashboard-house-buffer-top-pipe'] = RIGHT;
-            activePipeColors['dashboard-house-buffer-bottom-pipe'] = LEFT;
-            if (isSpruce && animateSpruceFloorLoop && bridgeOk) {
-                activePipeColors['dashboard-house-bridge-pipe'] = RIGHT;
-            }
-        }
-    } else if (storageDischargePipeAnimation) {
-        activePipeColors['dashboard-tank1-hp-vertical-pipe-discharge'] = UP;
-        activePipeColors['dashboard-tank1-buffer-horizontal-pipe-discharge'] = RIGHT;
-        activePipeColors['dashboard-tank1-connection-pipe-discharge'] = RIGHT;
-        activePipeColors['dashboard-tank3-hp-vertical-pipe-discharge'] = DOWN;
-        activePipeColors['dashboard-tank3-buffer-horizontal-pipe-discharge'] = LEFT;
-        activePipeColors['dashboard-tank3-connection-pipe-discharge'] = RIGHT;
-
-        if (hasDistFlow) {
-            activePipeColors['dashboard-house-right-hp-vertical-pipe'] = DOWN;
-            activePipeColors['dashboard-house-left-hp-vertical-pipe'] = UP;
-            if (!isSpruce || animateSpruceUpstairsLoop) {
-                activePipeColors['dashboard-house-right-connection-pipe'] = LEFT;
-                activePipeColors['dashboard-house-left-connection-pipe'] = LEFT;
-            }
-            if (isSpruce && animateSpruceFloorLoop && bridgeOk) {
-                activePipeColors['dashboard-house-bridge-pipe'] = RIGHT;
-            }
-            if (isSpruce) {
-                activePipeColors['dashboard-house-buffer-top-pipe'] = RIGHT;
-                activePipeColors['dashboard-house-buffer-bottom-pipe'] = LEFT;
-            }
-        }
-    } else if (currentState === 'HpOnStoreCharge') {
-        activePipeColors['dashboard-tank1-hp-vertical-pipe-charge'] = DOWN;
-        activePipeColors['dashboard-tank3-hp-vertical-pipe-charge'] = UP;
-        activePipeColors['dashboard-tank1-connection-pipe-charge'] = LEFT;
-        activePipeColors['dashboard-tank3-connection-pipe-charge'] = LEFT;
-        activePipeColors['dashboard-tank1-hp-horizontal-pipe-charge'] = RIGHT;
-        activePipeColors['dashboard-tank3-hp-horizontal-pipe-charge'] = LEFT;
-
-        if (hasDistFlow) {
-            activePipeColors['dashboard-house-right-hp-vertical-pipe'] = DOWN;
-            activePipeColors['dashboard-house-left-hp-vertical-pipe'] = LEFT;
-            if (!isSpruce || animateSpruceUpstairsLoop) {
-                activePipeColors['dashboard-house-right-connection-pipe'] = LEFT;
-                activePipeColors['dashboard-house-left-connection-pipe'] = LEFT;
-            }
-            activePipeColors['dashboard-house-buffer-top-pipe'] = LEFT;
-            activePipeColors['dashboard-house-buffer-bottom-pipe'] = RIGHT;
-            if (isSpruce && animateSpruceFloorLoop && bridgeOk) {
-                activePipeColors['dashboard-house-bridge-pipe'] = LEFT;
-            }
-        }
-    } else {
-        if (hasDistFlow) {
-            activePipeColors['dashboard-house-right-hp-vertical-pipe'] = DOWN;
-            activePipeColors['dashboard-house-left-hp-vertical-pipe'] = UP;
-            if (!isSpruce || animateSpruceUpstairsLoop) {
-                activePipeColors['dashboard-house-right-connection-pipe'] = LEFT;
-                activePipeColors['dashboard-house-left-connection-pipe'] = LEFT;
-            }
-            if (isSpruce && bridgeOk) {
-                activePipeColors['dashboard-house-bridge-pipe'] = RIGHT;
-            }
-
-            if (isSpruce) {
-                if (currentState === 'HpOffStoreOff') {
-                    activePipeColors['dashboard-house-buffer-top-pipe'] = LEFT;
-                    activePipeColors['dashboard-house-buffer-bottom-pipe'] = RIGHT;
-                    if (animateSpruceFloorLoop && bridgeOk) {
-                        activePipeColors['dashboard-house-bridge-pipe'] = LEFT;
-                    }
-                    if (hasPrimFlow) {
-                        activePipeColors['dashboard-hp-buffer-top-pipe'] = RIGHT;
-                        activePipeColors['dashboard-hp-buffer-bottom-pipe'] = LEFT;
-                    }
-                } else if (animateBufferDistLoop) {
-                    activePipeColors['dashboard-house-buffer-top-pipe'] = LEFT;
-                    activePipeColors['dashboard-house-buffer-bottom-pipe'] = RIGHT;
-                    if (animateSpruceFloorLoop && bridgeOk) {
-                        activePipeColors['dashboard-house-bridge-pipe'] = LEFT;
-                    }
-                }
-            } else if (animateBufferDistLoop) {
-                activePipeColors['dashboard-house-buffer-top-pipe'] = LEFT;
-                activePipeColors['dashboard-house-buffer-bottom-pipe'] = RIGHT;
-
-                activePipeColors['dashboard-hp-buffer-top-pipe'] = RIGHT;
-                activePipeColors['dashboard-hp-buffer-bottom-pipe'] = LEFT;
-            }
-        } else {
-            if (hasPrimFlow) {
-                activePipeColors['dashboard-hp-buffer-top-pipe'] = RIGHT;
-                activePipeColors['dashboard-hp-buffer-bottom-pipe'] = LEFT;
-            }
-        }
+    if (hasDistFlow) {
+        Object.entries(PIPES_DIST).forEach(([pipeId, direction]) => {
+            activePipeColors[pipeId as PipeSegmentId] = direction;
+        });
     }
 
     if (hasSiegFlow) {
-        activePipeColors['dashboard-sieg-loop-pipe'] = DOWN;
+        Object.entries(PIPES_SIEG_LOOP).forEach(([pipeId, direction]) => {
+            activePipeColors[pipeId as PipeSegmentId] = direction;
+        });
     }
+
+    if (currentState === 'HpOnStoreOff') {
+        Object.entries(PIPES_HEAT_PUMP_BUFFER).forEach(([pipeId, direction]) => {
+            activePipeColors[pipeId as PipeSegmentId] = direction;
+        });
+    }
+
+    if (currentState === 'HpOnStoreCharge') {
+        Object.entries(PIPES_CHARGE).forEach(([pipeId, direction]) => {
+            activePipeColors[pipeId as PipeSegmentId] = direction;
+        });
+        if (hasDistFlow) {
+            Object.entries(PIPES_DIST_FROM_BUFFER).forEach(([pipeId, direction]) => {
+                activePipeColors[pipeId as PipeSegmentId] = direction;
+            });
+        }
+    }
+
+    if (currentState === 'HpOffStoreOff') {
+        if (hasPrimFlow) {
+            Object.entries(PIPES_HEAT_PUMP_BUFFER).forEach(([pipeId, direction]) => {
+                activePipeColors[pipeId as PipeSegmentId] = direction;
+            });
+        }
+        if (hasDistFlow) {
+            Object.entries(PIPES_DIST_FROM_BUFFER).forEach(([pipeId, direction]) => {
+                activePipeColors[pipeId as PipeSegmentId] = direction;
+            });
+        }
+    }
+
+    if (currentState === 'HpOffStoreDischarge') {
+        Object.entries(PIPES_DISCHARGE).forEach(([pipeId, direction]) => {
+            activePipeColors[pipeId as PipeSegmentId] = direction;
+        });
+    }
+
+    
+
+    
+
+
+
+
+    // const animateBufferDistLoop =
+    //     hasDistFlow && !hasHpPower && !hasStoreFlow;
+    // const storageDischargePipeAnimation =
+    //     hasStoreFlow &&
+    //     !hasHpPower &&
+    //     (currentState === 'HpOffStoreDischarge' || currentState === null);
+    // const bridgeOk = hasSiegFlow;
+
+    // if (currentState === 'HpOnStoreOff') {
+    //     activePipeColors['dashboard-hp-buffer-top-pipe'] = RIGHT;
+    //     activePipeColors['dashboard-hp-buffer-bottom-pipe'] = LEFT;
+
+    //     if (hasDistFlow) {
+    //         activePipeColors['dashboard-house-right-hp-vertical-pipe'] = DOWN;
+    //         activePipeColors['dashboard-house-left-hp-vertical-pipe'] = UP;
+    //         if (!isSpruce || animateSpruceUpstairsLoop) {
+    //             activePipeColors['dashboard-house-right-connection-pipe'] = LEFT;
+    //             activePipeColors['dashboard-house-left-connection-pipe'] = LEFT;
+    //         }
+    //         activePipeColors['dashboard-house-buffer-top-pipe'] = RIGHT;
+    //         activePipeColors['dashboard-house-buffer-bottom-pipe'] = LEFT;
+    //         if (isSpruce && animateSpruceFloorLoop && bridgeOk) {
+    //             activePipeColors['dashboard-house-bridge-pipe'] = RIGHT;
+    //         }
+    //     }
+    // } else if (storageDischargePipeAnimation) {
+    //     activePipeColors['dashboard-tank1-hp-vertical-pipe-discharge'] = UP;
+    //     activePipeColors['dashboard-tank1-buffer-horizontal-pipe-discharge'] = RIGHT;
+    //     activePipeColors['dashboard-tank1-connection-pipe-discharge'] = RIGHT;
+    //     activePipeColors['dashboard-tank3-hp-vertical-pipe-discharge'] = DOWN;
+    //     activePipeColors['dashboard-tank3-buffer-horizontal-pipe-discharge'] = LEFT;
+    //     activePipeColors['dashboard-tank3-connection-pipe-discharge'] = RIGHT;
+
+    //     if (hasDistFlow) {
+    //         activePipeColors['dashboard-house-right-hp-vertical-pipe'] = DOWN;
+    //         activePipeColors['dashboard-house-left-hp-vertical-pipe'] = UP;
+    //         if (!isSpruce || animateSpruceUpstairsLoop) {
+    //             activePipeColors['dashboard-house-right-connection-pipe'] = LEFT;
+    //             activePipeColors['dashboard-house-left-connection-pipe'] = LEFT;
+    //         }
+    //         if (isSpruce && animateSpruceFloorLoop && bridgeOk) {
+    //             activePipeColors['dashboard-house-bridge-pipe'] = RIGHT;
+    //         }
+    //         if (isSpruce) {
+    //             activePipeColors['dashboard-house-buffer-top-pipe'] = RIGHT;
+    //             activePipeColors['dashboard-house-buffer-bottom-pipe'] = LEFT;
+    //         }
+    //     }
+    // } else if (currentState === 'HpOnStoreCharge') {
+    //     activePipeColors['dashboard-tank1-hp-vertical-pipe-charge'] = DOWN;
+    //     activePipeColors['dashboard-tank3-hp-vertical-pipe-charge'] = UP;
+    //     activePipeColors['dashboard-tank1-connection-pipe-charge'] = LEFT;
+    //     activePipeColors['dashboard-tank3-connection-pipe-charge'] = LEFT;
+    //     activePipeColors['dashboard-tank1-hp-horizontal-pipe-charge'] = RIGHT;
+    //     activePipeColors['dashboard-tank3-hp-horizontal-pipe-charge'] = LEFT;
+
+    //     if (hasDistFlow) {
+    //         activePipeColors['dashboard-house-right-hp-vertical-pipe'] = DOWN;
+    //         activePipeColors['dashboard-house-left-hp-vertical-pipe'] = LEFT;
+    //         if (!isSpruce || animateSpruceUpstairsLoop) {
+    //             activePipeColors['dashboard-house-right-connection-pipe'] = LEFT;
+    //             activePipeColors['dashboard-house-left-connection-pipe'] = LEFT;
+    //         }
+    //         activePipeColors['dashboard-house-buffer-top-pipe'] = LEFT;
+    //         activePipeColors['dashboard-house-buffer-bottom-pipe'] = RIGHT;
+    //         if (isSpruce && animateSpruceFloorLoop && bridgeOk) {
+    //             activePipeColors['dashboard-house-bridge-pipe'] = LEFT;
+    //         }
+    //     }
+    // } else {
+    //     if (hasDistFlow) {
+    //         activePipeColors['dashboard-house-right-hp-vertical-pipe'] = DOWN;
+    //         activePipeColors['dashboard-house-left-hp-vertical-pipe'] = UP;
+    //         if (!isSpruce || animateSpruceUpstairsLoop) {
+    //             activePipeColors['dashboard-house-right-connection-pipe'] = LEFT;
+    //             activePipeColors['dashboard-house-left-connection-pipe'] = LEFT;
+    //         }
+    //         if (isSpruce && bridgeOk) {
+    //             activePipeColors['dashboard-house-bridge-pipe'] = RIGHT;
+    //         }
+
+    //         if (isSpruce) {
+    //             if (currentState === 'HpOffStoreOff') {
+    //                 activePipeColors['dashboard-house-buffer-top-pipe'] = LEFT;
+    //                 activePipeColors['dashboard-house-buffer-bottom-pipe'] = RIGHT;
+    //                 if (animateSpruceFloorLoop && bridgeOk) {
+    //                     activePipeColors['dashboard-house-bridge-pipe'] = LEFT;
+    //                 }
+    //                 if (hasPrimFlow) {
+    //                     activePipeColors['dashboard-hp-buffer-top-pipe'] = RIGHT;
+    //                     activePipeColors['dashboard-hp-buffer-bottom-pipe'] = LEFT;
+    //                 }
+    //             } else if (animateBufferDistLoop) {
+    //                 activePipeColors['dashboard-house-buffer-top-pipe'] = LEFT;
+    //                 activePipeColors['dashboard-house-buffer-bottom-pipe'] = RIGHT;
+    //                 if (animateSpruceFloorLoop && bridgeOk) {
+    //                     activePipeColors['dashboard-house-bridge-pipe'] = LEFT;
+    //                 }
+    //             }
+    //         } else if (animateBufferDistLoop) {
+    //             activePipeColors['dashboard-house-buffer-top-pipe'] = LEFT;
+    //             activePipeColors['dashboard-house-buffer-bottom-pipe'] = RIGHT;
+
+    //             activePipeColors['dashboard-hp-buffer-top-pipe'] = RIGHT;
+    //             activePipeColors['dashboard-hp-buffer-bottom-pipe'] = LEFT;
+    //         }
+    //     } else {
+    //         if (hasPrimFlow) {
+    //             activePipeColors['dashboard-hp-buffer-top-pipe'] = RIGHT;
+    //             activePipeColors['dashboard-hp-buffer-bottom-pipe'] = LEFT;
+    //         }
+    //     }
+    // }
+
+    // if (hasSiegFlow) {
+    //     activePipeColors['dashboard-sieg-loop-pipe'] = DOWN;
+    // }
 
     return activePipeColors;
 }
@@ -238,8 +303,12 @@ export interface DiagramAnimatedComponents {
     showHeatPumpAnimation: boolean;
     showBufferHeatLinesOverlay: boolean;
     bufferHeatLinesFill: string;
-    showStorageTankOverlay: boolean;
-    /** Set when `showStorageTankOverlay`; discharge vs charge pick different tank line patterns. */
+    /** Tank 1 overlay (all layouts). Mirrors former `showStorageTankOverlay`. */
+    showStorageTank1Overlay: boolean;
+    /** Tanks 2–3 only exist in the non-Spruce three-tank layout. */
+    showStorageTank2Overlay: boolean;
+    showStorageTank3Overlay: boolean;
+    /** Pattern fill when any storage-tank overlay is shown; same for each tank rect. */
     storageTankAnimationFill: string;
     showHouseAnimation: boolean;
     /** Spruce: extra static rects over floor band when no floor-zone heating animation. */
@@ -271,8 +340,10 @@ export function resolveAnimatedComponents(input: DiagramPipeAnimationInput): Dia
     const bufferHeatLinesFill =
         isSpruce && hasDistFlow ? BUFFER_HEAT_LINES_BOTTOM_TO_TOP : BUFFER_HEAT_LINES_TOP_TO_BOTTOM;
 
-    const showStorageTankOverlay =
+    const showStorageTank1Overlay =
         storageDischargePipeAnimation || currentState === 'HpOnStoreCharge';
+    const showStorageTank2Overlay = showStorageTank1Overlay && !isSpruce;
+    const showStorageTank3Overlay = showStorageTank1Overlay && !isSpruce;
 
     let storageTankAnimationFill = TANK_HEAT_LINES_TOP_TO_BOTTOM;
     if (storageDischargePipeAnimation) {
@@ -289,7 +360,9 @@ export function resolveAnimatedComponents(input: DiagramPipeAnimationInput): Dia
         showHeatPumpAnimation,
         showBufferHeatLinesOverlay,
         bufferHeatLinesFill,
-        showStorageTankOverlay,
+        showStorageTank1Overlay,
+        showStorageTank2Overlay,
+        showStorageTank3Overlay,
         storageTankAnimationFill,
         showHouseAnimation,
         spruceHouseFloorStaticMask,

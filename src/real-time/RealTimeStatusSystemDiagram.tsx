@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import RealTimeStatusSystemDiagramPipes from "./RealTimeStatusSystemDiagramPipes";
 import { resolveAnimatedComponents } from "./realTimeStatusSystemDiagramPipeAnimation";
@@ -16,15 +16,40 @@ interface RealTimeStatusSystemDiagramProps {
     siegLoop?: boolean,
 }
 
+/** Temporary: trace relays into `getCurrentState`. Remove when fixed. */
+const RELAY_TRACE = '[real-time relays trace]';
+
 /** Sieg vertical: between HP-buffer horizontals (y=90 … y=215); x nudged right of the HP run. */
 const SIEG_LOOP_PIPE_Y = 90;
 const SIEG_LOOP_PIPE_W = 15;
 const SIEG_LOOP_PIPE_H = 125;
 
 export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce, siegLoop = false }: RealTimeStatusSystemDiagramProps) {
+    const relayTraceSigRef = useRef('');
+
     useEffect(() => {
-        console.log("[real-time diagram] sieg-cold (raw channel value):", readings["sieg-cold"]);
-    }, [readings["sieg-cold"]]);
+        const sig = JSON.stringify({
+            keys: Object.keys(relays).sort(),
+            relay3: relays['relay3'] ?? null,
+            relay5: relays['relay5'] ?? null,
+            relay6: relays['relay6'] ?? null,
+            relay9: relays['relay9'] ?? null,
+        });
+        if (sig !== relayTraceSigRef.current) {
+            relayTraceSigRef.current = sig;
+            const diagramRelayKeys = Object.keys(relays).sort();
+            const missingForState = ['relay3', 'relay5', 'relay6', 'relay9'].filter((k) => !relays[k]);
+            console.log(`${RELAY_TRACE} diagram props (relay map changed)`, {
+                diagramRelayKeyCount: diagramRelayKeys.length,
+                diagramRelayKeys,
+                missingForGetCurrentState: missingForState,
+                relay3: relays['relay3'],
+                relay5: relays['relay5'],
+                relay6: relays['relay6'],
+                relay9: relays['relay9'],
+            });
+        }
+    }, [relays]);
 
     /** When Sieg loop is shown, shift the heat pump graphic left; HP–buffer horizontals extend to match (`RealTimeStatusSystemDiagramPipes`). */
     const siegHpShiftX = siegLoop ? -28 : 0;
@@ -290,25 +315,21 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             {!isSpruce && renderStorageTank2(readings)}
             {renderStorageTank1(readings, tank1X, tank1TextX, isSpruce)}
 
-            {animated.showStorageTankOverlay &&
-                <>
-                    {!isSpruce &&
-                        <g id="dashboard-tank3-animation">
-                            <rect x="200" y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
-                        </g>
-                    }
-
-                    {!isSpruce &&
-                        <g id="dashboard-tank2-animation">
-                            <rect x="330" y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
-                        </g>
-                    }
-
-                    <g id="dashboard-tank1-animation">
-                        <rect x={tank1X} y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
-                    </g>
-                </>
-            }
+            {animated.showStorageTank3Overlay && (
+                <g id="dashboard-tank3-animation">
+                    <rect x="200" y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
+                </g>
+            )}
+            {animated.showStorageTank2Overlay && (
+                <g id="dashboard-tank2-animation">
+                    <rect x="330" y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
+                </g>
+            )}
+            {animated.showStorageTank1Overlay && (
+                <g id="dashboard-tank1-animation">
+                    <rect x={tank1X} y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
+                </g>
+            )}
 
             <RealTimeStatusSystemDiagramPipes
                 {...{
@@ -639,6 +660,9 @@ function tempValueToFahrenheit(channelName: string, rawValue: number | null | un
     return ((tempC * 9 / 5) + 32);
 }
 
+/** Throttle duplicate `getCurrentState` relay warnings across renders. */
+let lastRelayTraceGetCurrentStateSig = '';
+
 function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<string, number>) {
 
     const distFlowReading = readings['dist-flow'];
@@ -666,6 +690,25 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
     const relay6 = relays['relay6'];
     const relay3 = relays['relay3'];
     const relay9 = relays['relay9'];
+
+    const relayTraceSig = JSON.stringify({
+        relay3: relay3 ?? null,
+        relay5: relay5 ?? null,
+        relay6: relay6 ?? null,
+        relay9: relay9 ?? null,
+    });
+    if (relayTraceSig !== lastRelayTraceGetCurrentStateSig && !(relay5 && relay6 && relay3 && relay9)) {
+        lastRelayTraceGetCurrentStateSig = relayTraceSig;
+        console.warn(`${RELAY_TRACE} getCurrentState: relay3/5/6/9 not all present — currentState stays null`, {
+            relayKeysInRecord: Object.keys(relays).sort(),
+            relay3,
+            relay5,
+            relay6,
+            relay9,
+        });
+    } else if (relay5 && relay6 && relay3 && relay9) {
+        lastRelayTraceGetCurrentStateSig = relayTraceSig;
+    }
 
     let currentState = null;
 
