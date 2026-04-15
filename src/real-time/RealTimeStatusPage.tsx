@@ -30,6 +30,42 @@ interface SnapshotPayload {
     LatestReadingList: Reading[];
 }
 
+/** Map SCADA names like `hp-failsafe-relay5` to diagram keys `relay5` (see `LatestReadingList`). */
+function relayKeyFromScadaChannelName(channelName: string): string | null {
+    const withSuffix = channelName.match(/-relay(\d+)$/i);
+    if (withSuffix) {
+        return `relay${withSuffix[1]}`;
+    }
+    const plain = channelName.match(/^relay(\d+)$/i);
+    if (plain) {
+        return `relay${plain[1]}`;
+    }
+    return null;
+}
+
+function scadaValueToRelayState(value: number): string {
+    return value !== 0 ? 'energized' : 'deenergized';
+}
+
+function relayMapFromScadaReadings(readings: Record<string, number>): Record<string, RelayInfo> {
+    const out: Record<string, RelayInfo> = {};
+    const now = Date.now();
+    for (const [channelName, value] of Object.entries(readings)) {
+        const key = relayKeyFromScadaChannelName(channelName);
+        if (!key) {
+            continue;
+        }
+        out[key] = {
+            name: key,
+            channel_name: channelName,
+            display_name: channelName,
+            state: scadaValueToRelayState(value),
+            last_update: now,
+        };
+    }
+    return out;
+}
+
 interface DashboardStatusMessage {
     type: 'status';
     target_gnode?: string;
@@ -53,6 +89,9 @@ type DashboardInbound =
     | DashboardMqttMessage
     | DashboardErrorMessage
     | { type: string };
+
+/** Set true to log each raw WebSocket frame (very noisy during snapshots). */
+const LOG_RAW_DASHBOARD_WS_INBOUND = false;
 
 /**
  * Milliseconds until the next local snapshot tick on the minute grid: offsets i·x seconds from
@@ -172,6 +211,10 @@ function RealTimeStatusConnection({
         websocket.onmessage = (event) => {
             setErr(null);
 
+            if (LOG_RAW_DASHBOARD_WS_INBOUND) {
+                console.log(event.data);
+            }
+
             let data: DashboardInbound;
             try {
                 data = JSON.parse(event.data) as DashboardInbound;
@@ -185,25 +228,9 @@ function RealTimeStatusConnection({
                 if (s.thermostat_names) {
                     setThermostatNames(s.thermostat_names);
                 }
-                if (s.relays) {
-                    setRelays(s.relays);
-                }
             } else if (data.type === 'mqtt_message') {
                 const m = data as DashboardMqttMessage;
-                if (m.message_type === 'single.reading' && m.payload && typeof m.payload === 'object') {
-                    const p = m.payload as { relay_name?: string; state?: string };
-                    const relayName = p.relay_name;
-                    const state = p.state;
-                    if (relayName && state) {
-                        setRelays((prev) => ({
-                            ...prev,
-                            [relayName]: {
-                                ...prev[relayName],
-                                state,
-                            },
-                        }));
-                    }
-                } else if (m.message_type === 'snapshot.spaceheat' && m.payload && typeof m.payload === 'object') {
+                if (m.message_type === 'snapshot.spaceheat' && m.payload && typeof m.payload === 'object') {
                     const snapshot = m.payload as SnapshotPayload;
                     if (isSpruce && !hasLoggedSpruceChannelsRef.current) {
                         hasLoggedSpruceChannelsRef.current = true;
@@ -217,17 +244,17 @@ function RealTimeStatusConnection({
                         const next = Object.fromEntries(
                             (snapshot.LatestReadingList || []).map((r) => [r.ChannelName, r.Value]),
                         ) as Record<string, number>;
-                        if (!previous) {
-                            return next;
-                        }
-                        for (const [channelName, value] of Object.entries(previous)) {
-                            const lowered = channelName.toLowerCase();
-                            const isZoneHeatCall =
-                                lowered.includes('zone') && lowered.includes('heat-call');
-                            if (isZoneHeatCall && !(channelName in next)) {
-                                next[channelName] = value;
+                        if (previous) {
+                            for (const [channelName, value] of Object.entries(previous)) {
+                                const lowered = channelName.toLowerCase();
+                                const isZoneHeatCall =
+                                    lowered.includes('zone') && lowered.includes('heat-call');
+                                if (isZoneHeatCall && !(channelName in next)) {
+                                    next[channelName] = value;
+                                }
                             }
                         }
+                        setRelays(relayMapFromScadaReadings(next));
                         return next;
                     });
                 }
