@@ -172,9 +172,6 @@ export function resolveActivePipeFills(input: DiagramPipeAnimationInput): Partia
     return activePipeColors;
 }
 
-// FIRST MAKE IT SO THAT IT WORKS IN ADMIN TOO
-// MAYBE IT ALREADY DOES
-
 // ---------------------------------------
 // COMPONENT ANIMATIONS
 // ---------------------------------------
