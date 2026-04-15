@@ -685,7 +685,10 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
             currentState = 'HpOffStoreDischarge';
         } else if (!hpOn && !storeCharge && !storeDischarge) {
             currentState = 'HpOffStoreOff';
-        } else {
+        } else if (!hpOn && storeCharge && !storeDischarge) {
+            currentState = 'HpOffStoreCharge';
+        }
+        else {
             currentState = 'Unknown combined state';
         }
     }

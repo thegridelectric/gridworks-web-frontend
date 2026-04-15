@@ -139,7 +139,7 @@ export function resolveActivePipeFills(input: DiagramPipeAnimationInput): Partia
         });
     }
 
-    if (systemState === 'HpOnStoreCharge') {
+    if (systemState === 'HpOnStoreCharge' || systemState === 'HpOffStoreCharge') {
         Object.entries(PIPES_CHARGE).forEach(([pipeId, direction]) => {
             activePipeColors[pipeId as PipeSegmentId] = direction;
         });
@@ -171,6 +171,9 @@ export function resolveActivePipeFills(input: DiagramPipeAnimationInput): Partia
 
     return activePipeColors;
 }
+
+// FIRST MAKE IT SO THAT IT WORKS IN ADMIN TOO
+// MAYBE IT ALREADY DOES
 
 // ---------------------------------------
 // COMPONENT ANIMATIONS
