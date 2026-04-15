@@ -100,8 +100,8 @@ export function resolveActivePipeFills(input: DiagramPipeAnimationInput): Partia
     const activePipeColors: Partial<Record<PipeSegmentId, string>> = {};
 
     let systemState = currentState;
-    if (isSpruce) {
-        systemState = 'HpOffStoreOff';
+    if (isSpruce && currentState === null) {
+        systemState = 'HpOffStoreOff'; // TODO: eventually remove when heat pump/storage is installed
     }
 
     if (hasDistFlow) {
