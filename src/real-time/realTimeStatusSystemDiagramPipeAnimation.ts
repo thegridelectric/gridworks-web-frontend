@@ -44,8 +44,8 @@ export const PIPES_DISCHARGE = {
     'dashboard-tank1-connection-pipe-discharge': RIGHT,
     'dashboard-tank1-hp-vertical-pipe-discharge': UP,
     'dashboard-tank1-buffer-horizontal-pipe-discharge': RIGHT,
-    'dashboard-tank3-hp-vertical-pipe-discharge': DOWN,
     'dashboard-tank3-buffer-horizontal-pipe-discharge': LEFT,
+    'dashboard-tank3-hp-vertical-pipe-discharge': DOWN,
     'dashboard-tank3-connection-pipe-discharge': RIGHT,
 } as const;
 export const PIPES_DIST_VERTICAL = {
@@ -61,7 +61,7 @@ export const PIPES_DIST_FROM_BUFFER = {
     'dashboard-house-buffer-bottom-pipe': RIGHT,
 } as const;
 export const PIPES_SPRUCE_FLOOR = {
-    'dashboard-house-bridge-pipe': RIGHT,
+    'dashboard-house-bridge-pipe': LEFT,
 } as const;
 export const PIPES_SIEG_LOOP = {
     'dashboard-sieg-loop-pipe': DOWN,
