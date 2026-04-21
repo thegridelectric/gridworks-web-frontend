@@ -1,5 +1,5 @@
 import RealTimeStatusSystemDiagramPipes from "./RealTimeStatusSystemDiagramPipes";
-import { resolveAnimatedComponents } from "./realTimeStatusSystemDiagramPipeAnimation";
+import { resolveActiveComponentFills, resolveActiveComponentFlags } from "./realTimeStatusSystemDiagramPipeAnimation";
 
 interface RelayStatus {
     state: string,
@@ -69,7 +69,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
     const hasSiegFlow =
         siegLoop && (readings['sieg-flow'] ?? 0) > 0.5;
 
-    const animated = resolveAnimatedComponents({
+    const activeComponentFills = resolveActiveComponentFills({
         currentState,
         hasPrimFlow,
         hasDistFlow,
@@ -80,6 +80,24 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
         animateSpruceFloorLoop,
         animateSpruceUpstairsLoop,
     });
+    const activeComponentFlags = resolveActiveComponentFlags({
+        currentState,
+        hasPrimFlow,
+        hasDistFlow,
+        hasStoreFlow,
+        hasSiegFlow,
+        hasHpPower,
+        isSpruce,
+        animateSpruceFloorLoop,
+        animateSpruceUpstairsLoop,
+    });
+    const heatPumpAnimation = activeComponentFills['dashboard-hp-animation'] ?? null;
+    const bufferAnimation = activeComponentFills['dashboard-buffer-animation'] ?? null;
+    const tank1Animation = activeComponentFills['dashboard-tank1-animation'] ?? null;
+    const tank2Animation = activeComponentFills['dashboard-tank2-animation'] ?? null;
+    const tank3Animation = activeComponentFills['dashboard-tank3-animation'] ?? null;
+    const houseAnimation = activeComponentFills['dashboard-house-animation'] ?? null;
+    const spruceHouseFloorStaticMaskActive = Boolean(activeComponentFlags['dashboard-house-floor-static-mask']);
 
     /** Extra space on the left so shifted HP (translate) is not clipped; wider box also scales content slightly to fit the card. */
     const SIEG_LOOP_VIEWBOX_PAD_LEFT = 36;
@@ -174,8 +192,8 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                         repeatCount="indefinite" />
                 </pattern>
 
-                {/* Buffer heat lines pattern - top to bottom flow */}
-                <pattern id="dashboardBufferHeatLinesTopToBottom" x="0" y="0" width="20" height="120" patternUnits="userSpaceOnUse">
+                {/* Shared vertical heat lines pattern - downward flow */}
+                <pattern id="dashboardVerticalHeatLinesDownPattern" x="0" y="0" width="20" height="120" patternUnits="userSpaceOnUse">
                     <path d="M 3,10 Q 10,7 17,10 Q 10,13 3,10" fill="#999" opacity="0.12" />
                     <path d="M 3,30 Q 10,27 17,30 Q 10,33 3,30" fill="#999" opacity="0.12" />
                     <path d="M 3,50 Q 10,47 17,50 Q 10,53 3,50" fill="#999" opacity="0.12" />
@@ -190,8 +208,8 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                         repeatCount="indefinite" />
                 </pattern>
 
-                {/* Buffer heat lines pattern - bottom to top flow */}
-                <pattern id="dashboardBufferHeatLinesBottomToTop" x="0" y="0" width="20" height="120" patternUnits="userSpaceOnUse">
+                {/* Shared vertical heat lines pattern - upward flow */}
+                <pattern id="dashboardVerticalHeatLinesUpPattern" x="0" y="0" width="20" height="120" patternUnits="userSpaceOnUse">
                     <path d="M 3,10 Q 10,7 17,10 Q 10,13 3,10" fill="#999" opacity="0.12" />
                     <path d="M 3,30 Q 10,27 17,30 Q 10,33 3,30" fill="#999" opacity="0.12" />
                     <path d="M 3,50 Q 10,47 17,50 Q 10,53 3,50" fill="#999" opacity="0.12" />
@@ -222,46 +240,17 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                         repeatCount="indefinite" />
                 </pattern>
 
-                {/* Tank heat lines pattern - top to bottom flow */}
-                <pattern id="dashboardTankHeatLinesTopToBottom" x="0" y="0" width="20" height="120" patternUnits="userSpaceOnUse">
-                    <path d="M 3,10 Q 10,7 17,10 Q 10,13 3,10" fill="#999" opacity="0.12" />
-                    <path d="M 3,30 Q 10,27 17,30 Q 10,33 3,30" fill="#999" opacity="0.12" />
-                    <path d="M 3,50 Q 10,47 17,50 Q 10,53 3,50" fill="#999" opacity="0.12" />
-                    <path d="M 3,70 Q 10,67 17,70 Q 10,73 3,70" fill="#999" opacity="0.12" />
-                    <path d="M 3,90 Q 10,87 17,90 Q 10,93 3,90" fill="#999" opacity="0.12" />
-                    <path d="M 3,110 Q 10,107 17,110 Q 10,113 3,110" fill="#999" opacity="0.12" />
-                    <animateTransform
-                        attributeName="patternTransform"
-                        type="translate"
-                        values="0 0; 0 120"
-                        dur="3s"
-                        repeatCount="indefinite" />
-                </pattern>
-
-                {/* Tank heat lines pattern - bottom to top flow */}
-                <pattern id="dashboardTankHeatLinesBottomToTop" x="0" y="0" width="20" height="120" patternUnits="userSpaceOnUse">
-                    <path d="M 3,10 Q 10,7 17,10 Q 10,13 3,10" fill="#999" opacity="0.12" />
-                    <path d="M 3,30 Q 10,27 17,30 Q 10,33 3,30" fill="#999" opacity="0.12" />
-                    <path d="M 3,50 Q 10,47 17,50 Q 10,53 3,50" fill="#999" opacity="0.12" />
-                    <path d="M 3,70 Q 10,67 17,70 Q 10,73 3,70" fill="#999" opacity="0.12" />
-                    <path d="M 3,90 Q 10,87 17,90 Q 10,93 3,90" fill="#999" opacity="0.12" />
-                    <path d="M 3,110 Q 10,107 17,110 Q 10,113 3,110" fill="#999" opacity="0.12" />
-                    <animateTransform
-                        attributeName="patternTransform"
-                        type="translate"
-                        values="0 120; 0 0"
-                        dur="3s"
-                        repeatCount="indefinite" />
-                </pattern>
             </defs>
 
             {/* Heat pump (shift left when Sieg loop is on) */}
             <g id="dashboard-heat-pump-shift" transform={`translate(${siegHpShiftX}, 0)`}>
                 {renderStaticHeatPump()}
-                {animated.showHeatPumpAnimation &&
+                {heatPumpAnimation &&
                     <g id="dashboard-hp-animation">
-                        <rect x="20" y="50" width="120" height="200" rx="10" fill="url(#dashboardHeatGradient)" />
-                        <rect x="20" y="50" width="120" height="200" rx="10" fill="url(#dashboardHeatLinesPattern)" />
+                        {heatPumpAnimation.gradientFill && (
+                            <rect x="20" y="50" width="120" height="200" rx="10" fill={heatPumpAnimation.gradientFill} />
+                        )}
+                        <rect x="20" y="50" width="120" height="200" rx="10" fill={heatPumpAnimation.animationFill} />
                         <text id="dashboard-hp-lift" x="80" y="150" textAnchor="middle" fill="white" fontFamily="Montserrat, sans-serif" fontSize="16" fontWeight="600">
                             Lift<tspan x="80" dy="1.2em">{formatTempDelta(readings, 'hp-lwt', 'hp-ewt')}</tspan>
                         </text>
@@ -272,9 +261,9 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
 
             {/* Buffer */}
             {renderBufferTank(readings, isSpruce)}
-            {animated.showBufferHeatLinesOverlay &&
+            {bufferAnimation &&
                 <g id="dashboard-buffer-animation">
-                    <rect x="860" y="50" width="120" height="200" rx="10" fill={animated.bufferHeatLinesFill} />
+                    <rect x="860" y="50" width="120" height="200" rx="10" fill={bufferAnimation.animationFill} />
                 </g>
             }
 
@@ -284,19 +273,19 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             {!isSpruce && renderStorageTank2(readings)}
             {renderStorageTank1(readings, tank1X, tank1TextX, isSpruce)}
 
-            {animated.showStorageTank3Overlay && (
+            {tank3Animation && (
                 <g id="dashboard-tank3-animation">
-                    <rect x="200" y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
+                    <rect x="200" y="280" width="120" height="200" rx="10" fill={tank3Animation.animationFill} />
                 </g>
             )}
-            {animated.showStorageTank2Overlay && (
+            {tank2Animation && (
                 <g id="dashboard-tank2-animation">
-                    <rect x="330" y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
+                    <rect x="330" y="280" width="120" height="200" rx="10" fill={tank2Animation.animationFill} />
                 </g>
             )}
-            {animated.showStorageTank1Overlay && (
+            {tank1Animation && (
                 <g id="dashboard-tank1-animation">
-                    <rect x={tank1X} y="280" width="120" height="200" rx="10" fill={animated.storageTankAnimationFill} />
+                    <rect x={tank1X} y="280" width="120" height="200" rx="10" fill={tank1Animation.animationFill} />
                 </g>
             )}
 
@@ -519,13 +508,17 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
             )}
 
             {/* House animation group (moved to end to ensure visibility) */}
-            {animated.showHouseAnimation &&
+            {houseAnimation &&
                 <g id="dashboard-house-animation">
-                    <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="0" fill="url(#dashboardHouseHeatGradient)" />
-                    <polygon points={`${houseRoofLeftX},336 ${houseRoofRightX},336 ${houseTextX},290`} fill="url(#dashboardHouseHeatGradient)" />
-                    {/* <rect x="660" y="280" width="120" height="200" rx="10" fill="url(#dashboardHouseHeatGradient)"/> */}
-                    <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="10" fill="url(#dashboardHouseHeatLinesPattern)" />
-                    {animated.spruceHouseFloorStaticMask && (
+                    {houseAnimation.gradientFill && (
+                        <>
+                            <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="0" fill={houseAnimation.gradientFill} />
+                            <polygon points={`${houseRoofLeftX},336 ${houseRoofRightX},336 ${houseTextX},290`} fill={houseAnimation.gradientFill} />
+                        </>
+                    )}
+                    {/* <rect x="660" y="280" width="120" height="200" rx="10" fill={houseAnimation.gradientFill}/> */}
+                    <rect x={houseLeftX} y="335" width={houseWidth} height="90" rx="10" fill={houseAnimation.animationFill} />
+                    {spruceHouseFloorStaticMaskActive && (
                         <>
                             {/* Keep only the outside floor branch segments visually static when no eligible zone is heating. */}
                             <rect x={houseLeftX - 10} y="410" width="10" height="15" fill="#888" />
@@ -533,8 +526,10 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                             {/* Neutralize residual animation visible through the in-house floor band. */}
                             <rect x={houseLeftX} y="410" width={houseWidth} height="15" fill="#888" />
                             {/* Keep house animation visible above that in-house floor segment. */}
-                            <rect x={houseLeftX} y="410" width={houseWidth} height="15" fill="url(#dashboardHouseHeatGradient)" />
-                            <rect x={houseLeftX} y="410" width={houseWidth} height="15" fill="url(#dashboardHouseHeatLinesPattern)" />
+                            {houseAnimation.gradientFill && (
+                                <rect x={houseLeftX} y="410" width={houseWidth} height="15" fill={houseAnimation.gradientFill} />
+                            )}
+                            <rect x={houseLeftX} y="410" width={houseWidth} height="15" fill={houseAnimation.animationFill} />
                             {/* Also freeze only the lower portions of the two risers (below the small horizontal stubs). */}
                             <rect x={houseLeftX - 25} y="375" width="15" height="50" fill="#888" />
                             <rect x={houseLeftX + houseWidth + 10} y="375" width="15" height="50" fill="#888" />

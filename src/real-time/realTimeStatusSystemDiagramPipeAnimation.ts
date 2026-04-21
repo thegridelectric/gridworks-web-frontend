@@ -176,90 +176,163 @@ export function resolveActivePipeFills(input: DiagramPipeAnimationInput): Partia
 // COMPONENT ANIMATIONS
 // ---------------------------------------
 
-const BUFFER_HEAT_LINES_TOP_TO_BOTTOM = 'url(#dashboardBufferHeatLinesTopToBottom)';
-const BUFFER_HEAT_LINES_BOTTOM_TO_TOP = 'url(#dashboardBufferHeatLinesBottomToTop)';
-const TANK_HEAT_LINES_TOP_TO_BOTTOM = 'url(#dashboardTankHeatLinesTopToBottom)';
-const TANK_HEAT_LINES_BOTTOM_TO_TOP = 'url(#dashboardTankHeatLinesBottomToTop)';
+const COMPONENT_HEAT_PUMP_GRADIENT = 'url(#dashboardHeatGradient)';
+const COMPONENT_HEAT_PUMP_LINES = 'url(#dashboardHeatLinesPattern)';
+const COMPONENT_HOUSE_GRADIENT = 'url(#dashboardHouseHeatGradient)';
+const COMPONENT_HOUSE_LINES = 'url(#dashboardHouseHeatLinesPattern)';
+const COMPONENT_DOWN = 'url(#dashboardVerticalHeatLinesDownPattern)';
+const COMPONENT_UP = 'url(#dashboardVerticalHeatLinesUpPattern)';
 
-/** Shared by `resolveAnimatedComponents` only (pipe fills keep their own locals in `resolveActivePipeFills`). */
-function getDerivedFlowFlags(input: DiagramPipeAnimationInput) {
-    const { currentState, hasDistFlow, hasStoreFlow, hasHpPower } = input;
-    const animateBufferDistLoop =
-        hasDistFlow && !hasHpPower && !hasStoreFlow;
-    const storageDischargePipeAnimation =
-        hasStoreFlow &&
-        !hasHpPower &&
-        (currentState === 'HpOffStoreDischarge' || currentState === null);
-    return { animateBufferDistLoop, storageDischargePipeAnimation };
+export interface DiagramAnimatedComponent {
+    gradientFill?: string;
+    animationFill: string;
 }
 
-/** Overlay / volume animation decisions for `RealTimeStatusSystemDiagram` (buffer, tanks, house, HP). */
-export interface DiagramAnimatedComponents {
-    showHeatPumpAnimation: boolean;
-    showBufferHeatLinesOverlay: boolean;
-    bufferHeatLinesFill: string;
-    /** Tank 1 overlay (all layouts). Mirrors former `showStorageTankOverlay`. */
-    showStorageTank1Overlay: boolean;
-    /** Tanks 2–3 only exist in the non-Spruce three-tank layout. */
-    showStorageTank2Overlay: boolean;
-    showStorageTank3Overlay: boolean;
-    /** Pattern fill when any storage-tank overlay is shown; same for each tank rect. */
-    storageTankAnimationFill: string;
-    showHouseAnimation: boolean;
-    /** Spruce: extra static rects over floor band when no floor-zone heating animation. */
-    spruceHouseFloorStaticMask: boolean;
-}
+export const COMPONENTS_HEAT_PUMP = {
+    'dashboard-hp-animation': {
+        gradientFill: COMPONENT_HEAT_PUMP_GRADIENT,
+        animationFill: COMPONENT_HEAT_PUMP_LINES,
+    },
+} as const;
+export const COMPONENTS_BUFFER_TOP_TO_BOTTOM = {
+    'dashboard-buffer-animation': {
+        animationFill: COMPONENT_DOWN,
+    },
+} as const;
+export const COMPONENTS_BUFFER_BOTTOM_TO_TOP = {
+    'dashboard-buffer-animation': {
+        animationFill: COMPONENT_UP,
+    },
+} as const;
+export const COMPONENTS_STORAGE_CHARGE = {
+    'dashboard-tank1-animation': {
+        animationFill: COMPONENT_DOWN,
+    },
+    'dashboard-tank2-animation': {
+        animationFill: COMPONENT_DOWN,
+    },
+    'dashboard-tank3-animation': {
+        animationFill: COMPONENT_DOWN,
+    },
+} as const;
+export const COMPONENTS_STORAGE_CHARGE_SPRUCE = {
+    'dashboard-tank1-animation': {
+        animationFill: COMPONENT_DOWN,
+    },
+} as const;
+export const COMPONENTS_STORAGE_DISCHARGE = {
+    'dashboard-tank1-animation': {
+        animationFill: COMPONENT_UP,
+    },
+    'dashboard-tank2-animation': {
+        animationFill: COMPONENT_UP,
+    },
+    'dashboard-tank3-animation': {
+        animationFill: COMPONENT_UP,
+    },
+} as const;
+export const COMPONENTS_STORAGE_DISCHARGE_SPRUCE = {
+    'dashboard-tank1-animation': {
+        animationFill: COMPONENT_UP,
+    },
+} as const;
+export const COMPONENTS_HOUSE = {
+    'dashboard-house-animation': {
+        gradientFill: COMPONENT_HOUSE_GRADIENT,
+        animationFill: COMPONENT_HOUSE_LINES,
+    },
+} as const;
+export const COMPONENTS_SPRUCE_HOUSE_FLOOR_STATIC_MASK = {
+    'dashboard-house-floor-static-mask': true,
+} as const;
+
+const COMPONENT_FILL_DEFAULT_VALUE_BY_ID = {
+    ...COMPONENTS_HEAT_PUMP,
+    ...COMPONENTS_BUFFER_TOP_TO_BOTTOM,
+    ...COMPONENTS_STORAGE_CHARGE,
+    ...COMPONENTS_HOUSE,
+} as const;
+const COMPONENT_FLAG_DEFAULT_VALUE_BY_ID = {
+    ...COMPONENTS_SPRUCE_HOUSE_FLOOR_STATIC_MASK,
+} as const;
+
+export type ComponentFillId = keyof typeof COMPONENT_FILL_DEFAULT_VALUE_BY_ID;
+export type ComponentFlagId = keyof typeof COMPONENT_FLAG_DEFAULT_VALUE_BY_ID;
+export type DiagramActiveComponentFills = Partial<Record<ComponentFillId, DiagramAnimatedComponent>>;
+export type DiagramActiveComponentFlags = Partial<Record<ComponentFlagId, true>>;
 
 /**
- * Buffer/tank/house/HP animated overlays — same rules as the previous inline logic in
- * `RealTimeStatusSystemDiagram.tsx`.
+ * Returns SVG `fill` values for animated components. Omitted keys stay static (`#888` / off).
  */
-export function resolveAnimatedComponents(input: DiagramPipeAnimationInput): DiagramAnimatedComponents {
+export function resolveActiveComponentFills(input: DiagramPipeAnimationInput): DiagramActiveComponentFills {
     const {
         currentState,
         hasDistFlow,
+        hasHpPower,
         isSpruce,
-        animateSpruceFloorLoop,
     } = input;
 
-    const { animateBufferDistLoop, storageDischargePipeAnimation } = getDerivedFlowFlags(input);
+    const activeComponentFills: DiagramActiveComponentFills = {};
 
-    const showHeatPumpAnimation =
-        currentState === 'HpOnStoreOff' || currentState === 'HpOnStoreCharge';
-
-    const showBufferHeatLinesOverlay =
-        currentState === 'HpOnStoreOff' ||
-        storageDischargePipeAnimation ||
-        (hasDistFlow && (currentState === 'HpOffStoreOff' || animateBufferDistLoop));
-
-    const bufferHeatLinesFill =
-        isSpruce && hasDistFlow ? BUFFER_HEAT_LINES_BOTTOM_TO_TOP : BUFFER_HEAT_LINES_TOP_TO_BOTTOM;
-
-    const showStorageTank1Overlay =
-        storageDischargePipeAnimation || currentState === 'HpOnStoreCharge';
-    const showStorageTank2Overlay = showStorageTank1Overlay && !isSpruce;
-    const showStorageTank3Overlay = showStorageTank1Overlay && !isSpruce;
-
-    let storageTankAnimationFill = TANK_HEAT_LINES_TOP_TO_BOTTOM;
-    if (storageDischargePipeAnimation) {
-        storageTankAnimationFill = TANK_HEAT_LINES_BOTTOM_TO_TOP;
-    } else if (currentState === 'HpOnStoreCharge') {
-        storageTankAnimationFill = TANK_HEAT_LINES_TOP_TO_BOTTOM;
+    if (hasHpPower) {
+        Object.entries(COMPONENTS_HEAT_PUMP).forEach(([componentId, fill]) => {
+            activeComponentFills[componentId as ComponentFillId] = fill;
+        });
     }
 
-    const showHouseAnimation = hasDistFlow;
+    if (hasDistFlow) {
+        Object.entries(COMPONENTS_HOUSE).forEach(([componentId, fill]) => {
+            activeComponentFills[componentId as ComponentFillId] = fill;
+        });
+    }
 
-    const spruceHouseFloorStaticMask = isSpruce && !animateSpruceFloorLoop;
+    if (currentState === 'HpOffStoreDischarge') {
+        Object.entries(
+            isSpruce ? COMPONENTS_STORAGE_DISCHARGE_SPRUCE : COMPONENTS_STORAGE_DISCHARGE,
+        ).forEach(([componentId, fill]) => {
+            activeComponentFills[componentId as ComponentFillId] = fill;
+        });
+        Object.entries(COMPONENTS_BUFFER_TOP_TO_BOTTOM).forEach(([componentId, fill]) => {
+            activeComponentFills[componentId as ComponentFillId] = fill;
+        });
+    } 
+    
+    else if (currentState === 'HpOnStoreCharge') {
+        Object.entries(
+            isSpruce ? COMPONENTS_STORAGE_CHARGE_SPRUCE : COMPONENTS_STORAGE_CHARGE,
+        ).forEach(([componentId, fill]) => {
+            activeComponentFills[componentId as ComponentFillId] = fill;
+        });
+    }
 
-    return {
-        showHeatPumpAnimation,
-        showBufferHeatLinesOverlay,
-        bufferHeatLinesFill,
-        showStorageTank1Overlay,
-        showStorageTank2Overlay,
-        showStorageTank3Overlay,
-        storageTankAnimationFill,
-        showHouseAnimation,
-        spruceHouseFloorStaticMask,
-    };
+    else if (currentState === 'HpOnStoreOff') {
+        Object.entries(
+            isSpruce ? COMPONENTS_STORAGE_CHARGE_SPRUCE : COMPONENTS_STORAGE_CHARGE,
+        ).forEach(([componentId, fill]) => {
+            activeComponentFills[componentId as ComponentFillId] = fill;
+        });
+    }
+
+    if (currentState == 'HpOnStoreCharge' || currentState == 'HpOffStoreOff') {
+        if (hasDistFlow) {
+            Object.entries(COMPONENTS_BUFFER_BOTTOM_TO_TOP).forEach(([componentId, fill]) => {
+                activeComponentFills[componentId as ComponentFillId] = fill;
+            });
+        }
+    }
+
+    return activeComponentFills;
+}
+
+export function resolveActiveComponentFlags(input: DiagramPipeAnimationInput): DiagramActiveComponentFlags {
+    const { isSpruce, animateSpruceFloorLoop } = input;
+    const activeComponentFlags: DiagramActiveComponentFlags = {};
+
+    if (isSpruce && !animateSpruceFloorLoop) {
+        Object.keys(COMPONENTS_SPRUCE_HOUSE_FLOOR_STATIC_MASK).forEach((componentId) => {
+            activeComponentFlags[componentId as ComponentFlagId] = true;
+        });
+    }
+
+    return activeComponentFlags;
 }
