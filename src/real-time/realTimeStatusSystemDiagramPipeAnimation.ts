@@ -64,6 +64,8 @@ export const PIPES_SPRUCE_FLOOR = {
     'dashboard-house-bridge-pipe': LEFT,
 } as const;
 export const PIPES_SIEG_LOOP = {
+    'dashboard-sieg-loop-top-connector-pipe': RIGHT,
+    'dashboard-sieg-loop-bottom-connector-pipe': LEFT,
     'dashboard-sieg-loop-pipe': DOWN,
 } as const;
 

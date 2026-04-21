@@ -77,6 +77,9 @@ export default function RealTimeStatusSystemDiagramPipes({
     /** Left end of HP-buffer header rows (default 140); moves with shifted heat pump. Right end stays at 860. */
     const hpHeaderLeft = 140 + siegHpShiftX;
     const hpBufferFullSpanWidth = 720 - siegHpShiftX;
+    /** Short HP-side header spans that connect the top/bottom header rows to the Sieg vertical pipe. */
+    const siegLoopPipeX = hpHeaderLeft + 22;
+    const siegLoopConnectorWidth = siegLoopPipeX + 15 - hpHeaderLeft;
 
     const hideNonSpruceHeaderRowPipes =
         DEBUG_HIDE_NON_SPRUCE_BUFFER_HEADER_ROW_PIPES && !isSpruce;
@@ -140,6 +143,8 @@ export default function RealTimeStatusSystemDiagramPipes({
     const allPipeNames = [
         'dashboard-hp-buffer-top-pipe',
         'dashboard-hp-buffer-bottom-pipe',
+        'dashboard-sieg-loop-top-connector-pipe',
+        'dashboard-sieg-loop-bottom-connector-pipe',
         'dashboard-tank1-hp-vertical-pipe-discharge',
         'dashboard-tank1-buffer-horizontal-pipe-discharge',
         'dashboard-tank1-connection-pipe-discharge',
@@ -176,6 +181,8 @@ export default function RealTimeStatusSystemDiagramPipes({
         ) : (
             <rect x={hpHeaderLeft} y="215" width={hpBufferFullSpanWidth} height="15" fill={pipeColors['dashboard-hp-buffer-bottom-pipe']} />
         ),
+        'dashboard-sieg-loop-top-connector-pipe': <rect x={hpHeaderLeft} y="75" width={siegLoopConnectorWidth} height="15" fill={pipeColors['dashboard-sieg-loop-top-connector-pipe']} />,
+        'dashboard-sieg-loop-bottom-connector-pipe': <rect x={hpHeaderLeft} y="215" width={siegLoopConnectorWidth} height="15" fill={pipeColors['dashboard-sieg-loop-bottom-connector-pipe']} />,
         'dashboard-tank1-hp-horizontal-pipe-charge': hidePipeForHeaderRowDebug('dashboard-tank1-hp-horizontal-pipe-charge') ? (
             <g data-debug-omit="dashboard-tank1-hp-horizontal-pipe-charge" />
         ) : (
@@ -230,6 +237,8 @@ export default function RealTimeStatusSystemDiagramPipes({
     const nonHousePipeOrder = [
         'dashboard-hp-buffer-top-pipe',
         'dashboard-hp-buffer-bottom-pipe',
+        'dashboard-sieg-loop-top-connector-pipe',
+        'dashboard-sieg-loop-bottom-connector-pipe',
         'dashboard-tank1-hp-horizontal-pipe-charge',
         'dashboard-tank3-hp-horizontal-pipe-charge',
         'dashboard-tank1-hp-vertical-pipe-discharge',
