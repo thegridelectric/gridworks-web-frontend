@@ -86,7 +86,10 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
     const diagramViewBox = siegLoop
         ? `-${SIEG_LOOP_VIEWBOX_PAD_LEFT} 0 ${1000 + SIEG_LOOP_VIEWBOX_PAD_LEFT} 500`
         : '0 0 1000 500';
-    
+
+    const siegLoopLabelsLeftX = siegLoopPipeX + SIEG_LOOP_PIPE_W + 8;
+    const siegFlowAndModeY = SIEG_LOOP_PIPE_Y + 16;
+
     return <div id="dashboard-system-diagram">
         <svg id="dashboard-diagram-svg" viewBox={diagramViewBox} preserveAspectRatio="xMidYMid meet">
             <defs>
@@ -327,6 +330,20 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                         height={SIEG_LOOP_PIPE_H}
                         fill={hasSiegFlow ? 'url(#dashboardDownFlowPattern)' : '#888'}
                     />
+                    <text
+                        id="dashboard-sieg-flow-and-mode"
+                        x={siegLoopLabelsLeftX}
+                        y={siegFlowAndModeY}
+                        textAnchor="start"
+                        fill="#888"
+                        fontFamily="Montserrat, sans-serif"
+                        fontSize="14"
+                        fontWeight="600"
+                    >
+                        <tspan dx="10" id="dashboard-sieg-hp-loop-mode">
+                            {siegHpLoopRelayModeLabel(relays)}
+                        </tspan>
+                    </text>
                     <text
                         id="dashboard-sieg-hot"
                         x={siegLoopPipeX + SIEG_LOOP_PIPE_W + 8}
@@ -627,6 +644,24 @@ function tempValueToFahrenheit(channelName: string, rawValue: number | null | un
 
     const tempC = rawValue / 1000;
     return ((tempC * 9 / 5) + 32);
+}
+
+/** HP loop on/off (`hp-loop-on-off-relay14`) vs keep/send (`hp-loop-keep-send-relay15`) → diagram caption beside sieg-flow GPM. */
+function siegHpLoopRelayModeLabel(relays: Record<string, RelayStatus>): string {
+    const r14 = relays['relay14'];
+    const r15 = relays['relay15'];
+    if (r14?.state === 'energized') {
+        return 'Stationary';
+    }
+    if (r14?.state === 'deenergized') {
+        if (r15?.state === 'energized') {
+            return 'Keeping more';
+        }
+        if (r15?.state === 'deenergized') {
+            return 'Sending more';
+        }
+    }
+    return '—';
 }
 
 function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<string, number>) {

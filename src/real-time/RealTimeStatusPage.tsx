@@ -93,6 +93,9 @@ type DashboardInbound =
 /** Set true to log each raw WebSocket frame (very noisy during snapshots). */
 const LOG_RAW_DASHBOARD_WS_INBOUND = false;
 
+/** Set true to log each `snapshot.spaceheat` WebSocket frame as raw `event.data` (large and frequent). */
+const LOG_RAW_SNAPSHOT_SPACEHEAT = true;
+
 /**
  * Milliseconds until the next local snapshot tick on the minute grid: offsets i·x seconds from
  * each minute start for i ≥ 0 while i·x ≤ 60. The next tick is strictly after `fromMs`.
@@ -231,6 +234,9 @@ function RealTimeStatusConnection({
             } else if (data.type === 'mqtt_message') {
                 const m = data as DashboardMqttMessage;
                 if (m.message_type === 'snapshot.spaceheat' && m.payload && typeof m.payload === 'object') {
+                    if (LOG_RAW_SNAPSHOT_SPACEHEAT) {
+                        console.log('[dashboard] snapshot.spaceheat raw', event.data);
+                    }
                     const snapshot = m.payload as SnapshotPayload;
                     if (isSpruce && !hasLoggedSpruceChannelsRef.current) {
                         hasLoggedSpruceChannelsRef.current = true;
