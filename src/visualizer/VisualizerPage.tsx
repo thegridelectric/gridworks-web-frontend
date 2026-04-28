@@ -7,25 +7,26 @@ import {
     formatDate,
     formatTime,
     getDefaultDate,
-    isEndDateOldEnough,
-    wallDateTimeToUtcMs,
+    isEndDateOldEnoughUtc,
+    wallDateTimeToUtc,
 } from "../_util/newYorkTime";
 import { getIsDarkMode } from "../_util/theme";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
 import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
-import VisualizerServerPlots from "./VisualizerServerPlots";
-import type { VisualizerPlotsApiResponse } from "./visualizerApiTypes";
+import type { ReadingsBundleApiResponse } from "./visualizerApiTypes";
 import { VisualizerOptionsPanel } from "./VisualizerControls";
 import { CLIENT_ONLY_VISUALIZER_CHANNEL_IDS } from "./visualizerChannels";
 import { useVisualizerControls } from "./useVisualizerControls";
 import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
+import { PLOT_CONFIGS } from "./plot-configs";
+import VisualizerPlot from "./VisualizerPlot";
 
 export default function VisualizerPage() {
 
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(getDefaultDate(false));
-    const [plotsPayload, setPlotsPayload] = useState<VisualizerPlotsApiResponse['plots'] | null>(null);
+    const [readingsBundleData, setReadingsBundleData] = useState<ReadingsBundleApiResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFloLoading, setIsFloLoading] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
@@ -63,10 +64,14 @@ export default function VisualizerPage() {
             return;
         }
 
-        const startMs = wallDateTimeToUtcMs(startDt);
-        const endMs = wallDateTimeToUtcMs(endDt);
+        const startDate = wallDateTimeToUtc(startDt);
+        const endDate = wallDateTimeToUtc(endDt);
 
-        if (!isEndDateOldEnough(endMs, 10, houseAlias)) {
+        if (startDate == null || endDate == null) {
+            return;
+        }
+
+        if (!isEndDateOldEnoughUtc(endDate, 10, houseAlias)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
@@ -79,25 +84,18 @@ export default function VisualizerPage() {
         }
 
         setIsLoading(true);
-        setPlotsPayload(null);
+        setReadingsBundleData(null);
         try {
             const data = await fetchVisualizerPlots({
                 houseAlias,
-                startMs,
-                endMs,
+                startDateIso: startDate.toISO(),
+                endDateIso: endDate.toISO(),
                 selectedChannels,
                 darkmode: getIsDarkMode(),
                 token,
             });
 
-            if (!data.success) {
-                throw new Error(data.message || 'Visualizer returned success: false');
-            }
-            if (!data.plots) {
-                throw new Error('Visualizer returned no plots object.');
-            }
-
-            setPlotsPayload(data.plots);
+            setReadingsBundleData(data);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
@@ -120,7 +118,7 @@ export default function VisualizerPage() {
 
     function onClearClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         event.preventDefault();
-        setPlotsPayload(null);
+        setReadingsBundleData(null);
         setPlotError(null);
         resetControls();
         setStartDateTime(getDefaultDate(true));
@@ -177,15 +175,15 @@ export default function VisualizerPage() {
             return;
         }
 
-        const endMs = wallDateTimeToUtcMs(endDateTime);
-        if (!isEndDateOldEnough(endMs, 10, houseAlias)) {
+        const endDate = wallDateTimeToUtc(endDateTime);
+        if (!isEndDateOldEnoughUtc(endDate, 10, houseAlias)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
 
         setIsFloLoading(true);
         try {
-            await downloadVisualizerFlo({ houseAlias, timeMs: endMs, token });
+            await downloadVisualizerFlo({ houseAlias, timeMs: endDate.toMillis(), token });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
@@ -220,7 +218,7 @@ export default function VisualizerPage() {
     });
 
     useEffect(() => {
-        setPlotsPayload(null);
+        setReadingsBundleData(null);
         setPlotError(null);
     }, [currentInstallationId, houseAlias]);
 
@@ -325,13 +323,19 @@ export default function VisualizerPage() {
                 setIncludesChannel={setIncludesChannel}
             />
 
-            {plotsPayload &&
+            {readingsBundleData &&
                 <div className="plot-container border-top">
-                    <VisualizerServerPlots
+                    <div className="visualizer-server-plots-root">
+
+                        {PLOT_CONFIGS.map((c, i) => (
+                            <VisualizerPlot key={i} plotConfig={c} readingsBundleData={readingsBundleData} isDarkMode={getIsDarkMode()} showPoints={showPoints} />
+                        ))}
+                        {/* <VisualizerServerPlots
                         plots={plotsPayload}
                         selectedChannels={plotSelectedChannels}
                         darkmode={getIsDarkMode()}
-                    />
+                    /> */}
+                    </div>
                 </div>
             }
 

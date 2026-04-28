@@ -44,6 +44,28 @@ export function isEndDateOldEnough(
     return endUnixMs <= cutoff;
 }
 
+export function isEndDateOldEnoughUtc(
+    endDate: DateTime,
+    lookbackDays: number,
+    installationAliases?: string | string[],
+): boolean {
+    if (!shouldEnforceViewerLookback(installationAliases)) {
+        return true;
+    }
+    const cutoff = DateTime.now()
+        .setZone(NEW_YORK_TIME_ZONE)
+        .minus({ days: lookbackDays })
+        .toUTC()
+    return endDate <= cutoff;
+}
+
+export function wallDateTimeToUtc(date: Date): DateTime {
+    const ymd = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const hm = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    return DateTime.fromFormat(`${ymd} ${hm}`, 'yyyy-MM-dd HH:mm', { zone: NEW_YORK_TIME_ZONE })
+        .toUTC();
+}
+
 export function wallDateTimeToUtcMs(date: Date): number {
     const ymd = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const hm = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;

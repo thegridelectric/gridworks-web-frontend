@@ -1,15 +1,12 @@
-import type { Config, Data, Layout } from 'plotly.js';
-
-export interface VisualizerPlotSpec {
-    plotKind?: string;
-    data?: Data[];
-    layout?: Partial<Layout>;
-    config?: Partial<Config>;
-    [key: string]: unknown;
+export interface ChannelReading {
+    ChannelName: string,
+    ValueList: number[],
+    Unit: string,
 }
 
-export interface VisualizerPlotsApiResponse {
-    success: boolean;
-    message?: string;
-    plots?: Record<string, VisualizerPlotSpec | null | undefined>;
+export interface ReadingsBundleApiResponse {
+    StartTimestamp: string,
+    EndTimestamp: string,
+    TimestampList: string[],
+    ChannelReadingsList: ChannelReading[],
 }

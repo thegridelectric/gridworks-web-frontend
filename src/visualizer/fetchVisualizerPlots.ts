@@ -1,43 +1,41 @@
 import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
-import type { VisualizerPlotsApiResponse } from './visualizerApiTypes';
+import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
 
 export async function fetchVisualizerPlots(params: {
     houseAlias: string;
-    startMs: number;
-    endMs: number;
+    startDateIso: string;
+    endDateIso: string;
     selectedChannels: string[];
     darkmode: boolean;
     token: string;
-}): Promise<VisualizerPlotsApiResponse> {
+}): Promise<ReadingsBundleApiResponse> {
+    // TODO use this
     const base = getVisualizerApiBaseUrl();
-    const res = await fetch(`${base}/plots`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${params.token}`,
-        },
-        body: JSON.stringify({
-            house_alias: params.houseAlias,
-            password: '',
-            start_ms: params.startMs,
-            end_ms: params.endMs,
-            selected_channels: params.selectedChannels,
-            confirm_with_user: false,
-            darkmode: params.darkmode,
-        }),
-    });
 
-    const text = await res.text();
-    let data: VisualizerPlotsApiResponse;
+    // TODO pass in this ID
+    const houseId = `hw1.isone.me.versant.keene.${params.houseAlias}`;
+
+    const urlParams = new URLSearchParams();
+    urlParams.append("start", params.startDateIso);
+    urlParams.append("end", params.endDateIso);
+    urlParams.append("channels", params.selectedChannels.join(','));
+
     try {
-        data = JSON.parse(text) as VisualizerPlotsApiResponse;
-    } catch {
-        throw new Error(text || 'Visualizer API returned a non-JSON response');
-    }
+        const res = await fetch(`http://localhost:8000/api/v2/installations/${houseId}/synced.readings.bundle?${urlParams}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${params.token}`,
+            },
+        });
+        if (!res.ok) {
+            throw new Error(`Plots request failed: ${res.status}`);
+        }
 
-    if (!res.ok) {
-        throw new Error(data?.message || res.statusText || 'Plots request failed');
+        const data = await res.json() as ReadingsBundleApiResponse;
+        return data;
+    } catch (error: any) {
+        const errMsg = error.message || `Unknown error type ${typeof error}`
+        throw new Error(`Plots request failed: ${errMsg}`);
     }
-
-    return data;
 }
