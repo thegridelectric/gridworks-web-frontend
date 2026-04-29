@@ -3,11 +3,13 @@ import Plot from "react-plotly.js";
 import type { Config, Datum, PlotData } from 'plotly.js';
 import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
 import { getDefaultPlotLayout, getThemeColor, PLOT_CONTAINER_CSS, type PlotAxisConfig, type PlotAxisRange, type PlotConfig } from "./plot-configs";
+import { PriceForecastApiResponseSeriesNames, type PriceForecastApiReponse } from './pricing-api';
 
 interface VisualizerPlotProps {
     plotConfig: PlotConfig;
     selectedChannels: string[];
     readingsBundleData: ReadingsBundleApiResponse;
+    priceData: PriceForecastApiReponse;
     showPoints: boolean,
     isDarkMode: boolean;
 }
@@ -48,10 +50,16 @@ function getValueConverter(unit: string, scale: number): ConverterFunction {
     return x => typeof x === 'number' ? defaultConvert(x) * scale : x;
 }
 
-function convertTimestamp(ts: string): string {
-    return DateTime.fromISO(ts)
-        .setZone('America/New_York')
-        .toFormat("yyyy-LL-dd'T'HH:mm:ss");
+function formatForDisplay(dt: DateTime) : string {
+    return dt.setZone('America/New_York').toFormat("yyyy-LL-dd'T'HH:mm:ss");
+}
+
+function formatIsoTimeForDisplay(ts: string): string {
+    return formatForDisplay(DateTime.fromISO(ts))
+}
+
+function formatHourStartSForDisplay(hourStartS: number): string {
+    return formatForDisplay(DateTime.fromSeconds(hourStartS))
 }
 
 function getHoverTemplate(unit: string, scale?: number | null) {
@@ -116,26 +124,47 @@ function matchChannelName(channelDataName: string, channelConfigName: string | R
 
 export default function VisualizerPlot(props: VisualizerPlotProps) {
 
-    const { plotConfig, readingsBundleData } = props;
-    const times = readingsBundleData.TimestampList.map(convertTimestamp);
+    const { plotConfig, readingsBundleData, priceData } = props;
 
-    const tracesAndChannelReadings = readingsBundleData.ChannelReadingsList
-        // .filter(cr => props.selectedChannels.some(sc => sc == cr.ChannelName))
-        .map(cr => ({
-            channelReading: cr,
-            trace: plotConfig.traces.find(t => matchChannelName(cr.ChannelName, t.channelName))
-        }))
-        .filter(x => x.trace);
+    const timesForDisplay = {
+        'readings': readingsBundleData.TimestampList.map(formatIsoTimeForDisplay),
+        'prices': priceData.HourStartS.map(formatHourStartSForDisplay)
+    }
+
+    const dataWithTraces = [
+        ...readingsBundleData.ChannelReadingsList
+            // TODO put this back in once we have all the channel names based on hardware layout
+            // .filter(cr => props.selectedChannels.some(sc => sc == cr.ChannelName))
+            .map(cr => ({
+                seriesName: cr.ChannelName,
+                unit: cr.Unit,
+                yValues: cr.ValueList,
+                trace: plotConfig.traces.find(t => (
+                    (!t.dataSource || t.dataSource === 'readings') &&
+                    t.dataSeriesName && 
+                    matchChannelName(cr.ChannelName, t.dataSeriesName)
+                ))
+            }))
+            .filter(x => x.trace),
+        ...PriceForecastApiResponseSeriesNames
+            .map(seriesName => ({
+                seriesName,
+                unit: 'DollarsPerMWh',
+                yValues: priceData[seriesName],
+                trace: plotConfig.traces.find(t => t.dataSource === 'prices' && t.dataSeriesName === seriesName)
+            }))
+            .filter(x => x.trace),
+    ];
     
-    const yAxis1Used = tracesAndChannelReadings.some(tc => !tc.trace?.yAxis2);
-    const yAxis2Used = tracesAndChannelReadings.some(tc => tc.trace?.yAxis2);
+    const yAxis1Used = dataWithTraces.some(tc => !tc.trace?.yAxis2);
+    const yAxis2Used = dataWithTraces.some(tc => tc.trace?.yAxis2);
 
-    const plotlyData: Partial<PlotData>[] = tracesAndChannelReadings
-        .map(({ trace, channelReading }) => {
+    const plotlyData: Partial<PlotData>[] = dataWithTraces
+        .map(({ trace, seriesName, unit, yValues }) => {
 
             let regexpMatch;
-            if (trace?.channelName instanceof RegExp) {
-                regexpMatch = channelReading.ChannelName.match(trace.channelName);
+            if (trace?.dataSeriesName instanceof RegExp) {
+                regexpMatch = seriesName.match(trace.dataSeriesName);
             }
 
             let legendText = trace?.legendText;
@@ -161,11 +190,11 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
                 }
             }
 
-            const convertValue = getValueConverter(channelReading.Unit || '', trace?.scale || 1);
-            const yData = channelReading.ValueList.map(x => convertValue(x));
+            const convertValue = getValueConverter(unit || '', trace?.scale || 1);
+            const yData = yValues.map(x => convertValue(x));
             const result: Partial<PlotData> = {
                 type: 'scatter',
-                x: times,
+                x: timesForDisplay[trace?.dataSource || 'readings'],
                 y: yData,
                 mode: props.showPoints ? 'lines+markers' : 'lines',
                 opacity: trace?.opacity || 0.7,
@@ -178,7 +207,7 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
                 showlegend: !!legendText,
                 yaxis: (trace?.yAxis2 && yAxis1Used) ? 'y2' : 'y',
                 visible: trace?.toggledOff ? 'legendonly' : true,
-                hovertemplate: getHoverTemplate(channelReading.Unit || '', trace?.scale)
+                hovertemplate: getHoverTemplate(unit || '', trace?.scale)
 
             };
             return result;
@@ -192,8 +221,8 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
     plotlyLayout.xaxis = {
         ...plotlyLayout.xaxis,
         range: [
-            convertTimestamp(readingsBundleData.StartTimestamp),
-            convertTimestamp(readingsBundleData.EndTimestamp)
+            formatIsoTimeForDisplay(readingsBundleData.StartTimestamp),
+            formatIsoTimeForDisplay(readingsBundleData.EndTimestamp)
         ]
     };
     plotlyLayout.legend = {

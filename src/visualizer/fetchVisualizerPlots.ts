@@ -1,10 +1,11 @@
+import type { DateTime } from 'luxon';
 import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
 
 export async function fetchVisualizerPlots(params: {
     houseAlias: string;
-    startDateIso: string;
-    endDateIso: string;
+    startDate: DateTime;
+    endDate: DateTime;
     selectedChannels: string[];
     darkmode: boolean;
     token: string;
@@ -37,15 +38,14 @@ export async function fetchVisualizerPlots(params: {
     ]
 
     const urlParams = new URLSearchParams();
-    urlParams.append("start", params.startDateIso);
-    urlParams.append("end", params.endDateIso);
+    urlParams.append("start", params.startDate.toISO() || '');
+    urlParams.append("end", params.endDate.toISO() || '');
     urlParams.append("channels", selectedChannels.join(','));
 
     try {
         const res = await fetch(`http://localhost:8000/api/v2/installations/${houseId}/synced.readings.bundle?${urlParams}`, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
                 Authorization: `Bearer ${params.token}`,
             },
         });

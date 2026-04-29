@@ -21,13 +21,14 @@ export interface ColorCycle {
 }
 
 export interface PlotTraceConfig {
-    channelName: string | RegExp,
+    dataSeriesName: string | RegExp,
+    dataSource?: 'readings' | 'prices' | undefined, // Default to 'readings'
     legendText?: string | null,
     yAxis2?: boolean | null,        // Default is false
     toggledOff?: boolean | null,    // Default is false
     color: string | ColorCycle, 
     lineShape?: 'hv' | null,        // Default is 'linear'
-    lineDash?: 'dash' | null,       // Default is 'solid'
+    lineDash?: 'dash' | 'dot' | 'solid' | null,       // Default is 'solid'
     opacity?: number | null,        // Default is 7
     offset?: number | null,         // Default is 0
     scale?: number | null,          // Default is 1
@@ -53,41 +54,41 @@ const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
         singleOnlyRange: [0, 10],
     },
     traces: [{
-        channelName: 'hp-lwt',
+        dataSeriesName: 'hp-lwt',
         legendText: 'HP LWT',
         color: '#d62728'
     }, {
-        channelName: 'hp-ewt',
+        dataSeriesName: 'hp-ewt',
         legendText: 'HP EWT',
         color: '#1f77b4'
     }, {
-        channelName: 'hp-odu-pwr',
+        dataSeriesName: 'hp-odu-pwr',
         legendText: 'HP outdoor power',
         color: '#2ca02c',
         yAxis2: true,
         lineShape: 'hv',
     }, {
-        channelName: 'hp-idu-pwr',
+        dataSeriesName: 'hp-idu-pwr',
         legendText: 'HP indoor power',
         color: '#ff7f0e',
         yAxis2: true,
         lineShape: 'hv',
     }, {
-        channelName: 'oil-boiler-pwr',
+        dataSeriesName: 'oil-boiler-pwr',
         legendText: 'Oil boiler power x10',
-        color: 'theme-oil-boiler-power-color',
+        color: 'theme-line-muted',
         scale: 10,
         yAxis2: true,
         lineShape: 'hv',
     }, {
-        channelName: 'primary-flow',
+        dataSeriesName: 'primary-flow',
         legendText: 'Primary pump flow',
         color: 'purple',
         opacity: 0.4,
         yAxis2: true,
         lineShape: 'hv',
     }, {
-        channelName: 'primary-pump-pwr',
+        dataSeriesName: 'primary-pump-pwr',
         legendText: 'Primary pump power x100',
         color: 'pink',
         scale: 100,
@@ -109,22 +110,22 @@ const DISTRIBUTION_PLOT_CONFIG: PlotConfig = {
         dualOnlyRange: [0, 20],
     }, 
     traces: [{
-        channelName: 'dist-swt',
+        dataSeriesName: 'dist-swt',
         color: '#d62728',
         legendText: 'Distribution SWT'
     }, {
-        channelName: 'dist-rwt',
+        dataSeriesName: 'dist-rwt',
         color: '#1f77b4',
         legendText: 'Distribution RWT'
     }, {
-        channelName: 'dist-flow',
+        dataSeriesName: 'dist-flow',
         color: 'purple',
         opacity: 0.4,
         lineShape: 'hv',
         legendText: 'Distribution Flow',
         yAxis2: true,
     }, {
-        channelName: 'dist-pump-pwr',
+        dataSeriesName: 'dist-pump-pwr',
         color: 'pink',
         legendText: 'Distribution pump power /10',
         lineShape: 'hv',
@@ -153,7 +154,7 @@ const ZONES_CONFIG: PlotConfig = {
         }
     },
     traces: [{
-        channelName: /(?<zoneName>zone(?<zoneNumber>\d+)-\w+)-temp/,
+        dataSeriesName: /(?<zoneName>zone(?<zoneNumber>\d+)-\w+)-temp/,
         color: {
             options: ZONE_COLORS,
             index: '$zoneNumber'
@@ -161,7 +162,7 @@ const ZONES_CONFIG: PlotConfig = {
         lineShape: 'hv',
         legendText: '$zoneName'
     }, {
-        channelName: /(zone(?<zoneNumber>\d+)-\w+)-set/,
+        dataSeriesName: /(zone(?<zoneNumber>\d+)-\w+)-set/,
         color: {
             options: ZONE_COLORS,
             index: '$zoneNumber'
@@ -183,19 +184,19 @@ const BUFFER_CONFIG: PlotConfig = {
         }
     },
     traces: [{
-        channelName: /buffer-(?<sensorName>depth(?<depthIndex>\d+))/,
+        dataSeriesName: /buffer-(?<sensorName>depth(?<depthIndex>\d+))/,
         color: {
             index: "$depthIndex",
             options: ['#3b4cc0', '#b40426', '#f7b89c', '#aac7fd']
         },
         legendText: "$sensorName",        
     }, {
-        channelName: 'buffer-hot-pipe',
+        dataSeriesName: 'buffer-hot-pipe',
         color: '#d62728',
         lineShape: 'hv',
         legendText: 'Hot pipe'
     }, {
-        channelName: 'buffer-cold-pipe',
+        dataSeriesName: 'buffer-cold-pipe',
         color: '#1f77b4',
         lineShape: 'hv',
         legendText: 'Cold pipe'
@@ -225,38 +226,38 @@ const STORAGE_CONFIG: PlotConfig = {
         dualOnlyRange: [0, 80]
     },
     traces: [{
-        channelName: /(?<sensorName>tank1-depth(?<depthIndex>\d+))/,
+        dataSeriesName: /(?<sensorName>tank1-depth(?<depthIndex>\d+))/,
         color: {
             index: "$depthIndex",
             options: ['#f6a384', '#b40426', '#d44e41', '#ea7c61'],
         },
         legendText: "$sensorName",
     }, {
-        channelName: /(?<sensorName>tank2-depth(?<depthIndex>\d+))/,
+        dataSeriesName: /(?<sensorName>tank2-depth(?<depthIndex>\d+))/,
         color: {
             index: "$depthIndex",
             options: ['#b4cdfa', '#f5c1a8', '#e8d6cc', '#d1dae9'],
         },
         legendText: "$sensorName",
     }, {
-        channelName: /(?<sensorName>tank3-depth(?<depthIndex>\d+))/,
+        dataSeriesName: /(?<sensorName>tank3-depth(?<depthIndex>\d+))/,
         color: {
             index: "$depthIndex",
             options: ['#3b4cc0', '#95b7ff', '#7598f6', '#5774e0'],
         },
         legendText: "$sensorName",
     }, {
-        channelName: 'store-hot-pipe',
+        dataSeriesName: 'store-hot-pipe',
         color: '#d62728',
         lineShape: 'hv',
         legendText: 'Hot pipe'
     }, {
-        channelName: 'store-cold-pipe',
+        dataSeriesName: 'store-cold-pipe',
         color: '#1f77b4',
         lineShape: 'hv',
         legendText: 'Cold pipe'
     }, {
-        channelName: 'store-pump-pwr',
+        dataSeriesName: 'store-pump-pwr',
         color: 'pink',
         lineShape: 'hv',
         legendText: 'Storage pump power x1000',
@@ -264,7 +265,7 @@ const STORAGE_CONFIG: PlotConfig = {
         yAxis2: true,
         toggledOff: true,
     }, {
-        channelName: 'store-flow',
+        dataSeriesName: 'store-flow',
         color: 'purple',
         opacity: 0.4,
         lineShape: 'hv',
@@ -272,14 +273,14 @@ const STORAGE_CONFIG: PlotConfig = {
         scale: 10,
         yAxis2: true,
     }, {
-        channelName: 'usable-energy',
+        dataSeriesName: 'usable-energy',
         color: '#2ca02c',
         opacity: 0.4,
         legendText: 'Usable',
         yAxis2: true,
         toggledOff: true,
     }, {
-        channelName: 'required-energy',
+        dataSeriesName: 'required-energy',
         color: '#2ca02c',
         opacity: 0.4,
         lineDash: 'dash',
@@ -287,10 +288,38 @@ const STORAGE_CONFIG: PlotConfig = {
         yAxis2: true,
         toggledOff: true,
     }]
+};
+
+const PRICING_CONFIG: PlotConfig = {
+    title: 'Price Forecast',
+    yAxis1: {
+        titleText: 'Total price [$/MWh]'
+    },
+    yAxis2: {
+        titleText: 'LMP [$/MWh]'
+    },
+    traces: [{
+        dataSeriesName: 'TotalList',
+        dataSource: 'prices',
+        color: 'theme-line-muted',
+        lineShape: 'hv',
+        opacity: 0.8,
+        legendText: 'Total'
+    }, {
+        dataSeriesName: 'LmpList',
+        dataSource: 'prices',
+        color: 'theme-line-muted',
+        lineShape: 'hv',
+        lineDash: 'dot',
+        opacity: 0.4,
+        yAxis2: true,
+        legendText: 'LMP'
+    }]
 }
 
 export const PLOT_CONFIGS = [
     HEAT_PUMP_PLOT_CONFIG,
+    PRICING_CONFIG,
     DISTRIBUTION_PLOT_CONFIG,
     ZONES_CONFIG,
     BUFFER_CONFIG,
@@ -299,11 +328,11 @@ export const PLOT_CONFIGS = [
 
 
 const THEME_DARK: Record<string, string> = {
-    'oil-boiler-power-color': '#f0f0f0'
+    'line-muted': '#f0f0f0'
 }
 
 const THEME_LIGHT: Record<string, string> = {
-    'oil-boiler-power-color': '#5e5e5e'
+    'line-muted': '#5e5e5e'
 }
 
 export function getThemeColor(key: string, isDarkMode: boolean): string {

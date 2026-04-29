@@ -21,12 +21,14 @@ import { useVisualizerControls } from "./useVisualizerControls";
 import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 import { PLOT_CONFIGS } from "./plot-configs";
 import VisualizerPlot from "./VisualizerPlot";
+import { fetchPriceForecast, type PriceForecastApiReponse } from "./pricing-api";
 
 export default function VisualizerPage() {
 
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(getDefaultDate(false));
     const [readingsBundleData, setReadingsBundleData] = useState<ReadingsBundleApiResponse | null>(null);
+    const [priceData, setPriceData] = useState<PriceForecastApiReponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFloLoading, setIsFloLoading] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
@@ -84,18 +86,33 @@ export default function VisualizerPage() {
         }
 
         setIsLoading(true);
+        setPriceData(null);
         setReadingsBundleData(null);
         try {
-            const data = await fetchVisualizerPlots({
-                houseAlias,
-                startDateIso: startDate.toISO() || '',
-                endDateIso: endDate.toISO() || '',
-                selectedChannels,
-                darkmode: getIsDarkMode(),
-                token,
-            });
+            const requestResults = await Promise.allSettled([
+                fetchPriceForecast({
+                    houseAlias,
+                    startDate,
+                    endDate
+                }),
+                fetchVisualizerPlots({
+                    houseAlias,
+                    startDate,
+                    endDate,
+                    selectedChannels,
+                    darkmode: getIsDarkMode(),
+                    token,
+                })
+            ]);
 
-            setReadingsBundleData(data);
+            requestResults.forEach(r => {
+                if (r.status === 'rejected') {
+                    throw new Error(r.reason);
+                }
+            })
+
+            setPriceData((requestResults[0] as PromiseFulfilledResult<PriceForecastApiReponse>)?.value);
+            setReadingsBundleData((requestResults[1] as PromiseFulfilledResult<ReadingsBundleApiResponse>)?.value);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
@@ -323,7 +340,7 @@ export default function VisualizerPage() {
                 setIncludesChannel={setIncludesChannel}
             />
 
-            {readingsBundleData &&
+            {readingsBundleData && priceData &&
                 <div className="plot-container border-top">
                     <div className="visualizer-server-plots-root">
 
@@ -332,6 +349,7 @@ export default function VisualizerPage() {
                                 plotConfig={c} 
                                 selectedChannels={plotSelectedChannels} 
                                 readingsBundleData={readingsBundleData} 
+                                priceData={priceData}
                                 isDarkMode={getIsDarkMode()} 
                                 showPoints={showPoints} />
                         ))}
