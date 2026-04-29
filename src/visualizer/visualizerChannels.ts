@@ -55,7 +55,7 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
             { id: 'store-cold-pipe', label: 'Cold pipe' },
             { id: 'store-flow', label: 'Storage pump flow rate' },
             { id: 'store-pump-pwr', label: 'Storage pump power' },
-            { id: 'store-energy', label: 'Available and required energy' },
+            { id: 'usable-energy,required-energy', label: 'Available and required energy' },
         ],
     },
 ];
@@ -65,7 +65,7 @@ const NON_DEFAULT_CHANNELS = new Set([
     'buffer-cold-pipe',
     'store-hot-pipe',
     'store-cold-pipe',
-    'store-energy',
+    'usable-energy,required-energy',
     /** UI + plot shading only; never send as selected_channels to the plots API. */
     'hp-on-highlights',
 ]);

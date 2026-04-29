@@ -25,6 +25,15 @@ export async function fetchVisualizerPlots(params: {
         'buffer-depth1',
         'buffer-depth2',
         'buffer-depth3',
+        'tank1-depth1',
+        'tank1-depth2',
+        'tank1-depth3',
+        'tank2-depth1',
+        'tank2-depth2',
+        'tank2-depth3',
+        'tank3-depth1',
+        'tank3-depth2',
+        'tank3-depth3',
     ]
 
     const urlParams = new URLSearchParams();

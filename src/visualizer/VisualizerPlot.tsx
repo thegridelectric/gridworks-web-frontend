@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 import Plot from "react-plotly.js";
 import type { Config, Datum, PlotData } from 'plotly.js';
 import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
-import { getDefaultPlotLayout, getThemeColor, PLOT_CONTAINER_CSS, type PlotAxisConfig, type PlotConfig } from "./plot-configs";
+import { getDefaultPlotLayout, getThemeColor, PLOT_CONTAINER_CSS, type PlotAxisConfig, type PlotAxisRange, type PlotConfig } from "./plot-configs";
 
 interface VisualizerPlotProps {
     plotConfig: PlotConfig;
@@ -26,6 +26,7 @@ const UNIT_CONVERSIONS: Record<string, ConverterFunction> = {
     'AirTempFTimes1000': x => x * .001,
     'PowerW': x => x * .001,
     'GpmTimes100': x => x * .01,
+    'WattHours': x => x * .001,
 }
 
 const UNIT_HOVER_FORMATS: Record<string, string> = {
@@ -35,6 +36,7 @@ const UNIT_HOVER_FORMATS: Record<string, string> = {
     'AirrTempFTimes1000': '%{y:.1f}°F',
     'PowerW': '%{y:.1f} kW',
     'GpmTimes100': '%{y:.1f} GPM',
+    'WattHours': '%{y:.1f} kWh',
 }
 
 function getValueConverter(unit: string, scale: number): ConverterFunction {
@@ -63,13 +65,13 @@ function getHoverTemplate(unit: string, scale?: number | null) {
     return `%{x|%H:%M:%S} | ${yFormat}<extra></extra>`
 }
 
-function calculateMinMaxAxisRange(data: Partial<PlotData>[], axisName: string, minOffset: number, maxOffset: number): number[] {
+function calculateMinMaxAxisRange(data: Partial<PlotData>[], axisName: string, minOffset: number | undefined, maxOffset: number | undefined): number[] {
     const values: number[] = data
         .filter(d => d.yaxis === axisName)
         .flatMap(d => (d.y as any[] || []).filter((x: Datum) => typeof x === 'number'));
     return [
-        Math.min(...values) - minOffset,
-        Math.max(...values) + maxOffset
+        Math.min(...values) - (minOffset || 0),
+        Math.max(...values) + (maxOffset || 0)
     ];
 }
 
@@ -85,11 +87,22 @@ function calculateAxisRange(
     if (!range) {
         range = axisConfig.range;
     }
-    if (!range && axisConfig.minOffset && axisConfig.maxOffset) {
-        range = calculateMinMaxAxisRange(data, 'y', axisConfig.minOffset, axisConfig.maxOffset);
+    if (!range) {
+        return;
     }
-
-    return range;
+    if (0 in range && 1 in range) {
+        return range;
+    }
+    if ('minOffset' in range && 'maxOffset' in range) {
+        const calculatedRange = calculateMinMaxAxisRange(data, 'y', range.minOffset, range.maxOffset);
+        if (typeof range.absoluteMin === 'number' && calculatedRange[0] < range.absoluteMin) {
+            calculatedRange[0] = Math.max(range.absoluteMin, calculatedRange[0]);
+        }
+        if (typeof range.absoluteMax === 'number' && calculatedRange[1] > range.absoluteMax) {
+            calculatedRange[1] = Math.min(range.absoluteMax, calculatedRange[1]);
+        }
+        return calculatedRange;
+    }
 }
 
 function matchChannelName(channelDataName: string, channelConfigName: string | RegExp) {
@@ -164,6 +177,7 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
                 name: legendText || undefined,
                 showlegend: !!legendText,
                 yaxis: (trace?.yAxis2 && yAxis1Used) ? 'y2' : 'y',
+                visible: trace?.toggledOff ? 'legendonly' : true,
                 hovertemplate: getHoverTemplate(channelReading.Unit || '', trace?.scale)
 
             };
@@ -211,6 +225,10 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
             },
             range: calculateAxisRange(plotlyData, plotConfig.yAxis1, 'singleOnlyRange')
         }
+        plotlyLayout.yaxis2 = {
+            ...plotlyLayout.yaxis2,
+            visible: false
+        };
     }
     else {
         plotlyLayout.yaxis = {
@@ -220,6 +238,10 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
             },
             range: plotConfig.yAxis2 ? calculateAxisRange(plotlyData, plotConfig.yAxis2, 'singleOnlyRange') : undefined
         }
+        plotlyLayout.yaxis2 = {
+            ...plotlyLayout.yaxis2,
+            visible: false
+        };
     }
 
     // TODO new channels to implement

@@ -1,12 +1,18 @@
 import type { Layout, LayoutAxis } from "plotly.js";
 
-export interface PlotAxisConfig {
-    titleText?: string | undefined,
-    range?: any[] | undefined,
-    singleOnlyRange?: any[] | undefined,
-    dualOnlyRange?: any[] | undefined,
+export interface PlotAxisRange {
+    staticRange?: number[] | undefined,
     minOffset?: number | undefined,
     maxOffset?: number | undefined,
+    absoluteMin?: number | undefined,
+    absoluteMax?: number | undefined,
+}
+
+export interface PlotAxisConfig {
+    titleText?: string | undefined,
+    range?: PlotAxisRange | number[] | undefined,
+    dualOnlyRange?: PlotAxisRange | number[] | undefined,
+    singleOnlyRange?: PlotAxisRange | number[] | undefined,
 }
 
 export interface ColorCycle {
@@ -17,13 +23,14 @@ export interface ColorCycle {
 export interface PlotTraceConfig {
     channelName: string | RegExp,
     legendText?: string | null,
-    yAxis2?: boolean | null,    // Default is false
-    color: string | ColorCycle,
-    lineShape?: 'hv' | null,    // Default is 'linear'
-    lineDash?: 'dash' | null,   // Default is 'solid'
-    opacity?: number | null,    // Default is 7
-    offset?: number | null,     // Default is 0
-    scale?: number | null,      // Default is 1
+    yAxis2?: boolean | null,        // Default is false
+    toggledOff?: boolean | null,    // Default is false
+    color: string | ColorCycle, 
+    lineShape?: 'hv' | null,        // Default is 'linear'
+    lineDash?: 'dash' | null,       // Default is 'solid'
+    opacity?: number | null,        // Default is 7
+    offset?: number | null,         // Default is 0
+    scale?: number | null,          // Default is 1
 }
 
 export interface PlotConfig {
@@ -133,13 +140,17 @@ const ZONES_CONFIG: PlotConfig = {
     legendOrientation: 'h',
     yAxis1: {
         titleText: 'Zone Temperature [°F]',
-        minOffset: 30,
-        maxOffset: 20
+        range: {
+            minOffset: 30,
+            maxOffset: 20
+        }
     },
     yAxis2: {
         titleText: 'Outside air temperature [°F]',
-        minOffset: 2,
-        maxOffset: 20,
+        range: {
+            minOffset: 2,
+            maxOffset: 20,
+        }
     },
     traces: [{
         channelName: /(?<zoneName>zone(?<zoneNumber>\d+)-\w+)-temp/,
@@ -166,16 +177,18 @@ const BUFFER_CONFIG: PlotConfig = {
     legendOrientation: 'h',
     yAxis1: {
         titleText: 'Temperature [°F]',
-        minOffset: 15,
-        maxOffset: 30,
+        range: {
+            minOffset: 15,
+            maxOffset: 30,
+        }
     },
     traces: [{
-        channelName: /buffer-(?<depthName>depth(?<depthIndex>\d+))/,
+        channelName: /buffer-(?<sensorName>depth(?<depthIndex>\d+))/,
         color: {
             index: "$depthIndex",
             options: ['#3b4cc0', '#b40426', '#f7b89c', '#aac7fd']
         },
-        legendText: "$depthName",        
+        legendText: "$sensorName",        
     }, {
         channelName: 'buffer-hot-pipe',
         color: '#d62728',
@@ -189,11 +202,99 @@ const BUFFER_CONFIG: PlotConfig = {
     }]
 }
 
+const STORAGE_CONFIG: PlotConfig = {
+    title: 'Storage',
+    legendOrientation: 'h',
+    // TODO implement the ranges for the single yAxis2-only case
+    yAxis1: {
+        titleText: 'Temperature [°F]',
+        dualOnlyRange: {
+            minOffset: 80,
+            maxOffset: 80,
+            absoluteMax: 280,
+        },
+        singleOnlyRange: {
+            absoluteMin: 0,
+            absoluteMax: 280,
+            minOffset: 20,
+            maxOffset: 60
+        }
+    },
+    yAxis2: {
+        titleText: 'GPM, kW, or kWh',
+        dualOnlyRange: [0, 80]
+    },
+    traces: [{
+        channelName: /(?<sensorName>tank1-depth(?<depthIndex>\d+))/,
+        color: {
+            index: "$depthIndex",
+            options: ['#f6a384', '#b40426', '#d44e41', '#ea7c61'],
+        },
+        legendText: "$sensorName",
+    }, {
+        channelName: /(?<sensorName>tank2-depth(?<depthIndex>\d+))/,
+        color: {
+            index: "$depthIndex",
+            options: ['#b4cdfa', '#f5c1a8', '#e8d6cc', '#d1dae9'],
+        },
+        legendText: "$sensorName",
+    }, {
+        channelName: /(?<sensorName>tank3-depth(?<depthIndex>\d+))/,
+        color: {
+            index: "$depthIndex",
+            options: ['#3b4cc0', '#95b7ff', '#7598f6', '#5774e0'],
+        },
+        legendText: "$sensorName",
+    }, {
+        channelName: 'store-hot-pipe',
+        color: '#d62728',
+        lineShape: 'hv',
+        legendText: 'Hot pipe'
+    }, {
+        channelName: 'store-cold-pipe',
+        color: '#1f77b4',
+        lineShape: 'hv',
+        legendText: 'Cold pipe'
+    }, {
+        channelName: 'store-pump-pwr',
+        color: 'pink',
+        lineShape: 'hv',
+        legendText: 'Storage pump power x1000',
+        scale: 1000,
+        yAxis2: true,
+        toggledOff: true,
+    }, {
+        channelName: 'store-flow',
+        color: 'purple',
+        opacity: 0.4,
+        lineShape: 'hv',
+        legendText: 'Storage pump flow x10',
+        scale: 10,
+        yAxis2: true,
+    }, {
+        channelName: 'usable-energy',
+        color: '#2ca02c',
+        opacity: 0.4,
+        legendText: 'Usable',
+        yAxis2: true,
+        toggledOff: true,
+    }, {
+        channelName: 'required-energy',
+        color: '#2ca02c',
+        opacity: 0.4,
+        lineDash: 'dash',
+        legendText: 'Required',
+        yAxis2: true,
+        toggledOff: true,
+    }]
+}
+
 export const PLOT_CONFIGS = [
     HEAT_PUMP_PLOT_CONFIG,
     DISTRIBUTION_PLOT_CONFIG,
     ZONES_CONFIG,
     BUFFER_CONFIG,
+    STORAGE_CONFIG,
 ];
 
 
