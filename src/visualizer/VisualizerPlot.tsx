@@ -182,6 +182,10 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
             convertTimestamp(readingsBundleData.EndTimestamp)
         ]
     };
+    plotlyLayout.legend = {
+        ...plotlyLayout.legend,
+        orientation: plotConfig.legendOrientation || 'v'
+    };
 
     if (yAxis1Used && yAxis2Used) {
         plotlyLayout.yaxis = {

@@ -21,7 +21,10 @@ export async function fetchVisualizerPlots(params: {
         'zone1-down-set',
         'zone1-down-temp',
         'zone2-up-set',
-        'zone2-up-temp'
+        'zone2-up-temp',
+        'buffer-depth1',
+        'buffer-depth2',
+        'buffer-depth3',
     ]
 
     const urlParams = new URLSearchParams();

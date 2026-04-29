@@ -26,18 +26,12 @@ export interface PlotTraceConfig {
     scale?: number | null,      // Default is 1
 }
 
-export interface PlotShapeConfig {
-    channelName: string,
-    color: string,
-    threshold: any,
-}
-
 export interface PlotConfig {
     title: string,
+    legendOrientation?: 'h' | 'v' | undefined,   // Default is 'v'
     yAxis1: PlotAxisConfig,
-    yAxis2: PlotAxisConfig | undefined,
+    yAxis2?: PlotAxisConfig | undefined,
     traces: PlotTraceConfig[],
-    // shapes: PlotShapeConfig[],
 }
 
 const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
@@ -93,11 +87,6 @@ const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
         yAxis2: true,
         lineShape: 'hv',
     }],
-    // shapes: [{
-    //     channelName: 'persistence-delay',
-    //     color: 'red',
-    //     threshold: '10 min'
-    // }]
 };
 
 const DISTRIBUTION_PLOT_CONFIG: PlotConfig = {
@@ -141,6 +130,7 @@ const ZONE_COLORS = ['#d62728', '#1f77b4', '#ff7f0e', '#2ca02c'];
 
 const ZONES_CONFIG: PlotConfig = {
     title: 'Zones',
+    legendOrientation: 'h',
     yAxis1: {
         titleText: 'Zone Temperature [°F]',
         minOffset: 30,
@@ -169,20 +159,42 @@ const ZONES_CONFIG: PlotConfig = {
         lineDash: 'dash',
         legendText: null,
     }]
-    // traces: [{
-    //     channelName: 'zone1-*',
-    //     color: '#1f77b4',
-    //     legendText: 'Distribution RWT'
-    // }]
+};
+
+const BUFFER_CONFIG: PlotConfig = {
+    title: 'Buffer',
+    legendOrientation: 'h',
+    yAxis1: {
+        titleText: 'Temperature [°F]',
+        minOffset: 15,
+        maxOffset: 30,
+    },
+    traces: [{
+        channelName: /buffer-(?<depthName>depth(?<depthIndex>\d+))/,
+        color: {
+            index: "$depthIndex",
+            options: ['#3b4cc0', '#b40426', '#f7b89c', '#aac7fd']
+        },
+        legendText: "$depthName",        
+    }, {
+        channelName: 'buffer-hot-pipe',
+        color: '#d62728',
+        lineShape: 'hv',
+        legendText: 'Hot pipe'
+    }, {
+        channelName: 'buffer-cold-pipe',
+        color: '#1f77b4',
+        lineShape: 'hv',
+        legendText: 'Cold pipe'
+    }]
 }
 
 export const PLOT_CONFIGS = [
     HEAT_PUMP_PLOT_CONFIG,
     DISTRIBUTION_PLOT_CONFIG,
     ZONES_CONFIG,
+    BUFFER_CONFIG,
 ];
-
-// Distribution plot is similar to heat pump, but power/flow axis is 0-20 no matter what.
 
 
 const THEME_DARK: Record<string, string> = {
