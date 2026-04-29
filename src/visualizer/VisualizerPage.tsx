@@ -88,8 +88,8 @@ export default function VisualizerPage() {
         try {
             const data = await fetchVisualizerPlots({
                 houseAlias,
-                startDateIso: startDate.toISO(),
-                endDateIso: endDate.toISO(),
+                startDateIso: startDate.toISO() || '',
+                endDateIso: endDate.toISO() || '',
                 selectedChannels,
                 darkmode: getIsDarkMode(),
                 token,

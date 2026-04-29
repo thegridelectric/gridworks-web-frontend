@@ -15,10 +15,19 @@ export async function fetchVisualizerPlots(params: {
     // TODO pass in this ID
     const houseId = `hw1.isone.me.versant.keene.${params.houseAlias}`;
 
+    // TODO get this from the hardware layout
+    const selectedChannels = [
+        ...params.selectedChannels,
+        'zone1-down-set',
+        'zone1-down-temp',
+        'zone2-up-set',
+        'zone2-up-temp'
+    ]
+
     const urlParams = new URLSearchParams();
     urlParams.append("start", params.startDateIso);
     urlParams.append("end", params.endDateIso);
-    urlParams.append("channels", params.selectedChannels.join(','));
+    urlParams.append("channels", selectedChannels.join(','));
 
     try {
         const res = await fetch(`http://localhost:8000/api/v2/installations/${houseId}/synced.readings.bundle?${urlParams}`, {

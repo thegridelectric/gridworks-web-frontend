@@ -1,8 +1,8 @@
 import { DateTime } from 'luxon';
 import Plot from "react-plotly.js";
-import type { Config, Data, PlotData } from 'plotly.js';
+import type { Config, Datum, PlotData } from 'plotly.js';
 import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
-import { getDefaultPlotLayout, getThemeColor, PLOT_CONTAINER_CSS, type PlotConfig } from "./plot-configs";
+import { getDefaultPlotLayout, getThemeColor, PLOT_CONTAINER_CSS, type PlotAxisConfig, type PlotConfig } from "./plot-configs";
 
 interface VisualizerPlotProps {
     plotConfig: PlotConfig;
@@ -17,12 +17,13 @@ const defaultPlotConfig: Partial<Config> = {
     responsive: true,
 };
 
-type ConverterFunction= (x: number) => number;
+type ConverterFunction = (x: number) => number;
 const C2F: ConverterFunction = c => 9 * c / 5 + 32;
 const UNIT_CONVERSIONS: Record<string, ConverterFunction> = {
     'FahrenheitX100': x => x * 0.01,
     'WaterTempCTimes1000': x => C2F(x * .001),
     'WaterTempFTimes1000': x => x * .001,
+    'AirTempFTimes1000': x => x * .001,
     'PowerW': x => x * .001,
     'GpmTimes100': x => x * .01,
 }
@@ -31,6 +32,7 @@ const UNIT_HOVER_FORMATS: Record<string, string> = {
     'FahrenheitX100': '%{y:.1f}°F',
     'WaterTempCTimes1000': '%{y:.1f}°F',
     'WaterTempFTimes1000': '%{y:.1f}°F',
+    'AirrTempFTimes1000': '%{y:.1f}°F',
     'PowerW': '%{y:.1f} kW',
     'GpmTimes100': '%{y:.1f} GPM',
 }
@@ -41,7 +43,7 @@ function getValueConverter(unit: string, scale: number): ConverterFunction {
         defaultConvert = UNIT_CONVERSIONS[unit];
     }
 
-    return x => defaultConvert(x) * scale;
+    return x => typeof x === 'number' ? defaultConvert(x) * scale : x;
 }
 
 function convertTimestamp(ts: string): string {
@@ -58,7 +60,45 @@ function getHoverTemplate(unit: string, scale?: number | null) {
     if (scale) {
         yFormat += `/${scale}`;
     }
-    return `%{x|%H:%M:%S} | ${yFormat}<extra></extra>`    
+    return `%{x|%H:%M:%S} | ${yFormat}<extra></extra>`
+}
+
+function calculateMinMaxAxisRange(data: Partial<PlotData>[], axisName: string, minOffset: number, maxOffset: number): number[] {
+    const values: number[] = data
+        .filter(d => d.yaxis === axisName)
+        .flatMap(d => (d.y as any[] || []).filter((x: Datum) => typeof x === 'number'));
+    return [
+        Math.min(...values) - minOffset,
+        Math.max(...values) + maxOffset
+    ];
+}
+
+function calculateAxisRange(
+    data: Partial<PlotData>[],
+    axisConfig: PlotAxisConfig,
+    priorityRangeKey: 'dualOnlyRange' | 'singleOnlyRange' | undefined): number[] | undefined {
+
+    let range;
+    if (priorityRangeKey) {
+        range = axisConfig[priorityRangeKey];
+    }
+    if (!range) {
+        range = axisConfig.range;
+    }
+    if (!range && axisConfig.minOffset && axisConfig.maxOffset) {
+        range = calculateMinMaxAxisRange(data, 'y', axisConfig.minOffset, axisConfig.maxOffset);
+    }
+
+    return range;
+}
+
+function matchChannelName(channelDataName: string, channelConfigName: string | RegExp) {
+    if (typeof channelConfigName === 'string') {
+        return channelDataName === channelConfigName;
+    } else if (channelConfigName instanceof RegExp) {
+        return channelDataName.match(channelConfigName);
+    }
+
 }
 
 export default function VisualizerPlot(props: VisualizerPlotProps) {
@@ -66,35 +106,65 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
     const { plotConfig, readingsBundleData } = props;
     const times = readingsBundleData.TimestampList.map(convertTimestamp);
 
-    const tracesAndChannelReadings = plotConfig.traces
-        .filter(t => props.selectedChannels.includes(t.channelName))
-        .map(t => ({
-            t,
-            channelReadings: readingsBundleData.ChannelReadingsList.find(cr => cr.ChannelName == t.channelName)
+    const tracesAndChannelReadings = readingsBundleData.ChannelReadingsList
+        // .filter(cr => props.selectedChannels.some(sc => sc == cr.ChannelName))
+        .map(cr => ({
+            channelReading: cr,
+            trace: plotConfig.traces.find(t => matchChannelName(cr.ChannelName, t.channelName))
         }))
-        .filter(x => x.channelReadings != null);
-
-    const yAxis1Used = tracesAndChannelReadings.some(tc => !tc.t.yAxis2);
-    const yAxis2Used = tracesAndChannelReadings.some(tc => tc.t.yAxis2);
+        .filter(x => x.trace);
+    
+    const yAxis1Used = tracesAndChannelReadings.some(tc => !tc.trace?.yAxis2);
+    const yAxis2Used = tracesAndChannelReadings.some(tc => tc.trace?.yAxis2);
 
     const plotlyData: Partial<PlotData>[] = tracesAndChannelReadings
-        .map(({ t, channelReadings }) => {
-            const convertValue = getValueConverter(channelReadings?.Unit || '', t.scale || 1);
-            const yData = channelReadings?.ValueList.map(x => convertValue(x));
+        .map(({ trace, channelReading }) => {
+
+            let regexpMatch;
+            if (trace?.channelName instanceof RegExp) {
+                regexpMatch = channelReading.ChannelName.match(trace.channelName);
+            }
+
+            let legendText = trace?.legendText;
+            if (legendText && legendText.startsWith("$") && regexpMatch && regexpMatch.groups) {
+                legendText = regexpMatch.groups[legendText.substring(1)];
+            }
+
+            let colorString;
+            if (typeof trace?.color === 'string') {
+                colorString = trace.color;
+            } else {
+                if (trace?.color.index && trace.color.options) {
+                    let colorIndex = trace.color.index;
+                    if (typeof colorIndex === 'string' && colorIndex.startsWith("$") && regexpMatch && regexpMatch.groups) {
+                        colorIndex = regexpMatch.groups[colorIndex.substring(1)];
+                    }
+                    if (typeof colorIndex === 'string') {
+                        colorIndex = parseInt(colorIndex);
+                    }
+                    if (typeof colorIndex === 'number') {
+                        colorString = trace.color.options[colorIndex % trace.color.options.length]
+                    }
+                }
+            }
+
+            const convertValue = getValueConverter(channelReading.Unit || '', trace?.scale || 1);
+            const yData = channelReading.ValueList.map(x => convertValue(x));
             const result: Partial<PlotData> = {
                 type: 'scatter',
                 x: times,
                 y: yData,
                 mode: props.showPoints ? 'lines+markers' : 'lines',
-                opacity: t.opacity || 0.7,
+                opacity: trace?.opacity || 0.7,
                 line: {
-                    color: getThemeColor(t.color, props.isDarkMode),
-                    dash: t.dash || 'solid',
-                    shape: t.lineShape || 'linear'
+                    color: colorString ? getThemeColor(colorString, props.isDarkMode) : undefined,
+                    dash: trace?.lineDash || 'solid',
+                    shape: trace?.lineShape || 'linear'
                 },
-                name: t.legendText,
-                yaxis: (t.yAxis2 && yAxis1Used) ? 'y2' : 'y',
-                hovertemplate: getHoverTemplate(channelReadings?.Unit || '', t.scale)
+                name: legendText || undefined,
+                showlegend: !!legendText,
+                yaxis: (trace?.yAxis2 && yAxis1Used) ? 'y2' : 'y',
+                hovertemplate: getHoverTemplate(channelReading.Unit || '', trace?.scale)
 
             };
             return result;
@@ -117,34 +187,34 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
         plotlyLayout.yaxis = {
             ...plotlyLayout.yaxis,
             title: {
-                text: plotConfig.yAxisConfig1.titleText
+                text: plotConfig.yAxis1.titleText
             },
-            range: plotConfig.yAxisConfig1.dualRange
+            range: calculateAxisRange(plotlyData, plotConfig.yAxis1, 'dualOnlyRange')
         }
         plotlyLayout.yaxis2 = {
             ...plotlyLayout.yaxis2,
             title: {
-                text: plotConfig.yAxisConfig2.titleText
+                text: plotConfig.yAxis2?.titleText
             },
-            range: plotConfig.yAxisConfig2.dualRange
+            range: plotConfig.yAxis2 ? calculateAxisRange(plotlyData, plotConfig.yAxis2, 'dualOnlyRange') : undefined
         }
-    } 
+    }
     else if (yAxis1Used) {
         plotlyLayout.yaxis = {
             ...plotlyLayout.yaxis,
             title: {
-                text: plotConfig.yAxisConfig1.titleText
+                text: plotConfig.yAxis1.titleText
             },
-            range: plotConfig.yAxisConfig1.singleRange
+            range: calculateAxisRange(plotlyData, plotConfig.yAxis1, 'singleOnlyRange')
         }
     }
     else {
         plotlyLayout.yaxis = {
             ...plotlyLayout.yaxis,
             title: {
-                text: plotConfig.yAxisConfig2.titleText
+                text: plotConfig.yAxis2?.titleText
             },
-            range: plotConfig.yAxisConfig2.singleRange
+            range: plotConfig.yAxis2 ? calculateAxisRange(plotlyData, plotConfig.yAxis2, 'singleOnlyRange') : undefined
         }
     }
 

@@ -1,18 +1,26 @@
 import type { Layout, LayoutAxis } from "plotly.js";
 
-export interface PlotDualAxisConfig {
-    singleRange?: any[] | undefined,
-    dualRange?: any[] | undefined,
+export interface PlotAxisConfig {
     titleText?: string | undefined,
+    range?: any[] | undefined,
+    singleOnlyRange?: any[] | undefined,
+    dualOnlyRange?: any[] | undefined,
+    minOffset?: number | undefined,
+    maxOffset?: number | undefined,
+}
+
+export interface ColorCycle {
+    options: string[],
+    index: number | string,
 }
 
 export interface PlotTraceConfig {
-    channelName: string,
-    legendText: string,
+    channelName: string | RegExp,
+    legendText?: string | null,
     yAxis2?: boolean | null,    // Default is false
-    color: string,
-    lineShape?: 'hv' | null,   // Default is 'linear'
-    dash?: 'dash' | null,       // Default is 'solid'
+    color: string | ColorCycle,
+    lineShape?: 'hv' | null,    // Default is 'linear'
+    lineDash?: 'dash' | null,   // Default is 'solid'
     opacity?: number | null,    // Default is 7
     offset?: number | null,     // Default is 0
     scale?: number | null,      // Default is 1
@@ -26,22 +34,22 @@ export interface PlotShapeConfig {
 
 export interface PlotConfig {
     title: string,
-    yAxisConfig1: PlotDualAxisConfig,
-    yAxisConfig2: PlotDualAxisConfig,
+    yAxis1: PlotAxisConfig,
+    yAxis2: PlotAxisConfig | undefined,
     traces: PlotTraceConfig[],
     // shapes: PlotShapeConfig[],
 }
 
 const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
     title: 'Heat pump',
-    yAxisConfig1: {
+    yAxis1: {
         titleText: 'Temperature [°F]',
-        dualRange: [0, 260],
+        dualOnlyRange: [0, 260],
     },
-    yAxisConfig2: {
+    yAxis2: {
         titleText: 'Power [kW] or Flow [GPM]',
-        dualRange: [0, 35],
-        singleRange: [0, 10],
+        dualOnlyRange: [0, 35],
+        singleOnlyRange: [0, 10],
     },
     traces: [{
         channelName: 'hp-lwt',
@@ -94,15 +102,15 @@ const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
 
 const DISTRIBUTION_PLOT_CONFIG: PlotConfig = {
     title: 'Distribution',
-    yAxisConfig1: {
+    yAxis1: {
         titleText: 'Temperature [°F]',
-        singleRange: [0, 260],
-        dualRange: [0, 260],
+        singleOnlyRange: [0, 260],
+        dualOnlyRange: [0, 260],
     },
-    yAxisConfig2: {
+    yAxis2: {
         titleText: 'Flow [GPM] or Power [W]',
-        singleRange: [0, 20],
-        dualRange: [0, 20],
+        singleOnlyRange: [0, 20],
+        dualOnlyRange: [0, 20],
     }, 
     traces: [{
         channelName: 'dist-swt',
@@ -116,20 +124,62 @@ const DISTRIBUTION_PLOT_CONFIG: PlotConfig = {
         channelName: 'dist-flow',
         color: 'purple',
         opacity: 0.4,
+        lineShape: 'hv',
         legendText: 'Distribution Flow',
         yAxis2: true,
     }, {
         channelName: 'dist-pump-pwr',
         color: 'pink',
         legendText: 'Distribution pump power /10',
+        lineShape: 'hv',
         scale: 100,
         yAxis2: true,
     }]
+};
+
+const ZONE_COLORS = ['#d62728', '#1f77b4', '#ff7f0e', '#2ca02c'];
+
+const ZONES_CONFIG: PlotConfig = {
+    title: 'Zones',
+    yAxis1: {
+        titleText: 'Zone Temperature [°F]',
+        minOffset: 30,
+        maxOffset: 20
+    },
+    yAxis2: {
+        titleText: 'Outside air temperature [°F]',
+        minOffset: 2,
+        maxOffset: 20,
+    },
+    traces: [{
+        channelName: /(?<zoneName>zone(?<zoneNumber>\d+)-\w+)-temp/,
+        color: {
+            options: ZONE_COLORS,
+            index: '$zoneNumber'
+        },
+        lineShape: 'hv',
+        legendText: '$zoneName'
+    }, {
+        channelName: /(zone(?<zoneNumber>\d+)-\w+)-set/,
+        color: {
+            options: ZONE_COLORS,
+            index: '$zoneNumber'
+        },
+        lineShape: 'hv',
+        lineDash: 'dash',
+        legendText: null,
+    }]
+    // traces: [{
+    //     channelName: 'zone1-*',
+    //     color: '#1f77b4',
+    //     legendText: 'Distribution RWT'
+    // }]
 }
 
 export const PLOT_CONFIGS = [
     HEAT_PUMP_PLOT_CONFIG,
     DISTRIBUTION_PLOT_CONFIG,
+    ZONES_CONFIG,
 ];
 
 // Distribution plot is similar to heat pump, but power/flow axis is 0-20 no matter what.
