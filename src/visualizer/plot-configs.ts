@@ -1,5 +1,11 @@
 import type { Layout, LayoutAxis } from "plotly.js";
 
+export interface PlotDualAxisConfig {
+    singleRange?: any[] | undefined,
+    dualRange?: any[] | undefined,
+    titleText?: string | undefined,
+}
+
 export interface PlotTraceConfig {
     channelName: string,
     legendText: string,
@@ -20,12 +26,23 @@ export interface PlotShapeConfig {
 
 export interface PlotConfig {
     title: string,
+    yAxisConfig1: PlotDualAxisConfig,
+    yAxisConfig2: PlotDualAxisConfig,
     traces: PlotTraceConfig[],
     shapes: PlotShapeConfig[],
 }
 
 export const PLOT_CONFIGS: PlotConfig[] = [{
     title: 'Heat pump',
+    yAxisConfig1: {
+        titleText: 'Temperature [°F]',
+        dualRange: [0, 260],
+    },
+    yAxisConfig2: {
+        titleText: 'Power [kW] or Flow [GPM]',
+        dualRange: [0, 35],
+        singleRange: [0, 10],
+    },
     traces: [{
         channelName: 'hp-lwt',
         legendText: 'HP LWT',
@@ -57,6 +74,7 @@ export const PLOT_CONFIGS: PlotConfig[] = [{
         channelName: 'primary-flow',
         legendText: 'Primary pump flow',
         color: 'purple',
+        opacity: 0.4,
         yAxis2: true,
         lineShape: 'hv',
     }, {
@@ -74,7 +92,10 @@ export const PLOT_CONFIGS: PlotConfig[] = [{
     }]
 }];
 
-const THEME_DARK: Record<string, string>  = {
+// Distribution plot is similar to heat pump, but power/flow axis is 0-20 no matter what.
+
+
+const THEME_DARK: Record<string, string> = {
     'oil-boiler-power-color': '#f0f0f0'
 }
 
@@ -98,7 +119,7 @@ export function getThemeColor(key: string, isDarkMode: boolean): string {
 
 const VISUALIZER_PLOT_HEIGHT = 400;
 
-export function getDefaultPlotLayout(isDarkMode: boolean) : Partial<Layout> {
+export function getDefaultPlotLayout(isDarkMode: boolean): Partial<Layout> {
 
     const theme = {
         fontColor: isDarkMode ? '#b5b5b5' : 'rgb(42,63,96)',

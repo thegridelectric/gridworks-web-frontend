@@ -1,11 +1,12 @@
 import { DateTime } from 'luxon';
 import Plot from "react-plotly.js";
-import type { Config, Data } from 'plotly.js';
+import type { Config, Data, PlotData } from 'plotly.js';
 import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
 import { getDefaultPlotLayout, getThemeColor, PLOT_CONTAINER_CSS, type PlotConfig } from "./plot-configs";
 
 interface VisualizerPlotProps {
     plotConfig: PlotConfig;
+    selectedChannels: string[];
     readingsBundleData: ReadingsBundleApiResponse;
     showPoints: boolean,
     isDarkMode: boolean;
@@ -65,16 +66,22 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
     const { plotConfig, readingsBundleData } = props;
     const times = readingsBundleData.TimestampList.map(convertTimestamp);
 
-    const plotlyData: Partial<Data>[] = plotConfig.traces
+    const tracesAndChannelReadings = plotConfig.traces
+        .filter(t => props.selectedChannels.includes(t.channelName))
         .map(t => ({
             t,
             channelReadings: readingsBundleData.ChannelReadingsList.find(cr => cr.ChannelName == t.channelName)
         }))
-        .filter(x => x.channelReadings != null)
+        .filter(x => x.channelReadings != null);
+
+    const yAxis1Used = tracesAndChannelReadings.some(tc => !tc.t.yAxis2);
+    const yAxis2Used = tracesAndChannelReadings.some(tc => tc.t.yAxis2);
+
+    const plotlyData: Partial<PlotData>[] = tracesAndChannelReadings
         .map(({ t, channelReadings }) => {
             const convertValue = getValueConverter(channelReadings?.Unit || '', t.scale || 1);
-            const yData = channelReadings?.ValueList.map((x, i) => convertValue(x));
-            const result: Partial<Data> = {
+            const yData = channelReadings?.ValueList.map(x => convertValue(x));
+            const result: Partial<PlotData> = {
                 type: 'scatter',
                 x: times,
                 y: yData,
@@ -86,7 +93,7 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
                     shape: t.lineShape || 'linear'
                 },
                 name: t.legendText,
-                yaxis: t.yAxis2 ? 'y2' : 'y',
+                yaxis: (t.yAxis2 && yAxis1Used) ? 'y2' : 'y',
                 hovertemplate: getHoverTemplate(channelReadings?.Unit || '', t.scale)
 
             };
@@ -106,35 +113,60 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
         ]
     };
 
-
-    // TODO dynamic y-axes based on what's present in the plot
-    plotlyLayout.yaxis = {
-        ...plotlyLayout.yaxis,
-        title: {
-            text: 'Temperature [F]'
-        },
-        range: [0, 260],
+    if (yAxis1Used && yAxis2Used) {
+        plotlyLayout.yaxis = {
+            ...plotlyLayout.yaxis,
+            title: {
+                text: plotConfig.yAxisConfig1.titleText
+            },
+            range: plotConfig.yAxisConfig1.dualRange
+        }
+        plotlyLayout.yaxis2 = {
+            ...plotlyLayout.yaxis2,
+            title: {
+                text: plotConfig.yAxisConfig2.titleText
+            },
+            range: plotConfig.yAxisConfig2.dualRange
+        }
+    } 
+    else if (yAxis1Used) {
+        plotlyLayout.yaxis = {
+            ...plotlyLayout.yaxis,
+            title: {
+                text: plotConfig.yAxisConfig1.titleText
+            },
+            range: plotConfig.yAxisConfig1.singleRange
+        }
     }
-    plotlyLayout.yaxis2 = {
-        ...plotlyLayout.yaxis2,
-        title: {
-            text: 'Power [kW] or Flow [GPM]'
-        },
-        range: [0, 35],
+    else {
+        plotlyLayout.yaxis = {
+            ...plotlyLayout.yaxis,
+            title: {
+                text: plotConfig.yAxisConfig2.titleText
+            },
+            range: plotConfig.yAxisConfig2.singleRange
+        }
     }
 
+    // TODO new channels to implement
+    //  - persistence-delay (store on the front end, calc threshold on the back end)
+    //  - heatcall-zoneX
+    //  - hp-on state
+    //  - top-level-state, local-control-state, ltn-state
 
-    // if (plottingPower && plottingTemperatures) {
-    //     layout.yaxis.title = 'Temperature [F]';
-    //     layout.yaxis.range = [0, 260];
-    //     layout.yaxis2.title = 'Power [kW] or Flow [GPM]';
-    //     layout.yaxis2.range = [0, 35];
-    // } else if (plottingTemperatures && !plottingPower) {
-    //     layout.yaxis.title = 'Temperature [F]';
-    // } else if (plottingPower && !plottingTemperatures) {
-    //     layout.yaxis.title = 'Power [kW] or Flow [GPM]';
-    //     layout.yaxis.range = [0, 10];
-    // }
+    // TODO implement discrete state change graph
+    //  - Every value gets rounded to nearest integer
+    //  - Only changed values get displayed
+    //  - They get a marker that is based on the new value
+    //  - Nulls in the data end the trace
+
+    //
+    // Heat calls are weird overall, but y-axis ranges are a static offset from the # of zones. This can be done w/ multiple x-axes in Plotly
+    // Zone temperature y-axis ranges are a static offset from min/max values
+    //
+    // The logical "state" plots again just need a static offset from the min/max values.
+    //
+    // Weather forecast plot is a different beast altogether, not pulled from readings.
 
 
 

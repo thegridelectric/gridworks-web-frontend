@@ -328,13 +328,13 @@ export default function VisualizerPage() {
                     <div className="visualizer-server-plots-root">
 
                         {PLOT_CONFIGS.map((c, i) => (
-                            <VisualizerPlot key={i} plotConfig={c} readingsBundleData={readingsBundleData} isDarkMode={getIsDarkMode()} showPoints={showPoints} />
+                            <VisualizerPlot key={i} 
+                                plotConfig={c} 
+                                selectedChannels={plotSelectedChannels} 
+                                readingsBundleData={readingsBundleData} 
+                                isDarkMode={getIsDarkMode()} 
+                                showPoints={showPoints} />
                         ))}
-                        {/* <VisualizerServerPlots
-                        plots={plotsPayload}
-                        selectedChannels={plotSelectedChannels}
-                        darkmode={getIsDarkMode()}
-                    /> */}
                     </div>
                 </div>
             }
