@@ -29,10 +29,10 @@ export interface PlotConfig {
     yAxisConfig1: PlotDualAxisConfig,
     yAxisConfig2: PlotDualAxisConfig,
     traces: PlotTraceConfig[],
-    shapes: PlotShapeConfig[],
+    // shapes: PlotShapeConfig[],
 }
 
-export const PLOT_CONFIGS: PlotConfig[] = [{
+const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
     title: 'Heat pump',
     yAxisConfig1: {
         titleText: 'Temperature [°F]',
@@ -85,12 +85,52 @@ export const PLOT_CONFIGS: PlotConfig[] = [{
         yAxis2: true,
         lineShape: 'hv',
     }],
-    shapes: [{
-        channelName: 'persistence-delay',
-        color: 'red',
-        threshold: '10 min'
+    // shapes: [{
+    //     channelName: 'persistence-delay',
+    //     color: 'red',
+    //     threshold: '10 min'
+    // }]
+};
+
+const DISTRIBUTION_PLOT_CONFIG: PlotConfig = {
+    title: 'Distribution',
+    yAxisConfig1: {
+        titleText: 'Temperature [°F]',
+        singleRange: [0, 260],
+        dualRange: [0, 260],
+    },
+    yAxisConfig2: {
+        titleText: 'Flow [GPM] or Power [W]',
+        singleRange: [0, 20],
+        dualRange: [0, 20],
+    }, 
+    traces: [{
+        channelName: 'dist-swt',
+        color: '#d62728',
+        legendText: 'Distribution SWT'
+    }, {
+        channelName: 'dist-rwt',
+        color: '#1f77b4',
+        legendText: 'Distribution RWT'
+    }, {
+        channelName: 'dist-flow',
+        color: 'purple',
+        opacity: 0.4,
+        legendText: 'Distribution Flow',
+        yAxis2: true,
+    }, {
+        channelName: 'dist-pump-pwr',
+        color: 'pink',
+        legendText: 'Distribution pump power /10',
+        scale: 100,
+        yAxis2: true,
     }]
-}];
+}
+
+export const PLOT_CONFIGS = [
+    HEAT_PUMP_PLOT_CONFIG,
+    DISTRIBUTION_PLOT_CONFIG,
+];
 
 // Distribution plot is similar to heat pump, but power/flow axis is 0-20 no matter what.
 
