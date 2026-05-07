@@ -2,7 +2,7 @@ import { DateTime } from 'luxon';
 import Plot from "react-plotly.js";
 import type { Config, Datum, PlotData } from 'plotly.js';
 import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
-import { getDefaultPlotLayout, getThemeColor, PLOT_CONTAINER_CSS, type PlotAxisConfig, type PlotAxisRange, type PlotConfig } from "./plot-configs";
+import { getDefaultPlotLayout, getThemeColor, PLOT_CONTAINER_CSS, type PlotAxisConfig, type PlotAxisRange, type PlotConfig, type PlotTraceConfig } from "./plot-configs";
 import { PriceForecastApiResponseSeriesNames, type PriceForecastApiReponse } from './pricing-api';
 
 interface VisualizerPlotProps {
@@ -122,22 +122,30 @@ function matchChannelName(channelDataName: string, channelConfigName: string | R
 
 }
 
+interface TraceWithData {
+    trace?: PlotTraceConfig | null,
+    seriesName: string,
+    unit?: string | null,
+    xValues: any[],
+    yValues: any[],
+    plotDataOverride?: Partial<PlotData> | null,
+}
+
 export default function VisualizerPlot(props: VisualizerPlotProps) {
 
     const { plotConfig, readingsBundleData, priceData } = props;
 
-    const timesForDisplay = {
-        'readings': readingsBundleData.TimestampList.map(formatIsoTimeForDisplay),
-        'prices': priceData.HourStartS.map(formatHourStartSForDisplay)
-    }
+    const readingsTimes = readingsBundleData.TimestampList.map(formatIsoTimeForDisplay);
+    const pricesTimes = priceData.HourStartS.map(formatHourStartSForDisplay);
 
-    const dataWithTraces = [
+    const tracesWithData: TraceWithData[] = [
         ...readingsBundleData.ChannelReadingsList
             // TODO put this back in once we have all the channel names based on hardware layout
             // .filter(cr => props.selectedChannels.some(sc => sc == cr.ChannelName))
             .map(cr => ({
                 seriesName: cr.ChannelName,
                 unit: cr.Unit,
+                xValues: readingsTimes,
                 yValues: cr.ValueList,
                 trace: plotConfig.traces.find(t => (
                     (!t.dataSource || t.dataSource === 'readings') &&
@@ -150,17 +158,89 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
             .map(seriesName => ({
                 seriesName,
                 unit: 'DollarsPerMWh',
+                xValues: pricesTimes,
                 yValues: priceData[seriesName],
                 trace: plotConfig.traces.find(t => t.dataSource === 'prices' && t.dataSeriesName === seriesName)
             }))
             .filter(x => x.trace),
-    ];
-    
-    const yAxis1Used = dataWithTraces.some(tc => !tc.trace?.yAxis2);
-    const yAxis2Used = dataWithTraces.some(tc => tc.trace?.yAxis2);
+        ...plotConfig.traces
+            .filter(t => t.dataSource === 'states')
+            .flatMap(t => {
+                if (!t.stateConfigs) {
+                    return [];
+                }
+                const sequences = readingsBundleData.OperatingStateSequenceList.filter(oss => matchChannelName(oss.ChannelName, t.dataSeriesName));
+                if (!sequences.length) {
+                    return [];
+                }
 
-    const plotlyData: Partial<PlotData>[] = dataWithTraces
-        .map(({ trace, seriesName, unit, yValues }) => {
+                const allTimestamps = sequences.flatMap(s => s.TimestampList);
+                const allValues = sequences.flatMap(s => s.ValueList);
+                const allSortedPoints = allTimestamps.map((t, i) => ({ date: DateTime.fromISO(t), val: allValues[i]}))
+                allSortedPoints.sort((a, b) => a.date.diff(b.date).toMillis());
+                
+                const allStatesLine: TraceWithData = {
+                    seriesName: 'All',
+                    unit: null,
+                    xValues: allSortedPoints.map(xy => formatForDisplay(xy.date)),
+                    yValues: allSortedPoints.map(xy => {
+                        if (t.stateConfigs && t.stateConfigs[xy.val]) {
+                            return t.stateConfigs[xy.val].y;
+                        }
+                    }),
+                    trace: t,
+                    plotDataOverride: {
+                        mode: 'lines',
+                    }
+                };
+                allStatesLine.xValues.push(formatIsoTimeForDisplay(readingsBundleData.EndTimestamp));
+                allStatesLine.yValues.push(allStatesLine.yValues[allStatesLine.yValues.length - 1]);
+
+                const seriesByName: Record<string, TraceWithData> = {}
+                for (const sequence of sequences) {
+                    for (var i = 0; i < sequence.TimestampList.length; i++) {
+                        const time = sequence.TimestampList[i];
+                        const value = sequence.ValueList[i];
+                        const config = t.stateConfigs[value];
+                        if (config) {
+                            if (!seriesByName[value]) {
+                                seriesByName[value] = {
+                                    seriesName: value,
+                                    unit: null,
+                                    xValues: [],
+                                    yValues: [],
+                                    plotDataOverride: {
+                                        name: value,
+                                        showlegend: true,
+                                        mode: 'markers',
+                                        marker: {
+                                            color: config.markerColor,
+                                            size: 10,
+                                        },
+                                        opacity: 0.8,
+                                        hovertemplate: '%{x|%H:%M:%S}'
+                                    }
+                                }
+                            }
+                            seriesByName[value].xValues.push(formatIsoTimeForDisplay(time));
+                            seriesByName[value].yValues.push(config.y);
+                        }
+                    }
+                }
+
+                return [
+                    allStatesLine,
+                    ...Object.values(seriesByName)
+                ];
+            })
+    ];
+
+    
+    const yAxis1Used = tracesWithData.some(tc => !tc.trace?.yAxis2);
+    const yAxis2Used = tracesWithData.some(tc => tc.trace?.yAxis2);
+
+    const plotlyData: Partial<PlotData>[] = tracesWithData
+        .map(({ trace, plotDataOverride, seriesName, unit, xValues, yValues }) => {
 
             let regexpMatch;
             if (trace?.dataSeriesName instanceof RegExp) {
@@ -192,9 +272,10 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
 
             const convertValue = getValueConverter(unit || '', trace?.scale || 1);
             const yData = yValues.map(x => convertValue(x));
+
             const result: Partial<PlotData> = {
                 type: 'scatter',
-                x: timesForDisplay[trace?.dataSource || 'readings'],
+                x: xValues,
                 y: yData,
                 mode: props.showPoints ? 'lines+markers' : 'lines',
                 opacity: trace?.opacity || 0.7,
@@ -207,11 +288,15 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
                 showlegend: !!legendText,
                 yaxis: (trace?.yAxis2 && yAxis1Used) ? 'y2' : 'y',
                 visible: trace?.toggledOff ? 'legendonly' : true,
-                hovertemplate: getHoverTemplate(unit || '', trace?.scale)
-
+                hovertemplate: getHoverTemplate(unit || '', trace?.scale),
+                ...plotDataOverride || {}
             };
             return result;
         });
+
+    if (!plotlyData.length) {
+        return null;
+    }
 
     const plotlyLayout = getDefaultPlotLayout(props.isDarkMode);
     plotlyLayout.title = {
@@ -236,6 +321,7 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
             title: {
                 text: plotConfig.yAxis1.titleText
             },
+            dtick: plotConfig.yAxis1.dtick,
             range: calculateAxisRange(plotlyData, plotConfig.yAxis1, 'dualOnlyRange')
         }
         plotlyLayout.yaxis2 = {
@@ -243,6 +329,7 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
             title: {
                 text: plotConfig.yAxis2?.titleText
             },
+            dtick: plotConfig.yAxis2?.dtick,
             range: plotConfig.yAxis2 ? calculateAxisRange(plotlyData, plotConfig.yAxis2, 'dualOnlyRange') : undefined
         }
     }
@@ -252,7 +339,8 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
             title: {
                 text: plotConfig.yAxis1.titleText
             },
-            range: calculateAxisRange(plotlyData, plotConfig.yAxis1, 'singleOnlyRange')
+            range: calculateAxisRange(plotlyData, plotConfig.yAxis1, 'singleOnlyRange'),
+            dtick: plotConfig.yAxis1.dtick
         }
         plotlyLayout.yaxis2 = {
             ...plotlyLayout.yaxis2,
@@ -265,6 +353,7 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
             title: {
                 text: plotConfig.yAxis2?.titleText
             },
+            dtick: plotConfig.yAxis2?.dtick,
             range: plotConfig.yAxis2 ? calculateAxisRange(plotlyData, plotConfig.yAxis2, 'singleOnlyRange') : undefined
         }
         plotlyLayout.yaxis2 = {

@@ -1,4 +1,4 @@
-import type { Layout, LayoutAxis } from "plotly.js";
+import type { DTickValue, Layout, LayoutAxis } from "plotly.js";
 
 export interface PlotAxisRange {
     staticRange?: number[] | undefined,
@@ -13,6 +13,7 @@ export interface PlotAxisConfig {
     range?: PlotAxisRange | number[] | undefined,
     dualOnlyRange?: PlotAxisRange | number[] | undefined,
     singleOnlyRange?: PlotAxisRange | number[] | undefined,
+    dtick?: DTickValue | undefined,
 }
 
 export interface ColorCycle {
@@ -20,13 +21,19 @@ export interface ColorCycle {
     index: number | string,
 }
 
+export interface StateValueConfig {
+    y: number,
+    markerColor: string,
+}
+
 export interface PlotTraceConfig {
     dataSeriesName: string | RegExp,
-    dataSource?: 'readings' | 'prices' | undefined, // Default to 'readings'
+    dataSource?: 'readings' | 'prices' | 'states' | undefined, // Default to 'readings'
+    stateConfigs?: Record<string, StateValueConfig> | null
     legendText?: string | null,
     yAxis2?: boolean | null,        // Default is false
     toggledOff?: boolean | null,    // Default is false
-    color: string | ColorCycle, 
+    color: string | ColorCycle | Record<string, string>, 
     lineShape?: 'hv' | null,        // Default is 'linear'
     lineDash?: 'dash' | 'dot' | 'solid' | null,       // Default is 'solid'
     opacity?: number | null,        // Default is 7
@@ -317,15 +324,96 @@ const PRICING_CONFIG: PlotConfig = {
     }]
 }
 
-export const PLOT_CONFIGS = [
-    HEAT_PUMP_PLOT_CONFIG,
-    PRICING_CONFIG,
-    DISTRIBUTION_PLOT_CONFIG,
-    ZONES_CONFIG,
-    BUFFER_CONFIG,
-    STORAGE_CONFIG,
-];
+const TOP_STATE_CONFIG: PlotConfig = {
+    title: 'Top State',
+    yAxis1: {
+         range: {
+            absoluteMin: -0.6,
+            maxOffset: 0,
+         },
+         dtick: 1,
+    },
+    traces: [{
+        dataSource: 'states',
+        dataSeriesName: 'top-state',
+        color: 'theme-line-muted',
+        lineShape: 'hv',
+        stateConfigs: {
+            'LocalControl': { y: 0, markerColor: '#EF553B'},
+            'LeafTransactiveNode': { y: 1, markerColor: '#00CC96'},
+            'Admin': { y: 2, markerColor: '#636EFA'}
+        },
+    }]
+}
 
+const LTN_STATE_CONFIG: PlotConfig = {
+    title: 'LTN State',
+    yAxis1: {
+         range: {
+            absoluteMin: -0.6,
+            absoluteMax: 7.2,
+         },
+         dtick: 1,
+    },
+    traces: [{
+        dataSource: 'states',
+        dataSeriesName: /ltn-all-tanks-state|ltn-buffer-only-state/,
+        color: 'theme-line-muted',
+        lineShape: 'hv',
+        stateConfigs: {
+            'HpOffStoreDischarge': { y: 0, markerColor: '#EF553B'},
+            'HpOffStoreOff': { y: 1, markerColor: '#00CC96'},
+            'HpOff': { y: 1, markerColor: '#00CC96'},
+            'HpOnStoreOff': { y: 2, markerColor: '#636EFA'},
+            'HpOn': { y: 2, markerColor: '#636EFA'},
+            'HpOnStoreCharge': { y: 3, markerColor: '#feca52'},
+            'HpOffNonElectricBackup': { y: 4, markerColor: '#ee93fa'},
+            'Initializing': { y: 5, markerColor: '#a3a3a3'},
+            'Dormant': { y: 6, markerColor: '#4f4f4f'},
+            'EverythingOff': { y: 7, markerColor: '#4f4f4f'},
+        },
+    }]
+};
+const LC_STATE_CONFIG: PlotConfig = {
+    title: 'LocalControl State',
+    yAxis1: {
+         range: {
+            absoluteMin: -0.6,
+            absoluteMax: 7.2,
+         },
+         dtick: 1,
+    },
+    traces: [{
+        dataSource: 'states',
+        dataSeriesName: /local-control-all-tanks-state|local-control-buffer-only-state|local-control-standby-state/,
+        color: 'theme-line-muted',
+        lineShape: 'hv',
+        stateConfigs: {
+            'HpOffStoreDischarge': { y: 0, markerColor: '#EF553B'},
+            'HpOffStoreOff': { y: 1, markerColor: '#00CC96'},
+            'HpOff': { y: 1, markerColor: '#00CC96'},
+            'HpOnStoreOff': { y: 2, markerColor: '#636EFA'},
+            'HpOn': { y: 2, markerColor: '#636EFA'},
+            'HpOnStoreCharge': { y: 3, markerColor: '#feca52'},
+            'HpOffNonElectricBackup': { y: 4, markerColor: '#ee93fa'},
+            'Initializing': { y: 5, markerColor: '#a3a3a3'},
+            'Dormant': { y: 6, markerColor: '#4f4f4f'},
+            'EverythingOff': { y: 7, markerColor: '#4f4f4f'},
+        },
+    }]
+};
+
+export const PLOT_CONFIGS = [
+    // HEAT_PUMP_PLOT_CONFIG,
+    // PRICING_CONFIG,
+    // DISTRIBUTION_PLOT_CONFIG,
+    // ZONES_CONFIG,
+    // BUFFER_CONFIG,
+    // STORAGE_CONFIG,
+    TOP_STATE_CONFIG,
+    LC_STATE_CONFIG,
+    LTN_STATE_CONFIG,
+];
 
 const THEME_DARK: Record<string, string> = {
     'line-muted': '#f0f0f0'
