@@ -1,6 +1,6 @@
 import { DateTime } from 'luxon';
 import Plot from "react-plotly.js";
-import type { Config, Datum, PlotData } from 'plotly.js';
+import type { Config, Datum, PlotData, Shape } from 'plotly.js';
 import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
 import { getDefaultPlotLayout, getThemeColor, PLOT_CONTAINER_CSS, type PlotAxisConfig, type PlotAxisRange, type PlotConfig, type PlotTraceConfig } from "./plot-configs";
 import { PriceForecastApiResponseSeriesNames, type PriceForecastApiReponse } from './pricing-api';
@@ -133,7 +133,7 @@ interface TraceWithData {
 
 export default function VisualizerPlot(props: VisualizerPlotProps) {
 
-    const { plotConfig, readingsBundleData, priceData } = props;
+    const { plotConfig, readingsBundleData, selectedChannels, priceData } = props;
 
     const readingsTimes = readingsBundleData.TimestampList.map(formatIsoTimeForDisplay);
     const pricesTimes = priceData.HourStartS.map(formatHourStartSForDisplay);
@@ -366,23 +366,68 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
     //  - persistence-delay (store on the front end, calc threshold on the back end)
     //  - heatcall-zoneX
     //  - hp-on state
-    //  - top-level-state, local-control-state, ltn-state
-
-    // TODO implement discrete state change graph
-    //  - Every value gets rounded to nearest integer
-    //  - Only changed values get displayed
-    //  - They get a marker that is based on the new value
-    //  - Nulls in the data end the trace
 
     //
     // Heat calls are weird overall, but y-axis ranges are a static offset from the # of zones. This can be done w/ multiple x-axes in Plotly
     // Zone temperature y-axis ranges are a static offset from min/max values
     //
-    // The logical "state" plots again just need a static offset from the min/max values.
-    //
     // Weather forecast plot is a different beast altogether, not pulled from readings.
 
+    const HeatPumpOnHighlightTemplate: Partial<Shape> = {
+        type: 'rect',
+        xref: 'x',
+        yref: 'paper',
+        y0: 0,
+        y1: 1,
+        fillcolor: 'green',
+        opacity: 0.16,
+        layer: 'below',
+        line: { width: 0 }
+    };
 
+    plotlyLayout.shapes = [
+        ...readingsBundleData.LatePersistenceList.map(([start, end]): Partial<Shape> => ({
+            type: 'rect',
+            xref: 'x',
+            yref: 'paper',
+            x0: formatIsoTimeForDisplay(start),
+            x1: formatIsoTimeForDisplay(end),
+            y0: 0,
+            y1: 1,
+            fillcolor: 'red',
+            opacity: 0.15,
+            layer: 'below',
+            line: { width: 0 }
+        })),
+        ...(plotConfig.includeHeatPumpHighlights && selectedChannels.includes('hp-on-highlights')) ?
+            readingsBundleData.OperatingStateSequenceList.flatMap((oss): Partial<Shape>[] => {
+                var onStart = null;
+                const results: Partial<Shape>[] = [];
+                for (var i = 0; i < oss.TimestampList.length; i++) {
+                    const t = oss.TimestampList[i];
+                    const state = oss.ValueList[i];
+                    if (!onStart && state.match(/HpOn/)) {
+                        onStart = t;
+                    } else if (onStart) {
+                        results.push({
+                            ...HeatPumpOnHighlightTemplate,
+                            x0: formatIsoTimeForDisplay(onStart),
+                            x1: formatIsoTimeForDisplay(t),
+                        });
+                        onStart = null;
+                    }
+                }
+                if (onStart) {
+                    results.push({
+                        ...HeatPumpOnHighlightTemplate,
+                        x0: formatIsoTimeForDisplay(onStart),
+                        x1: formatIsoTimeForDisplay(readingsBundleData.EndTimestamp),
+                    });
+                }
+                return results;
+            }) :
+            [],
+    ];
 
 
     // TODO shapes        

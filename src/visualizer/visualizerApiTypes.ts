@@ -15,6 +15,6 @@ export interface ReadingsBundleApiResponse {
     EndTimestamp: string,
     TimestampList: string[],
     ChannelReadingsList: ChannelReading[],
-    LatePersistenceList: string[][2],
+    LatePersistenceList: string[][],
     OperatingStateSequenceList: OperatingStateSequence[]
 }

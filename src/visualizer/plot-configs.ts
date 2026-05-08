@@ -47,6 +47,7 @@ export interface PlotConfig {
     yAxis1: PlotAxisConfig,
     yAxis2?: PlotAxisConfig | undefined,
     traces: PlotTraceConfig[],
+    includeHeatPumpHighlights?: boolean | undefined,
 }
 
 const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
@@ -60,6 +61,7 @@ const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
         dualOnlyRange: [0, 35],
         singleOnlyRange: [0, 10],
     },
+    includeHeatPumpHighlights: true,
     traces: [{
         dataSeriesName: 'hp-lwt',
         legendText: 'HP LWT',
@@ -404,12 +406,12 @@ const LC_STATE_CONFIG: PlotConfig = {
 };
 
 export const PLOT_CONFIGS = [
-    // HEAT_PUMP_PLOT_CONFIG,
-    // PRICING_CONFIG,
-    // DISTRIBUTION_PLOT_CONFIG,
-    // ZONES_CONFIG,
-    // BUFFER_CONFIG,
-    // STORAGE_CONFIG,
+    HEAT_PUMP_PLOT_CONFIG,
+    PRICING_CONFIG,
+    DISTRIBUTION_PLOT_CONFIG,
+    ZONES_CONFIG,
+    BUFFER_CONFIG,
+    STORAGE_CONFIG,
     TOP_STATE_CONFIG,
     LC_STATE_CONFIG,
     LTN_STATE_CONFIG,
