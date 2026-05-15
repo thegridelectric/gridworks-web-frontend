@@ -25,6 +25,7 @@ const UNIT_CONVERSIONS: Record<string, ConverterFunction> = {
     'FahrenheitX100': x => x * 0.01,
     'WaterTempCTimes1000': x => C2F(x * .001),
     'WaterTempFTimes1000': x => x * .001,
+    'AirTempCTimes1000': x => C2F(x * .001),
     'AirTempFTimes1000': x => x * .001,
     'PowerW': x => x * .001,
     'GpmTimes100': x => x * .01,
@@ -33,9 +34,10 @@ const UNIT_CONVERSIONS: Record<string, ConverterFunction> = {
 
 const UNIT_HOVER_FORMATS: Record<string, string> = {
     'FahrenheitX100': '%{y:.1f}°F',
-    'WaterTempCTimes1000': '%{y:.1f}°F',
+    'WaterTempCTimes1000': '%{y:.1f}°C',
+    'AirTempCTimes1000': '%{y:.1f}°C',
     'WaterTempFTimes1000': '%{y:.1f}°F',
-    'AirrTempFTimes1000': '%{y:.1f}°F',
+    'AirTempFTimes1000': '%{y:.1f}°F',
     'PowerW': '%{y:.1f} kW',
     'GpmTimes100': '%{y:.1f} GPM',
     'WattHours': '%{y:.1f} kWh',
@@ -240,7 +242,7 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
     const yAxis2Used = tracesWithData.some(tc => tc.trace?.yAxis2);
 
     const plotlyData: Partial<PlotData>[] = tracesWithData
-        .map(({ trace, plotDataOverride, seriesName, unit, xValues, yValues }) => {
+        .map(({ trace, plotDataOverride, seriesName, unit, xValues, yValues }, idx) => {
 
             let regexpMatch;
             if (trace?.dataSeriesName instanceof RegExp) {
@@ -271,7 +273,11 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
             }
 
             const convertValue = getValueConverter(unit || '', trace?.scale || 1);
-            const yData = yValues.map(x => convertValue(x));
+            let yData = yValues.map(x => convertValue(x));
+
+            if (trace?.stacked) {
+                yData = yData.map(y => y + idx)
+            }
 
             const result: Partial<PlotData> = {
                 type: 'scatter',
@@ -362,16 +368,7 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
         };
     }
 
-    // TODO new channels to implement
-    //  - persistence-delay (store on the front end, calc threshold on the back end)
-    //  - heatcall-zoneX
-    //  - hp-on state
-
-    //
-    // Heat calls are weird overall, but y-axis ranges are a static offset from the # of zones. This can be done w/ multiple x-axes in Plotly
-    // Zone temperature y-axis ranges are a static offset from min/max values
-    //
-    // Weather forecast plot is a different beast altogether, not pulled from readings.
+    // TODO Weather forecast plot is a different beast altogether, not pulled from readings.
 
     const HeatPumpOnHighlightTemplate: Partial<Shape> = {
         type: 'rect',

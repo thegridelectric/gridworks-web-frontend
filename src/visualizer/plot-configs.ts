@@ -37,8 +37,8 @@ export interface PlotTraceConfig {
     lineShape?: 'hv' | null,        // Default is 'linear'
     lineDash?: 'dash' | 'dot' | 'solid' | null,       // Default is 'solid'
     opacity?: number | null,        // Default is 7
-    offset?: number | null,         // Default is 0
     scale?: number | null,          // Default is 1
+    stacked?: boolean | null,       // Default is false
 }
 
 export interface PlotConfig {
@@ -145,6 +145,28 @@ const DISTRIBUTION_PLOT_CONFIG: PlotConfig = {
 
 const ZONE_COLORS = ['#d62728', '#1f77b4', '#ff7f0e', '#2ca02c'];
 
+const HEATCALLS_CONFIG: PlotConfig = {
+    title: 'Heat calls',
+    legendOrientation: 'h',
+    yAxis1: {
+        dtick: 1,
+        range: {
+            minOffset: 0.5,
+            maxOffset: 0.5,
+        }
+    },
+    traces: [{
+        dataSeriesName: /(?<zoneName>zone(?<zoneNumber>\d+)-[\w-]+)-heatcall$/,
+        color: {
+            options: ZONE_COLORS,
+            index: '$zoneNumber'
+        },
+        lineShape: 'hv',
+        legendText: '$zoneName',
+        stacked: true,
+    }]
+}
+
 const ZONES_CONFIG: PlotConfig = {
     title: 'Zones',
     legendOrientation: 'h',
@@ -163,7 +185,7 @@ const ZONES_CONFIG: PlotConfig = {
         }
     },
     traces: [{
-        dataSeriesName: /(?<zoneName>zone(?<zoneNumber>\d+)-\w+)-temp/,
+        dataSeriesName: /(?<zoneName>zone(?<zoneNumber>\d+)-[\w-]+(?<!gw))-temp$/,
         color: {
             options: ZONE_COLORS,
             index: '$zoneNumber'
@@ -171,7 +193,7 @@ const ZONES_CONFIG: PlotConfig = {
         lineShape: 'hv',
         legendText: '$zoneName'
     }, {
-        dataSeriesName: /(zone(?<zoneNumber>\d+)-\w+)-set/,
+        dataSeriesName: /(zone(?<zoneNumber>\d+)-[\w-]+)-set$/,
         color: {
             options: ZONE_COLORS,
             index: '$zoneNumber'
@@ -409,6 +431,7 @@ export const PLOT_CONFIGS = [
     HEAT_PUMP_PLOT_CONFIG,
     PRICING_CONFIG,
     DISTRIBUTION_PLOT_CONFIG,
+    HEATCALLS_CONFIG,
     ZONES_CONFIG,
     BUFFER_CONFIG,
     STORAGE_CONFIG,

@@ -16,25 +16,14 @@ export async function fetchVisualizerPlots(params: {
     // TODO pass in this ID
     const houseId = `hw1.isone.me.versant.keene.${params.houseAlias}`;
 
-    // TODO get this from the hardware layout
+    // TODO use just the selected channels
     const selectedChannels = [
         ...params.selectedChannels,
-        'zone1-down-set',
-        'zone1-down-temp',
-        'zone2-up-set',
-        'zone2-up-temp',
-        'buffer-depth1',
-        'buffer-depth2',
-        'buffer-depth3',
-        'tank1-depth1',
-        'tank1-depth2',
-        'tank1-depth3',
-        'tank2-depth1',
-        'tank2-depth2',
-        'tank2-depth3',
-        'tank3-depth1',
-        'tank3-depth2',
-        'tank3-depth3',
+        '^zone\\d+-.+-set$',
+        '^zone\\d+-.+-temp$',
+        '^zone\\d+-.+-heatcall$',
+        '^buffer-depth\\d$',
+        '^tank\\d-depth\\d$',
     ]
 
     const urlParams = new URLSearchParams();
