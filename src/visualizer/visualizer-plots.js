@@ -178,6 +178,21 @@ const STORAGE_TANK_KEYS = [
                 hovertemplate: '%{x|%H:%M:%S} | %{y:.1f} GPM<extra></extra>'
             });
         }
+        c = take('sieg-flow');
+        if (c) {
+            plottingPower = true;
+            traces.push({
+                type: 'scatter',
+                x: c.times.map(toNyLocalIso),
+                y: c.values.map((v) => v / 100),
+                mode,
+                opacity: 0.4,
+                line: { color: '#4a148c', dash: 'solid', shape: 'hv' },
+                name: 'Sieg loop flow',
+                yaxis: yAxisPower,
+                hovertemplate: '%{x|%H:%M:%S} | %{y:.1f} GPM<extra></extra>'
+            });
+        }
         c = take('primary-pump-pwr');
         if (c) {
             plottingPower = true;

@@ -17,6 +17,7 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
             { id: 'hp-odu-pwr', label: 'Outdoor unit power' },
             { id: 'hp-idu-pwr', label: 'Indoor unit power' },
             { id: 'primary-flow', label: 'Primary pump flow rate' },
+            { id: 'sieg-flow', label: 'Sieg loop flow rate' },
             { id: 'primary-pump-pwr', label: 'Primary pump power' },
             { id: 'oil-boiler-pwr', label: 'Oil boiler power' },
             { id: 'hp-on-highlights', label: 'Highlight HP on times' },
