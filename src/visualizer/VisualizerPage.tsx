@@ -1,6 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import './VisualizerPage.css';
-import { getRequiredAuthToken } from "../auth/auth";
 import InstallationPicker from "../_shared/InstallationPicker";
 import SessionContext, { installationForRouteId } from "../_util/SessionContext";
 import {
@@ -21,14 +20,12 @@ import { useVisualizerControls } from "./useVisualizerControls";
 import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 import { PLOT_CONFIGS } from "./plot-configs";
 import VisualizerPlot from "./VisualizerPlot";
-import { fetchPriceForecast, type PriceForecastApiReponse } from "./pricing-api";
 
 export default function VisualizerPage() {
 
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(getDefaultDate(false));
     const [readingsBundleData, setReadingsBundleData] = useState<ReadingsBundleApiResponse | null>(null);
-    const [priceData, setPriceData] = useState<PriceForecastApiReponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFloLoading, setIsFloLoading] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
@@ -49,7 +46,6 @@ export default function VisualizerPage() {
 
     const installation = installationForRouteId(session?.installations, currentInstallationId);
     const houseAlias = (installation?.houseAlias?.trim() || installation?.id || '').trim();
-    const token = getRequiredAuthToken();
     const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);
 
     const visualizerCardRef = useRef<HTMLDivElement>(null);
@@ -86,33 +82,17 @@ export default function VisualizerPage() {
         }
 
         setIsLoading(true);
-        setPriceData(null);
+        setPlotError(null);
         setReadingsBundleData(null);
         try {
-            const requestResults = await Promise.allSettled([
-                fetchPriceForecast({
-                    houseAlias,
-                    startDate,
-                    endDate
-                }),
-                fetchVisualizerPlots({
-                    houseAlias,
-                    startDate,
-                    endDate,
-                    selectedChannels,
-                    darkmode: getIsDarkMode(),
-                    token,
-                })
-            ]);
-
-            requestResults.forEach(r => {
-                if (r.status === 'rejected') {
-                    throw new Error(r.reason);
-                }
+            const apiResult = await fetchVisualizerPlots({
+                houseAlias,
+                startDate,
+                endDate,
+                selectedChannels,
             })
 
-            setPriceData((requestResults[0] as PromiseFulfilledResult<PriceForecastApiReponse>)?.value);
-            setReadingsBundleData((requestResults[1] as PromiseFulfilledResult<ReadingsBundleApiResponse>)?.value);
+            setReadingsBundleData(apiResult as ReadingsBundleApiResponse);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
@@ -200,7 +180,7 @@ export default function VisualizerPage() {
 
         setIsFloLoading(true);
         try {
-            await downloadVisualizerFlo({ houseAlias, timeMs: endDate.toMillis(), token });
+            await downloadVisualizerFlo({ houseAlias, timeMs: endDate.toMillis() });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
@@ -340,16 +320,18 @@ export default function VisualizerPage() {
                 setIncludesChannel={setIncludesChannel}
             />
 
-            {readingsBundleData && priceData &&
+            {readingsBundleData &&
                 <div className="plot-container border-top">
                     <div className="visualizer-server-plots-root">
 
                         {PLOT_CONFIGS.map((c, i) => (
                             <VisualizerPlot key={i} 
                                 plotConfig={c} 
+                                houseAlias={houseAlias}
+                                startDate={wallDateTimeToUtc(startDateTime)}
+                                endDate={wallDateTimeToUtc(endDateTime)}
                                 selectedChannels={plotSelectedChannels} 
                                 readingsBundleData={readingsBundleData} 
-                                priceData={priceData}
                                 isDarkMode={getIsDarkMode()} 
                                 showPoints={showPoints} />
                         ))}

@@ -1,14 +1,13 @@
 import type { DateTime } from 'luxon';
 import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
+import { getRequiredAuthToken } from '../auth/auth';
 
 export async function fetchVisualizerPlots(params: {
     houseAlias: string;
     startDate: DateTime;
     endDate: DateTime;
     selectedChannels: string[];
-    darkmode: boolean;
-    token: string;
 }): Promise<ReadingsBundleApiResponse> {
     // TODO use this
     const base = getVisualizerApiBaseUrl();
@@ -31,11 +30,13 @@ export async function fetchVisualizerPlots(params: {
     urlParams.append("end", params.endDate.toISO() || '');
     urlParams.append("channels", selectedChannels.join(','));
 
+    const token = getRequiredAuthToken();
+    
     try {
         const res = await fetch(`http://localhost:8000/api/v2/installations/${houseId}/synced.readings.bundle?${urlParams}`, {
             method: 'GET',
             headers: {
-                Authorization: `Bearer ${params.token}`,
+                Authorization: `Bearer ${token}`,
             },
         });
         if (!res.ok) {
@@ -46,6 +47,6 @@ export async function fetchVisualizerPlots(params: {
         return data;
     } catch (error: any) {
         const errMsg = error.message || `Unknown error type ${typeof error}`
-        throw new Error(`Plots request failed: ${errMsg}`);
+        throw new Error(`synced.readings.bundle API request failed: ${errMsg}`);
     }
 }

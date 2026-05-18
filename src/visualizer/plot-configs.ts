@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import type { DTickValue, Layout, LayoutAxis } from "plotly.js";
 
 export interface PlotAxisRange {
@@ -43,10 +44,11 @@ export interface PlotTraceConfig {
 
 export interface PlotConfig {
     title: string,
+    plotType?: 'Default' | 'PriceForecast' | 'WeatherForecast' | null,
     legendOrientation?: 'h' | 'v' | undefined,   // Default is 'v'
-    yAxis1: PlotAxisConfig,
+    yAxis1?: PlotAxisConfig,
     yAxis2?: PlotAxisConfig | undefined,
-    traces: PlotTraceConfig[],
+    traces?: PlotTraceConfig[],
     includeHeatPumpHighlights?: boolean | undefined,
 }
 
@@ -323,6 +325,7 @@ const STORAGE_CONFIG: PlotConfig = {
 
 const PRICING_CONFIG: PlotConfig = {
     title: 'Price Forecast',
+    plotType: 'PriceForecast',
     yAxis1: {
         titleText: 'Total price [$/MWh]'
     },
@@ -427,6 +430,11 @@ const LC_STATE_CONFIG: PlotConfig = {
     }]
 };
 
+const WEATHER_CONFIG: PlotConfig = {
+    title: 'Weather Forecasts',
+    plotType: 'WeatherForecast'
+}
+
 export const PLOT_CONFIGS = [
     HEAT_PUMP_PLOT_CONFIG,
     PRICING_CONFIG,
@@ -438,6 +446,7 @@ export const PLOT_CONFIGS = [
     TOP_STATE_CONFIG,
     LC_STATE_CONFIG,
     LTN_STATE_CONFIG,
+    WEATHER_CONFIG,
 ];
 
 const THEME_DARK: Record<string, string> = {
@@ -460,6 +469,17 @@ export function getThemeColor(key: string, isDarkMode: boolean): string {
     return key;
 }
 
+export function formatForDisplay(dt: DateTime): string {
+    return dt.setZone('America/New_York').toFormat("yyyy-LL-dd'T'HH:mm:ss");
+}
+
+export function formatIsoTimeForDisplay(ts: string): string {
+    return formatForDisplay(DateTime.fromISO(ts))
+}
+
+export function formatHourStartSForDisplay(hourStartS: number): string {
+    return formatForDisplay(DateTime.fromSeconds(hourStartS))
+}
 
 
 const VISUALIZER_PLOT_HEIGHT = 400;

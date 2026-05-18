@@ -22,7 +22,7 @@ export async function fetchPriceForecast(params: {
 }): Promise<PriceForecastApiReponse> {
 
 
-    // TODO pull the location from the houseAlias
+    // TODO pull the region from the houseAlias
     try {
         const res = await fetch(`https://price-service.electricity.works/get_prices_visualizer/hw1-isone-me-versant-keene-ps/gw0-price-forecast`, {
             method: 'POST',

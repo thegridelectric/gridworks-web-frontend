@@ -1,4 +1,5 @@
 import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
+import { getRequiredAuthToken } from '../auth/auth';
 
 function floDownloadFilename(houseAlias: string, endUnixMs: number): string {
     const newYorkDate = new Date(endUnixMs)
@@ -19,14 +20,14 @@ function floDownloadFilename(houseAlias: string, endUnixMs: number): string {
 export async function downloadVisualizerFlo(params: {
     houseAlias: string;
     timeMs: number;
-    token: string;
 }): Promise<void> {
     const base = getVisualizerApiBaseUrl();
+    const token = getRequiredAuthToken();
     const res = await fetch(`${base}/flo`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${params.token}`,
+            Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
             house_alias: params.houseAlias,
