@@ -99,6 +99,13 @@ const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
         yAxis2: true,
         lineShape: 'hv',
     }, {
+        dataSeriesName: 'sieg-flow',
+        legendText: 'Sieg loop flow',
+        color: '#4a148c',
+        opacity: 0.4,
+        yAxis2: true,
+        lineShape: 'hv',
+    }, {
         dataSeriesName: 'primary-pump-pwr',
         legendText: 'Primary pump power x100',
         color: 'pink',
