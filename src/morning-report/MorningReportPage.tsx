@@ -2,14 +2,13 @@ import { useContext, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 
 import { getRequiredAuthToken } from '../auth/auth';
-import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
+import SessionContext, { canViewDataFromDate, type InstallationRole } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
     formatDate,
     formatTime,
     getDefaultDate,
     getNowInNewYork,
-    isEndDateOldEnough,
     wallDateTimeToUtcMs,
 } from '../_util/newYorkTime';
 import { getIsDarkMode } from '../_util/theme';
@@ -24,7 +23,7 @@ const MESSAGE_TYPES = [
     { value: 'gridworks.event.problem', label: 'gridworks.event.problem' },
     { value: 'glitch', label: 'glitch' },
 ] as const;
-const EMPTY_INSTALLATIONS: BasicInstallationInfo[] = [];
+const EMPTY_INSTALLATIONS: InstallationRole[] = [];
 
 function dataColumnKeys(data: MorningReportMessagesPayload): string[] {
     return Object.keys(data).filter(
@@ -39,17 +38,17 @@ function dataColumnKeys(data: MorningReportMessagesPayload): string[] {
 
 function aliasesForQuery(
     selectedIds: ReadonlySet<string>,
-    installations: BasicInstallationInfo[],
+    installations: InstallationRole[],
 ): string {
     if (selectedIds.size === 0) {
         return '';
     }
     const aliases: string[] = [];
     for (const inst of installations) {
-        if (!selectedIds.has(String(inst.id))) {
+        if (!selectedIds.has(String(inst.gNodeAlias))) {
             continue;
         }
-        const a = (inst.houseAlias || inst.displayName || '').trim();
+        const a = (inst.gNodeAlias || inst.displayName || '').trim();
         if (a) {
             aliases.push(a);
         }
@@ -65,17 +64,17 @@ function aliasesForQuery(
 
 function selectedHouseFieldValue(
     selectedIds: ReadonlySet<string>,
-    installations: BasicInstallationInfo[],
+    installations: InstallationRole[],
 ): string {
     if (selectedIds.size === 0) {
         return '';
     }
     const aliases: string[] = [];
     for (const inst of installations) {
-        if (!selectedIds.has(String(inst.id))) {
+        if (!selectedIds.has(String(inst.gNodeAlias))) {
             continue;
         }
-        const a = (inst.houseAlias || inst.displayName || '').trim();
+        const a = (inst.gNodeAlias || inst.displayName || '').trim();
         if (a) {
             aliases.push(a);
         }
@@ -98,7 +97,7 @@ function MorningReportPageContent() {
     const [detailRowIndex, setDetailRowIndex] = useState<number | null>(null);
 
     const token = getRequiredAuthToken();
-    const installations = session?.installations ?? EMPTY_INSTALLATIONS;
+    const installations = session?.installationRoles ?? EMPTY_INSTALLATIONS;
 
     const houseAliasParam = useMemo(
         () => aliasesForQuery(selectedInstallationIds, installations),
@@ -115,7 +114,7 @@ function MorningReportPageContent() {
             return houseAliasParam.split(',').map((s) => s.trim()).filter((s) => s.length > 0);
         }
         return installations
-            .map((i) => (i.houseAlias || i.displayName || '').trim())
+            .map((i) => (i.gNodeAlias || i.displayName || '').trim())
             .filter((s) => s.length > 0);
     }, [houseAliasParam, installations]);
 
@@ -150,7 +149,8 @@ function MorningReportPageContent() {
 
         const startMs = wallDateTimeToUtcMs(startDateTime);
         const endMs = wallDateTimeToUtcMs(endDateTime);
-        if (!isEndDateOldEnough(endMs, 10, aliasesForDateLookback)) {
+        // TODO fix this
+        if (!canViewDataFromDate(session, aliasesForDateLookback, startMs)) {
             setError('End time must be at least 10 days in the past when viewer access applies to any selected installation.');
             return;
         }

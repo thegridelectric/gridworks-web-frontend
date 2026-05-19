@@ -1,13 +1,12 @@
 import { useContext, useState, type CSSProperties } from 'react';
 
 import { getRequiredAuthToken } from '../auth/auth';
-import SessionContext, { installationForRouteId } from '../_util/SessionContext';
+import SessionContext, { installationRoleForGNode } from '../_util/SessionContext';
 import {
   formatDate,
   formatTime,
   getDefaultDate,
   getNowInNewYork,
-  isEndDateOldEnough,
   wallDateTimeToUtcMs,
 } from '../_util/newYorkTime';
 import { useRouteInfo } from '../_util/useRouteInfo';
@@ -28,12 +27,9 @@ const LABEL_MUTED: CSSProperties = {
 
 export default function ChannelDataExportPage() {
   const session = useContext(SessionContext);
-  const { currentInstallationId } = useRouteInfo();
-  const installation = installationForRouteId(session?.installations, currentInstallationId);
+  const { installationGNode } = useRouteInfo();
 
   const token = getRequiredAuthToken();
-
-  const houseAliasForCsv = (installation?.houseAlias?.trim() || installation?.id || '').trim();
 
   const [channelStart, setChannelStart] = useState(() => getDefaultDate(true));
   const [channelEnd, setChannelEnd] = useState(() => getDefaultDate(false));
@@ -68,7 +64,7 @@ export default function ChannelDataExportPage() {
 
   async function onChannelCsv() {
     setError(null);
-    if (!houseAliasForCsv) {
+    if (!installationGNode) {
       setError('Select a house first.');
       return;
     }
@@ -79,7 +75,7 @@ export default function ChannelDataExportPage() {
     }
     const startMs = wallDateTimeToUtcMs(channelStart);
     const endMs = wallDateTimeToUtcMs(channelEnd);
-    if (!isEndDateOldEnough(endMs, 10, houseAliasForCsv)) {
+    if (!isEndDateOldEnough(endMs, 10, houseGNode)) {
       setError('End time must be at least 10 days in the past for viewer access to this installation.');
       return;
     }
@@ -90,7 +86,7 @@ export default function ChannelDataExportPage() {
       for (;;) {
         const result = await requestChannelDataCsv({
           token,
-          houseAlias: houseAliasForCsv,
+          houseAlias: installationGNode,
           startMs,
           endMs,
           selectedChannels: selected,
@@ -213,7 +209,7 @@ export default function ChannelDataExportPage() {
             <button
               type="button"
               className="btn btn-sm btn-outline-secondary"
-              disabled={channelBusy || !token || !houseAliasForCsv}
+              disabled={channelBusy || !token || !installationGNode}
               style={{ opacity: channelBusy ? 0.5 : 1 }}
               onClick={onChannelCsv}
             >

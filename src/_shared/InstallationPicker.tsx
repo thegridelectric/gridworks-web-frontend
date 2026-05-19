@@ -7,14 +7,14 @@ export default function InstallationPicker() {
 
     const session = useContext(SessionContext);
     const navigate = useNavigate();
-    const { pathRoot, currentInstallationId } = useRouteInfo();
+    const { pathRoot, installationGNode } = useRouteInfo();
 
     const installationsSorted = useMemo(() => {
-        const list = session?.installations ?? [];
+        const list = session?.installationRoles ?? [];
         return [...list].sort((a, b) =>
             a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' }),
         );
-    }, [session?.installations]);
+    }, [session?.installationRoles]);
 
     function onInstallationChanged(evt: React.ChangeEvent<HTMLSelectElement, Element>) {
         evt.preventDefault();
@@ -27,12 +27,12 @@ export default function InstallationPicker() {
     }
 
 
-    return <select value={currentInstallationId || ''} className="form-select" style={{ maxWidth: '300px' }} onChange={onInstallationChanged}>
-        {!currentInstallationId &&
+    return <select value={installationGNode || ''} className="form-select" style={{ maxWidth: '300px' }} onChange={onInstallationChanged}>
+        {!installationGNode &&
             <option value=''>Select an installation</option>
         }
         {installationsSorted.map((i) => (
-            <option key={i.id} value={i.id}>{i.displayName}</option>
+            <option key={i.gNodeAlias} value={i.gNodeAlias}>{i.displayName}</option>
         ))}
     </select>
 

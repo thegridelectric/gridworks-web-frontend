@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { getAuthToken, hasRealTimeAccessForInstallationAlias } from "../auth/auth";
-import SessionContext, { type BasicInstallationInfo } from "../_util/SessionContext";
+import SessionContext, { type BasicInstallationInfo, type InstallationRole } from "../_util/SessionContext";
 import { useHouseTableSelection } from "../_util/useHouseTableSelection";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { useHouseRealtimeData, type HouseRealtimeData } from "../real-time/HouseRealtimeDataProvider";
@@ -67,21 +67,25 @@ function aliasBadgeClassForHouse(
     return isLastHeardFresh(snapshotTimeUnixMsForHouse(h, realtimeDataByAlias), nowMs)
         ? "bg-success"
         : "bg-danger";
+function getLocationLabel(h: InstallationRole): string {
+    return h.address && h.address.city && h.address.state ? 
+        `${h.address.city}, ${h.address.state}` : 
+        "N/A";
 }
 
 function compareInstallations(
-    a: BasicInstallationInfo,
-    b: BasicInstallationInfo,
+    a: InstallationRole,
+    b: InstallationRole,
     column: SortColumn,
     direction: SortDirection,
     realtimeDataByAlias: Record<string, HouseRealtimeData>,
 ): number {
-    const cell = (h: BasicInstallationInfo) => {
+    const cell = (h: InstallationRole) => {
         if (column === "short_alias") {
             return (h.displayName || "").trim();
         }
         if (column === "address") {
-            return (h.locationLabel || "N/A").trim();
+            return (getLocationLabel(h)).trim();
         }
         const alias = houseAliasForInstallation(h);
         const hasAccess = Boolean(alias && hasRealTimeAccessForInstallationAlias(alias));
@@ -112,6 +116,7 @@ function useHousesTableState(
     realtimeDataByAlias: Record<string, HouseRealtimeData>,
     nowMs: number,
 ) {
+// function useHousesTableState(homes: InstallationRole[]) {
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [aliasFilter, setAliasFilter] = useState("");
     const [cityFilter, setCityFilter] = useState("");
@@ -133,6 +138,13 @@ function useHousesTableState(
                     !isLastHeardFresh(snapshotTimeUnixMsForHouse(h, realtimeDataByAlias), nowMs),
             ).length,
         [homes, realtimeDataByAlias, nowMs],
+// TODO fix this merge
+    //     () => homes.filter((h) => h.alertStatus?.status === "ok").length,
+    //     [homes],
+    // );
+    // const alertCount = useMemo(
+    //     () => homes.filter((h) => h.alertStatus?.status === "alert").length,
+    //     [homes],
     );
     // [alert-status-badge]
     // const okCount = useMemo(
@@ -152,6 +164,9 @@ function useHousesTableState(
             const alias = (h.displayName || "").toLowerCase();
             const city = (h.locationLabel || "N/A").toLowerCase();
             // [commit-column] const commit = (h.commit || "N/A").toLowerCase();
+// TODO fix this merge
+            // const city = (getLocationLabel(h) || "N/A").toLowerCase();
+            // const commit = (h.commit || "N/A").toLowerCase();
             return (
                 alias.startsWith(af) &&
                 city.startsWith(cf)
@@ -343,9 +358,11 @@ function HousesCardTable({
     homes: BasicInstallationInfo[];
     realtimeDataByAlias: Record<string, HouseRealtimeData>;
     nowMs: number;
+// TODO fix this merge
+    // homes: InstallationRole[];
     sortClass: (column: SortColumn) => string;
     onSortHeaderClick: (column: SortColumn) => void;
-    onRowActivate: (home: BasicInstallationInfo) => void;
+    onRowActivate: (home: InstallationRole) => void;
     rowSelectedClass: (id: string) => string;
     showNoSearchResults: boolean;
 }) {
@@ -400,11 +417,18 @@ function HousesCardTable({
                         const realtime = hasRealtimeAccess
                             ? realtimeDataForAlias(alias, realtimeDataByAlias)
                             : null;
+                        const alert = h.alertStatus?.status;
+// TODO fix this merge
+                        // const badgeClass =
+                        //     alert === "ok"
+                        //         ? "bg-success"
+                        //         : alert === "alert"
+                        //           ? "bg-danger"
+                        //           : "bg-secondary";
                         return (
                             <tr
-                                key={h.id}
-                                className={`expandable-row ${rowSelectedClass(h.id)}`.trim()}
-                                data-home-id={h.id}
+                                key={h.gNodeAlias}
+                                className={`expandable-row ${rowSelectedClass(h.gNodeAlias)}`.trim()}
                                 tabIndex={0}
                                 onClick={() => onRowActivate(h)}
                                 onKeyDown={(e) => {
@@ -421,6 +445,8 @@ function HousesCardTable({
                                 </td>
                                 <td>{h.locationLabel || "N/A"}</td>
                                 {/* [commit-column]
+// TODO fix this merge
+                                <td>{getLocationLabel(h)}</td>
                                 <td className="json-cell text-muted">
                                     {h.commit || "N/A"}
                                 </td>
@@ -453,16 +479,16 @@ function HousesCardTable({
 export default function HousesTableCard() {
     const session = useContext(SessionContext);
     const navigate = useNavigate();
-    const { pathRoot, currentInstallationId } = useRouteInfo();
+    const { pathRoot, installationGNode } = useRouteInfo();
     const { isSelectionMode, selectedInstallationIds, toggleInstallationSelection } =
         useHouseTableSelection();
 
     const token = getAuthToken();
     const homes = useMemo(
-        () => session?.installations ?? [],
-        [session?.installations],
+        () => session?.installationRoles ?? [],
+        [session?.installationRoles],
     );
-    const hasTable = token && !session?.homesError && homes.length > 0;
+    const hasTable = token && homes.length > 0;
 
     const realtimeDataByAlias = useHouseRealtimeData();
     const nowMs = useNowMs();
@@ -485,18 +511,18 @@ export default function HousesTableCard() {
         sortClass,
     } = useHousesTableState(homes, realtimeDataByAlias, nowMs);
 
-    function selectHouse(h: BasicInstallationInfo) {
+    function selectHouse(h: InstallationRole) {
         const root = pathRoot ?? "installations";
         const targetRoot = root === "installations" ? "real-time" : root;
         navigate(
-            `/${targetRoot}/${h.id}/`,
+            `/${targetRoot}/${h.gNodeAlias}/`,
             root === "installations" ? undefined : { replace: true },
         );
     }
 
-    function onRowActivate(h: BasicInstallationInfo) {
+    function onRowActivate(h: InstallationRole) {
         if (isSelectionMode) {
-            toggleInstallationSelection(String(h.id));
+            toggleInstallationSelection(String(h.gNodeAlias));
             return;
         }
         selectHouse(h);
@@ -506,21 +532,14 @@ export default function HousesTableCard() {
         if (isSelectionMode) {
             return selectedInstallationIds.has(String(id)) ? "expanded" : "";
         }
-        return String(id).trim() === String(currentInstallationId ?? "").trim()
+        return String(id).trim() === String(installationGNode ?? "").trim()
             ? "expanded"
             : "";
     }
 
     return (
         <div className="houses-table-at-top mb-4">
-            {session?.homesError && (
-                <div className="alert alert-warning mb-3" role="alert">
-                    Could not load homes from the visualizer API:{" "}
-                    {session.homesError}
-                </div>
-            )}
-
-            {token && !session?.homesError && homes.length === 0 && (
+            {token && homes.length === 0 && (
                 <div className="card houses-card mb-0">
                     <div className="empty-state">
                         <h3>No homes found</h3>

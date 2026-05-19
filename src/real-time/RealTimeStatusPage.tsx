@@ -7,7 +7,7 @@ import RealTimeStatusThermostatTable from "./RealTimeStatusThermostatTable";
 import { Spinner } from "react-bootstrap";
 import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
 import InstallationPicker from "../_shared/InstallationPicker";
-import SessionContext, { installationForRouteId } from "../_util/SessionContext";
+import SessionContext, { canConnectRealTimeData, installationRoleForGNode } from "../_util/SessionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketUrl } from "../_util/visualizerApi";
 import { hasRealTimeAccessForInstallationAlias } from "../auth/auth";
@@ -558,20 +558,21 @@ function RealTimeStatusConnection({
 }
 
 export default function RealTimeStatusPage() {
-    const { currentInstallationId } = useRouteInfo();
+    const { installationGNode } = useRouteInfo();
     const session = useContext(SessionContext);
-    const installation = installationForRouteId(session?.installations, currentInstallationId);
-    const houseAlias = (installation?.houseAlias?.trim() || '').trim();
-    const isSpruce = houseAlias.toLowerCase().includes('spruce');
+    const installation = installationRoleForGNode(session?.installationRoles, installationGNode);
+    const houseShortAlias = installation?.displayName || '';
+    const isSpruce = houseShortAlias.toLowerCase().includes('spruce');
 
     const installationUnknown =
-        !!currentInstallationId && !!session && !installation;
+        !!installationGNode && !!session && !installation;
     const houseAliasMissing =
-        !!currentInstallationId && !!installation && !houseAlias;
-    const showConnectedContent = Boolean(currentInstallationId && houseAlias);
+        !!installationGNode && !!installation && !houseShortAlias;
+    const showConnectedContent = Boolean(installationGNode && houseShortAlias);
     const realTimeNotPermittedForAlias =
-        showConnectedContent && !hasRealTimeAccessForInstallationAlias(houseAlias);
+        showConnectedContent && !canConnectRealTimeData(session, installationGNode!);
 
+    // TODO fix this
     const defaultSiegLoop = hardwareLayoutHasSiegEnabled(installation?.hardwareLayout);
 
     if (!showConnectedContent) {
@@ -667,9 +668,8 @@ export default function RealTimeStatusPage() {
 
     return (
         <RealTimeStatusConnection
-            key={`${currentInstallationId}:${houseAlias}`}
-            currentInstallationId={currentInstallationId}
-            houseAlias={houseAlias}
+            currentInstallationId={installationGNode}
+            houseAlias={houseShortAlias}
             isSpruce={isSpruce}
             defaultSiegLoop={defaultSiegLoop}
         />

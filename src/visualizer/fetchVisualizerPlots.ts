@@ -4,16 +4,13 @@ import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
 import { getRequiredAuthToken } from '../auth/auth';
 
 export async function fetchVisualizerPlots(params: {
-    houseAlias: string;
+    installationGNode: string;
     startDate: DateTime;
     endDate: DateTime;
     selectedChannels: string[];
 }): Promise<ReadingsBundleApiResponse> {
     // TODO use this
     const base = getVisualizerApiBaseUrl();
-
-    // TODO pass in this ID
-    const houseId = `hw1.isone.me.versant.keene.${params.houseAlias}`;
 
     // TODO use just the selected channels
     const selectedChannels = [
@@ -33,7 +30,7 @@ export async function fetchVisualizerPlots(params: {
     const token = getRequiredAuthToken();
     
     try {
-        const res = await fetch(`http://localhost:8000/api/v2/installations/${houseId}/synced.readings.bundle?${urlParams}`, {
+        const res = await fetch(`http://localhost:8000/api/v2/installations/${params.installationGNode}/synced.readings.bundle?${urlParams}`, {
             method: 'GET',
             headers: {
                 Authorization: `Bearer ${token}`,

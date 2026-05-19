@@ -2,14 +2,13 @@ import { useContext, useEffect, useMemo, useRef, useState, type CSSProperties } 
 import JSZip from 'jszip';
 
 import { getRequiredAuthToken } from '../auth/auth';
-import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
+import SessionContext, { type InstallationRole } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
   formatDate,
   formatTime,
   getDefaultDate,
   getNowInNewYork,
-  isEndDateOldEnough,
   wallDateTimeToUtcMs,
 } from '../_util/newYorkTime';
 import { getIsDarkMode } from '../_util/theme';
@@ -29,7 +28,7 @@ const LABEL_MUTED: CSSProperties = {
   fontSize: '0.875rem',
   color: 'var(--text-muted)',
 };
-const EMPTY_INSTALLATIONS: BasicInstallationInfo[] = [];
+const EMPTY_INSTALLATIONS: InstallationRole[] = [];
 
 export default function HourlyDataExportPage() {
   const session = useContext(SessionContext);
@@ -40,16 +39,16 @@ export default function HourlyDataExportPage() {
   const hourlyPlotHostRef = useRef<HTMLDivElement>(null);
   const hourlyPlotBlobUrlsRef = useRef<string[]>([]);
 
-  const installations = session?.installations ?? EMPTY_INSTALLATIONS;
+  const installations = session?.installationRoles ?? EMPTY_INSTALLATIONS;
 
-  function aliasesForHourlyQuery(selectedIds: ReadonlySet<string>, installs: BasicInstallationInfo[]): string[] {
+  function aliasesForHourlyQuery(selectedIds: ReadonlySet<string>, installs: InstallationRole[]): string[] {
     if (installs.length === 0) {
       return [];
     }
     if (selectedIds.size === 0) {
       const all: string[] = [];
       for (const inst of installs) {
-        const a = (inst.houseAlias || inst.displayName || '').trim();
+        const a = (inst.gNodeAlias || inst.displayName || '').trim();
         if (a) {
           all.push(a);
         }
@@ -58,10 +57,10 @@ export default function HourlyDataExportPage() {
     }
     const out: string[] = [];
     for (const inst of installs) {
-      if (!selectedIds.has(String(inst.id))) {
+      if (!selectedIds.has(String(inst.gNodeAlias))) {
         continue;
       }
-      const a = (inst.houseAlias || inst.displayName || '').trim();
+      const a = (inst.gNodeAlias || inst.displayName || '').trim();
       if (a) {
         out.push(a);
       }
@@ -69,16 +68,16 @@ export default function HourlyDataExportPage() {
     return out;
   }
 
-  function selectedHouseFieldValue(selectedIds: ReadonlySet<string>, installs: BasicInstallationInfo[]): string {
+  function selectedHouseFieldValue(selectedIds: ReadonlySet<string>, installs: InstallationRole[]): string {
     if (selectedIds.size === 0) {
       return '';
     }
     const aliases: string[] = [];
     for (const inst of installs) {
-      if (!selectedIds.has(String(inst.id))) {
+      if (!selectedIds.has(String(inst.gNodeAlias))) {
         continue;
       }
-      const a = (inst.houseAlias || inst.displayName || '').trim();
+      const a = (inst.gNodeAlias || inst.displayName || '').trim();
       if (a) {
         aliases.push(a);
       }

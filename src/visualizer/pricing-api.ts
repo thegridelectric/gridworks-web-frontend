@@ -16,13 +16,13 @@ export const PriceForecastApiResponseSeriesNames: [keyof PriceForecastApiReponse
 
 
 export async function fetchPriceForecast(params: {
-    houseAlias: string;
+    installationGNode: string;
     startDate: DateTime;
     endDate: DateTime;
 }): Promise<PriceForecastApiReponse> {
 
 
-    // TODO pull the region from the houseAlias
+    // TODO pull the region from the houseGNode
     try {
         const res = await fetch(`https://price-service.electricity.works/get_prices_visualizer/hw1-isone-me-versant-keene-ps/gw0-price-forecast`, {
             method: 'POST',

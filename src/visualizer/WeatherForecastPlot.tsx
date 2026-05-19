@@ -3,9 +3,8 @@
 
 
 import Plot, { type PlotParams } from "react-plotly.js";
-import { fetchPriceForecast, PriceForecastApiResponseSeriesNames, type PriceForecastApiReponse } from "./pricing-api";
 import React, { useEffect, useState } from "react";
-import { formatForDisplay, formatHourStartSForDisplay, formatIsoTimeForDisplay, type PlotConfig } from "./plot-configs";
+import { formatForDisplay, formatHourStartSForDisplay, type PlotConfig } from "./plot-configs";
 import { PlotlyWrapper } from "./PlotlyWrapper";
 import { generateDefaultPlotInfo, type TraceWithData } from "./DefaultVisualizerPlot";
 import type { DateTime } from "luxon";
@@ -13,7 +12,7 @@ import { fetchMessages } from "./messages-api";
 
 
 export interface WeatherForecastPlotParams {
-    houseAlias: string,
+    installationGNode: string,
     startDate: DateTime,
     endDate: DateTime,
     plotConfig: PlotConfig,
@@ -62,47 +61,6 @@ export function parseWeatherForecastMessages(weatherForecasts: WeatherForecastMe
     return runs;
 }
 
-
-
-// function parseWeatherForecastData(messages: any[]): WeatherForecastPlotData {
-//     // const result: WeatherForecastPlotData = {
-//     //     timestamps: [],
-//     //     latestOatForecast: [],
-//     //     priorOatForecasts: [],
-//     // }
-
-
-//     const oat_forecasts: Record<number, number[]> = {}
-//     // Messages will be sorted by ascending ForecastCreatedS
-//     for (const msg of messages) {
-//         const forecastMessage = msg as WeatherForecastMessage;
-//         if (forecastMessage) {
-//             const forecast_start_time = Math.floor(forecastMessage.ForecastCreatedS / 3600) * 3600;
-//             oat_forecasts[forecast_start_time] = forecastMessage.OatF
-//         }
-//     }
-
-//     const runs = []
-//     const n = Object.keys(oat_forecasts).length;
-//     for (let i = 0; i < n; i++) {
-
-//     for i, weather_time in enumerate(oat_forecasts):
-//         oat = oat_forecasts[weather_time]
-//         times_s = [int(weather_time) + 3600 * j for j in range(len(oat))]
-//         runs.append({
-//             'times_ms': [t * 1000 for t in times_s],
-//             'oat_f': list(oat),
-//             'run_index': i,
-//             'is_latest': i == n - 1,
-//         })
-
-
-
-//     for (const msg of messages) {
-//     }
-// }
-
-
 const RDBU_REV = [
     '#67001f',
     '#b2182b',
@@ -120,7 +78,7 @@ const RDBU_REV = [
 export default function WeatherForecastPlot(props: WeatherForecastPlotParams) {
 
 
-    const { startDate, endDate, houseAlias } = props
+    const { startDate, endDate, installationGNode } = props
     const [weatherData, setWeatherData] = useState<WeatherForecastRun[] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
@@ -132,7 +90,7 @@ export default function WeatherForecastPlot(props: WeatherForecastPlotParams) {
             setWeatherData(null);
             try {
                 const apiResult = await fetchMessages({
-                    houseAlias,
+                    installationGNode,
                     startDate: startDate.minus({ hours: 24 }),
                     endDate,
                     messageTypes: ['weather.forecast']
@@ -149,7 +107,7 @@ export default function WeatherForecastPlot(props: WeatherForecastPlotParams) {
         }
         fetchDataAsync();
 
-    }, [houseAlias, startDate, endDate])
+    }, [installationGNode, startDate, endDate])
 
     let content: React.ReactNode;
     if (weatherData) {

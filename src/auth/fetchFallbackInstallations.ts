@@ -5,6 +5,7 @@ import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 
 interface FallbackHouse {
     unique_id: string | number;
+    g_node_alias: string;
     short_alias?: string;
     address?: {
         city?: string;
@@ -44,6 +45,7 @@ function toInstallation(h: FallbackHouse): BasicInstallationInfo {
     const alias = h.short_alias?.trim();
     return {
         id: String(h.unique_id),
+        gNodeAlias: h.g_node_alias,
         displayName: alias || 'N/A',
         houseAlias: alias || undefined,
         locationLabel,

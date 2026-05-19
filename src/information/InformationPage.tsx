@@ -1,7 +1,7 @@
 import { useContext, useMemo, useState } from 'react';
 
 import InstallationPicker from '../_shared/InstallationPicker';
-import SessionContext, { installationForRouteId } from '../_util/SessionContext';
+import SessionContext, { installationRoleForGNode } from '../_util/SessionContext';
 import { useRouteInfo } from '../_util/useRouteInfo';
 
 import './InformationPage.css';
@@ -11,7 +11,7 @@ type InfoSection = 'address' | 'contact' | 'status' | 'hardware';
 export default function InformationPage() {
   const session = useContext(SessionContext);
   const { currentInstallationId } = useRouteInfo();
-  const installation = installationForRouteId(session?.installations, currentInstallationId);
+  const installation = installationRoleForGNode(session?.installations, currentInstallationId);
 
   const [activeSection, setActiveSection] = useState<InfoSection | null>(null);
 

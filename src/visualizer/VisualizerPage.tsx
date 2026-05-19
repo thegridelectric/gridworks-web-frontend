@@ -1,12 +1,11 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import './VisualizerPage.css';
 import InstallationPicker from "../_shared/InstallationPicker";
-import SessionContext, { installationForRouteId } from "../_util/SessionContext";
+import SessionContext, { canViewDataFromDate, installationRoleForGNode } from "../_util/SessionContext";
 import {
     formatDate,
     formatTime,
     getDefaultDate,
-    isEndDateOldEnoughUtc,
     wallDateTimeToUtc,
 } from "../_util/newYorkTime";
 import { getIsDarkMode } from "../_util/theme";
@@ -20,11 +19,13 @@ import { useVisualizerControls } from "./useVisualizerControls";
 import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 import { PLOT_CONFIGS } from "./plot-configs";
 import VisualizerPlot from "./VisualizerPlot";
+import type { VisualizerParams } from "./VisualizerParams";
 
 export default function VisualizerPage() {
 
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(getDefaultDate(false));
+    const [plottedParams, setPlottedParams] = useState<VisualizerParams | null>(null)
     const [readingsBundleData, setReadingsBundleData] = useState<ReadingsBundleApiResponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFloLoading, setIsFloLoading] = useState(false);
@@ -41,11 +42,12 @@ export default function VisualizerPage() {
         resetControls,
     } = useVisualizerControls();
 
-    const { currentInstallationId, pathRoot } = useRouteInfo();
+    const { installationGNode, pathRoot } = useRouteInfo();
     const session = useContext(SessionContext);
+    if (!session) {
+        return null;
+    }
 
-    const installation = installationForRouteId(session?.installations, currentInstallationId);
-    const houseAlias = (installation?.houseAlias?.trim() || installation?.id || '').trim();
     const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);
 
     const visualizerCardRef = useRef<HTMLDivElement>(null);
@@ -53,12 +55,8 @@ export default function VisualizerPage() {
     async function runPlotQuery(startDt: Date, endDt: Date) {
         setPlotError(null);
 
-        if (!currentInstallationId) {
+        if (!installationGNode) {
             setPlotError('Select an installation first.');
-            return;
-        }
-        if (!houseAlias) {
-            setPlotError('Could not resolve a house alias for this installation.');
             return;
         }
 
@@ -69,7 +67,7 @@ export default function VisualizerPage() {
             return;
         }
 
-        if (!isEndDateOldEnoughUtc(endDate, 10, houseAlias)) {
+        if (!canViewDataFromDate(session, [installationGNode], startDate)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
@@ -86,12 +84,16 @@ export default function VisualizerPage() {
         setReadingsBundleData(null);
         try {
             const apiResult = await fetchVisualizerPlots({
-                houseAlias,
+                installationGNode,
                 startDate,
                 endDate,
                 selectedChannels,
             })
-
+            setPlottedParams({
+                startDate: startDate,
+                endDate: endDate,
+                installationGNode
+            })
             setReadingsBundleData(apiResult as ReadingsBundleApiResponse);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
@@ -163,24 +165,21 @@ export default function VisualizerPage() {
         event.preventDefault();
         setPlotError(null);
 
-        if (!currentInstallationId) {
+        if (!installationGNode) {
             setPlotError('Select an installation first.');
-            return;
-        }
-        if (!houseAlias) {
-            setPlotError('Could not resolve a house alias for this installation.');
             return;
         }
 
         const endDate = wallDateTimeToUtc(endDateTime);
-        if (!isEndDateOldEnoughUtc(endDate, 10, houseAlias)) {
+        if (!isEndDateOldEnoughUtc(endDate, 10, installationGNode)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
 
         setIsFloLoading(true);
         try {
-            await downloadVisualizerFlo({ houseAlias, timeMs: endDate.toMillis() });
+            // TODO
+            await downloadVisualizerFlo({ houseAlias: installationGNode, timeMs: endDate.toMillis() });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
@@ -217,7 +216,7 @@ export default function VisualizerPage() {
     useEffect(() => {
         setReadingsBundleData(null);
         setPlotError(null);
-    }, [currentInstallationId, houseAlias]);
+    }, [installationGNode]);
 
     return (
         <div ref={visualizerCardRef} className={`card visualizer-card${isFullscreen ? ' fullscreen' : ''}`}>
@@ -320,16 +319,16 @@ export default function VisualizerPage() {
                 setIncludesChannel={setIncludesChannel}
             />
 
-            {readingsBundleData &&
+            {readingsBundleData && plottedParams &&
                 <div className="plot-container border-top">
                     <div className="visualizer-server-plots-root">
 
                         {PLOT_CONFIGS.map((c, i) => (
                             <VisualizerPlot key={i} 
                                 plotConfig={c} 
-                                houseAlias={houseAlias}
-                                startDate={wallDateTimeToUtc(startDateTime)}
-                                endDate={wallDateTimeToUtc(endDateTime)}
+                                installationGNode={plottedParams.installationGNode}
+                                startDate={plottedParams.startDate}
+                                endDate={plottedParams.endDate}
                                 selectedChannels={plotSelectedChannels} 
                                 readingsBundleData={readingsBundleData} 
                                 isDarkMode={getIsDarkMode()} 

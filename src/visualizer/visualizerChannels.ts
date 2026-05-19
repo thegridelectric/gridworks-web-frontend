@@ -42,7 +42,7 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
     {
         category: 'Buffer',
         channels: [
-            { id: 'buffer-depths', label: 'Buffer depths' },
+            { id: '^buffer-depth\\d$', label: 'Buffer depths' },
             { id: 'buffer-hot-pipe', label: 'Hot pipe' },
             { id: 'buffer-cold-pipe', label: 'Cold pipe' },
         ],

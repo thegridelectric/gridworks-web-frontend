@@ -7,7 +7,7 @@ import { generateDefaultPlotInfo } from "./DefaultVisualizerPlot";
 import type { DateTime } from "luxon";
 
 export interface PriceForecastPlotParams {
-    houseAlias: string,
+    houseGNode: string,
     startDate: DateTime,
     endDate: DateTime,
     plotConfig: PlotConfig,
@@ -18,7 +18,7 @@ export interface PriceForecastPlotParams {
 
 export default function PriceForecastPlot(props: PriceForecastPlotParams) {
 
-    const { startDate, endDate, houseAlias } = props
+    const { startDate, endDate, houseGNode } = props
     const [priceData, setPriceData] = useState<PriceForecastApiReponse | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
             setPriceData(null);
             try {
                 const apiResult = await fetchPriceForecast({
-                    houseAlias,
+                    houseGNode,
                     startDate,
                     endDate
                 });
@@ -44,7 +44,7 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
         }
         fetchDataAsync();
         
-    }, [houseAlias, startDate, endDate])
+    }, [houseGNode, startDate, endDate])
 
     let content: React.ReactNode;
     if (priceData) {

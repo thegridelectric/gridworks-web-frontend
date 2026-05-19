@@ -11,7 +11,7 @@ interface VisualizerPlotProps {
     plotConfig: PlotConfig;
     selectedChannels: string[];
     readingsBundleData: ReadingsBundleApiResponse;
-    houseAlias: string,
+    installationGNode: string,
     startDate: DateTime,
     endDate: DateTime,
     showPoints: boolean,

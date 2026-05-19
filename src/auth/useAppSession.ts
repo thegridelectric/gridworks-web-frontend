@@ -16,21 +16,7 @@ interface UseAppSessionResult {
     hasResolvedSession: boolean;
 }
 
-function filterInstallationsForCurrentUser(
-    installations: BasicInstallationInfo[],
-): BasicInstallationInfo[] {
-    if (isAdminUser()) {
-        return installations;
-    }
-    const allowedAliases = new Set(getAuthUserInstallations());
-    if (allowedAliases.size === 0) {
-        return [];
-    }
-    return installations.filter((installation) => {
-        const alias = (installation.houseAlias || installation.displayName || '').trim().toLowerCase();
-        return alias !== '' && allowedAliases.has(alias);
-    });
-}
+
 
 export function useAppSession(loadSession: boolean): UseAppSessionResult {
     const [isLoadingSession, setIsLoadingSession] = useState(true);
@@ -53,6 +39,37 @@ export function useAppSession(loadSession: boolean): UseAppSessionResult {
 
         (async () => {
             try {
+                const sessionRes = await GridworksApi.get<Session>('/api/v2/session');
+                if (cancelled) return;
+
+                let installations = sessionRes.data.installationRoles ?? [];
+                let userName = sessionRes.data.userName;
+                let homesError: string | null = null;
+                const token = getAuthToken();
+
+                if (installations.length === 0 && token) {
+                    try {
+                        const installationsFromFallback = await fetchFallbackInstallations(token);
+                        if (!cancelled) {
+                            installations = installationsFromFallback;
+                            userName = getDisplayUserName();
+                        }
+                    } catch (e) {
+                        if (!cancelled) {
+                            homesError = e instanceof Error ? e.message : 'Unknown error';
+                        }
+                    }
+                }
+                installations = filterInstallationsForCurrentUser(installations);
+
+                if (!cancelled) {
+                    setSession({
+                        userName,
+                        installations,
+                        homesError,
+                    });
+                }
+            } catch {
                 const token = getAuthToken();
                 if (!token) {
                     if (!cancelled) {

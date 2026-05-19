@@ -1,18 +1,44 @@
 import { Navigate, useLocation } from "react-router";
 import { Spinner } from "react-bootstrap";
 
-import SessionContext from "./_util/SessionContext";
+import SessionContext, { canViewAdminPages, canViewRealTimePage, type Session } from "./_util/SessionContext";
 import HeaderLayout from "./_layout/HeaderLayout";
-import { getAuthToken, hasAnyRealTimeEligibleRole, isAdminUser } from "./auth/auth";
-import { useAppSession } from "./auth/useAppSession";
+import { getAuthToken } from "./auth/auth";
+import { useEffect, useState } from "react";
+import GridworksApi from './_util/GridWorksApi';
 
 
 
 export default function App({ children }: React.PropsWithChildren) {
+
+    const [isLoadingSession, setIsLoadingSession] = useState(true);
+    const [session, setSession] = useState<Session | null>(null);
+
     const location = useLocation();
     const authToken = getAuthToken();
-    const loadSession = location.pathname !== '/login/';
-    const { isLoadingSession, session, hasResolvedSession } = useAppSession(loadSession);
+    const isSessionRequired = location.pathname !== '/login/';
+
+    useEffect(() => {
+        (async function() {
+            if (!session && isSessionRequired) {
+                setIsLoadingSession(true);
+                try {
+                    const sessionResponse = await GridworksApi.get<Session>('/api/v2/sessions/me', {
+                        headers: {
+                            Authorization: `Bearer ${authToken}`
+                        }
+                    });
+                    setSession(sessionResponse.data);
+                }
+                catch {
+                    console.log('Authentication failed')
+                }
+                finally {
+                    setIsLoadingSession(false);
+                }
+            }
+        })();
+    }, [session, isSessionRequired]);
 
     if (location.pathname === '/') {
         return <Navigate to="/installations/" />;
@@ -20,21 +46,12 @@ export default function App({ children }: React.PropsWithChildren) {
     if (!location.pathname.endsWith('/')) {
         return <Navigate to={`${location.pathname}/`} replace />;
     }
-    if (loadSession && !authToken) {
+    if (isSessionRequired && !authToken) {
         return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
     }
-    if (loadSession && !isAdminUser()) {
-        const isAllowedPath =
-            location.pathname.startsWith('/installations/') ||
-            (hasAnyRealTimeEligibleRole() && location.pathname.startsWith('/real-time/')) ||
-            location.pathname.startsWith('/visualizer/');
-        if (!isAllowedPath) {
-            return <Navigate to="/installations/" replace />;
-        }
-    }
 
-    if (loadSession) {
-        if (isLoadingSession || !hasResolvedSession) {
+    if (isSessionRequired) {
+        if (isLoadingSession) {
             return <HeaderLayout>
                 <Spinner animation="border" role="status" />
             </HeaderLayout>
@@ -43,10 +60,20 @@ export default function App({ children }: React.PropsWithChildren) {
         if (!session) {
             return <Navigate to="/login/" replace />;
         }
+
+        if (!canViewAdminPages(session)) {
+            const isAllowedPath =
+                location.pathname.startsWith('/installations/') ||
+                (location.pathname.startsWith('/real-time/') && canViewRealTimePage(session)) ||
+                location.pathname.startsWith('/visualizer/');
+            if (!isAllowedPath) {
+                return <Navigate to="/installations/" replace />;
+            }
+        }
     }
 
 
-    return <SessionContext value={loadSession ? session : null}>
+    return <SessionContext value={session}>
         {children}
     </SessionContext>
 

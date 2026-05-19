@@ -22,11 +22,12 @@ import InformationPage from './information/InformationPage.tsx';
 import MorningReportPage from './morning-report/MorningReportPage.tsx';
 import AlertsPage from './alerts/AlertsPage.tsx';
 import ParametersPage from './parameters/ParametersPage.tsx';
+import { StrictMode } from 'react';
 
 
 
 createRoot(document.getElementById('root')!).render(
-	// <StrictMode>
+	<StrictMode>
 		<BrowserRouter basename="/gridworks-web-frontend">
 			<GridWorksApiInterceptor />
 			<App>
@@ -34,19 +35,19 @@ createRoot(document.getElementById('root')!).render(
 					<Route path="/login/" element={<LoginPage />} />
 
 					<Route element={<AuthedSidebarOutletLayout />}>
-						<Route path="/installations/:homeId?/" element={<InstallationsPage />} />
-						<Route path="/real-time/:homeId?/" element={<RealTimeStatusPage />} />
-						<Route path="/visualizer/:homeId?/" element={<VisualizerPage />} />
-						<Route path="/information/:homeId?/" element={<InformationPage />} />
-						<Route path="/data-export/:homeId?/" element={<DataExportPage />} />
-						<Route path="/data-export-channel/:homeId?/" element={<ChannelDataExportPage />} />
-						<Route path="/data-export-hourly/:homeId?/" element={<HourlyDataExportPage />} />
-						<Route path="/morning-report/:homeId?/" element={<MorningReportPage />} />
+						<Route path="/installations/:gNode?/" element={<InstallationsPage />} />
+						<Route path="/real-time/:gNode?/" element={<RealTimeStatusPage />} />
+						<Route path="/visualizer/:gNode?/" element={<VisualizerPage />} />
+						<Route path="/information/:gNode?/" element={<InformationPage />} />
+						<Route path="/data-export/:gNode?/" element={<DataExportPage />} />
+						<Route path="/data-export-channel/:gNode?/" element={<ChannelDataExportPage />} />
+						<Route path="/data-export-hourly/:gNode?/" element={<HourlyDataExportPage />} />
+						<Route path="/morning-report/:gNode?/" element={<MorningReportPage />} />
 						<Route path="/alerts/" element={<AlertsPage />} />
-						<Route path="/parameters/:homeId?/" element={<ParametersPage />} />
+						<Route path="/parameters/:gNode?/" element={<ParametersPage />} />
 					</Route>
 				</Routes>
 			</App>
 		</BrowserRouter>
-	// </StrictMode>,
+	</StrictMode>,
 )

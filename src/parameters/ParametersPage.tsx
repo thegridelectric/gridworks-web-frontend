@@ -3,7 +3,7 @@ import Plot from 'react-plotly.js';
 
 import InstallationPicker from '../_shared/InstallationPicker';
 import SessionContext, {
-    installationForRouteId,
+    installationRoleForGNode,
     type BasicInstallationInfo,
 } from '../_util/SessionContext';
 import { getIsDarkMode } from '../_util/theme';
@@ -169,7 +169,7 @@ function ParametersCard({ installation }: { installation: BasicInstallationInfo 
 export default function ParametersPage() {
     const { currentInstallationId } = useRouteInfo();
     const session = useContext(SessionContext);
-    const installation = installationForRouteId(session?.installations, currentInstallationId);
+    const installation = installationRoleForGNode(session?.installations, currentInstallationId);
 
     return <ParametersCard key={installation?.id ?? '__none__'} installation={installation} />;
 }

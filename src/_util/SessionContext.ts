@@ -1,62 +1,71 @@
+import { DateTime } from 'luxon';
 import { createContext } from 'react';
 
-import type { HouseParameters } from '../parameters/types';
+/** Only these role keys are accepted; any other keys from the API are ignored. */
+const ALLOWED_ROLE_NAMES = new Set(['admin', 'viewer', 'owner']);
 
-export interface BasicInstallationInfo {
-    id: string;
-    displayName: string;
-    houseAlias?: string;
-    locationLabel?: string;
-    address?: {
-        street?: string;
-        city?: string;
-        state?: string;
-        zip?: string;
-        country?: string;
-        latitude?: number;
-        longitude?: number;
-    };
-    primaryContact?: {
-        firstName?: string;
-        lastName?: string;
-        email?: string;
-        phone?: string;
-    };
-    secondaryContact?: {
-        firstName?: string;
-        lastName?: string;
-        email?: string;
-        phone?: string;
-    };
-    commit?: string;
-    hardwareLayout?: string;
-    alertStatus?: 'ok' | 'alert' | 'unknown';
-    alertMessage?: string;
-    houseParameters?: HouseParameters;
-}
 
-export function installationForRouteId(
-    installations: BasicInstallationInfo[] | undefined,
-    routeId: string | undefined,
-): BasicInstallationInfo | undefined {
-    if (!installations?.length || routeId == null || routeId === '') {
+export function installationRoleForGNode(
+    installationRoles: InstallationRole[] | undefined,
+    gNode: string | undefined,
+): InstallationRole | undefined {
+    if (!installationRoles?.length || gNode == null || gNode === '') {
         return undefined;
     }
-    const needle = decodeURIComponent(routeId).trim();
-    return installations.find((i) => String(i.id).trim() === needle);
+    const needle = decodeURIComponent(gNode).trim();
+    return installationRoles.find((i) => i.gNodeAlias === needle);
+}
+
+export interface InstallationRole {
+    role: string;
+    gNodeAlias: string;
+    displayName: string;
+    alertStatus: any;
+    address: any;
+    commit: string;
 }
 
 export interface Session {
-    userName: string;
-    installations: BasicInstallationInfo[];
-    homesError?: string | null;
+    username: string;
+    installationRoles: InstallationRole[];
 }
 
 export default createContext<Session | null>(null);
 
-// export interface SessionContext {
-//     isLoading: boolean,
-//     session: Session | null
-// }
+export function getRoleForInstallation(session: Session | null, installationGNode: string): string | null {
+    if (!session) {
+        return null;
+    }
 
-// export default createContext<SessionContext>({isLoading: true, session: null});
+    return session.installationRoles.find(r => r.gNodeAlias == installationGNode)?.role || null;
+}
+
+export function canViewRealTimePage(session: Session | null): boolean {
+    return !!session && session.installationRoles.some(r => ['owner', 'admin'].includes(r.role));
+}
+
+export function canConnectRealTimeData(session: Session | null, installationGNode: string) : boolean {
+    const role = getRoleForInstallation(session, installationGNode);
+    return !!role && ['owner', 'admin'].includes(role);
+}
+
+export function canViewAdminPages(session: Session | null): boolean {
+    return !!session && session.installationRoles.some(r => r.role === 'admin');
+}
+
+export function hasUnlimitedLookback(session: Session, installationGNodes: string[]) {
+    return !!session && installationGNodes.some(n => ['owner', 'admin'].includes(getRoleForInstallation(session, n) || 'missing'));
+}
+
+/** Only admins and owners can view data older than 10 days. */
+export function canViewDataFromDate(session: Session | null, installationGNodes: string[], date: DateTime) {
+    if (!session) {
+        return false;
+    }
+
+    if (installationGNodes.every(n => ['owner', 'admin'].includes(session.installationRoles.find(r => r.gNodeAlias == n)?.role || 'missing'))) {
+        return true;
+    }
+
+    return DateTime.now().minus({days: 10}) < date;
+}

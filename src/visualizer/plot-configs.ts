@@ -239,7 +239,6 @@ const BUFFER_CONFIG: PlotConfig = {
 const STORAGE_CONFIG: PlotConfig = {
     title: 'Storage',
     legendOrientation: 'h',
-    // TODO implement the ranges for the single yAxis2-only case
     yAxis1: {
         titleText: 'Temperature [°F]',
         dualOnlyRange: {
