@@ -2,22 +2,19 @@ import { useContext, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 
 import { getRequiredAuthToken } from '../auth/auth';
-import SessionContext, { canViewDataFromDate, type InstallationRole } from '../_util/SessionContext';
+import SessionContext, { canViewDataFromDate, type InstallationRole, type Session } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
     formatDate,
     formatTime,
     getDefaultDate,
     getNowInNewYork,
-    wallDateTimeToUtcMs,
+    wallDateTimeToUtc,
 } from '../_util/newYorkTime';
-import { getIsDarkMode } from '../_util/theme';
-import {
-    fetchMorningReportMessages,
-    type MorningReportMessagesPayload,
-} from './fetchMorningReportMessages';
+import GridworksApi from '../_util/GridWorksApi';
 
 import './MorningReportPage.css';
+import { DateTime } from 'luxon';
 
 const MESSAGE_TYPES = [
     { value: 'gridworks.event.problem', label: 'gridworks.event.problem' },
@@ -25,7 +22,7 @@ const MESSAGE_TYPES = [
 ] as const;
 const EMPTY_INSTALLATIONS: InstallationRole[] = [];
 
-function dataColumnKeys(data: MorningReportMessagesPayload): string[] {
+function dataColumnKeys(data: MorningReportData): string[] {
     return Object.keys(data).filter(
         (k) =>
             k !== 'Details' &&
@@ -82,6 +79,42 @@ function selectedHouseFieldValue(
     return aliases.join(', ');
 }
 
+interface Glitch {
+    FromGNodeAlias: string;
+    Node: string;
+    Type: 'Critical' | 'Error' | 'Warning' | 'Info' | 'Debug' | 'Trace';
+    Summary: string;
+    Details: string;
+    CreatedMs: number;
+}
+
+interface GridworksEventProblem {
+    Src: string;
+    ProblemType: string;
+    Summary: string;
+    Details: string;
+    TimeCreatedMs: number
+    MessageId: string
+
+}
+
+interface MorningReportData {
+    Details: string[];
+    'Time created': string[];
+    'From node': string[];
+    'Log level': string[];
+    Summary: string[];
+    SummaryTable: Record<string, number>;
+};
+
+function formatMillisForTable(millis: number) {
+    return DateTime.fromMillis(millis).setZone('America/New_York').toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS)
+}
+
+function tryFindDisplayName(session: Session, nodeName: string) {
+    return session.installationRoles.find(r => nodeName.includes(r.gNodeAlias))?.displayName || nodeName;
+}
+
 function MorningReportPageContent() {
     const session = useContext(SessionContext);
     const { selectedInstallationIds } = useHouseTableSelection();
@@ -91,7 +124,7 @@ function MorningReportPageContent() {
     const [selectedTypes, setSelectedTypes] = useState<Set<string>>(
         () => new Set(MESSAGE_TYPES.map((m) => m.value)),
     );
-    const [tableData, setTableData] = useState<MorningReportMessagesPayload | null>(null);
+    const [tableData, setTableData] = useState<MorningReportData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [detailRowIndex, setDetailRowIndex] = useState<number | null>(null);
@@ -147,24 +180,72 @@ function MorningReportPageContent() {
             return;
         }
 
-        const startMs = wallDateTimeToUtcMs(startDateTime);
-        const endMs = wallDateTimeToUtcMs(endDateTime);
-        // TODO fix this
-        if (!canViewDataFromDate(session, aliasesForDateLookback, startMs)) {
+        const startDate = wallDateTimeToUtc(startDateTime);
+        const endDate = wallDateTimeToUtc(endDateTime);
+
+        if (!canViewDataFromDate(session, aliasesForDateLookback, startDate)) {
             setError('End time must be at least 10 days in the past when viewer access applies to any selected installation.');
             return;
         }
 
         setIsLoading(true);
         try {
-            const data = await fetchMorningReportMessages({
-                token,
-                houseAlias: houseAliasParam,
-                selectedMessageTypes: types,
-                startMs,
-                endMs,
-                darkmode: getIsDarkMode(),
-            });
+            // TODO implement multi-installation request
+            const messagesResponse = await GridworksApi.get<(Glitch | GridworksEventProblem)[]>(
+                `/api/v2/installations/${encodeURIComponent(houseAliasParam || '*')}/messages`, 
+                {
+                    params: {
+                        start: startDate.toISO(),
+                        end: endDate.toISO(),
+                        message_types: [...selectedTypes].join(','),
+                    },
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            const problems: GridworksEventProblem[] = messagesResponse.data.filter(
+                m => m['TypeName' as keyof typeof m] === 'gridworks.event.problem'
+            ).map(m => (m as GridworksEventProblem)!);
+            problems.sort((a, b) => a.ProblemType.localeCompare(b.ProblemType));
+
+            const data: MorningReportData = {
+                "From node": [],
+                "Log level": [],
+                "Time created": [],
+                Details: [],
+                Summary: [],
+                SummaryTable: {},
+            }
+            for (const p of problems) {
+                data['From node'].push(tryFindDisplayName(session!, p.Src));
+                data['Log level'].push(p.ProblemType.toLowerCase())
+                data['Time created'].push(formatMillisForTable(p.TimeCreatedMs))
+                data['Details'].push(p.Details)
+                data['Summary'].push(p.Summary);
+            }
+
+            const glitches: Glitch[] = messagesResponse.data.filter(
+                m => m['TypeName' as keyof typeof m] === 'glitch'
+            ).map(m => (m as Glitch)!);
+            glitches.sort((a, b) => a.Type.localeCompare(b.Type));
+            for (const g of glitches) {
+                data['From node'].push(tryFindDisplayName(session!, g.FromGNodeAlias))
+                data['Log level'].push(g.Type.toLowerCase())
+                data['Time created'].push(formatMillisForTable(g.CreatedMs))
+                data['Details'].push(g.Details)
+                data['Summary'].push(g.Summary);
+            }
+
+            const logLevels = ['critical', 'error', 'warning', 'info', 'debug', 'trace'];
+            data.SummaryTable = Object.assign({}, ...logLevels.map(level => ({[level]: data['Log level'].filter(x => x === level).length})));
+            for (const key in data.SummaryTable) {
+                if (!data.SummaryTable[key]) {
+                    delete data.SummaryTable[key];
+                }
+            }
+
             setTableData(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load messages.');
@@ -182,7 +263,7 @@ function MorningReportPageContent() {
     const columnKeys = tableData ? dataColumnKeys(tableData) : [];
     const firstColumn =
         tableData && columnKeys[0]
-            ? tableData[columnKeys[0] as keyof MorningReportMessagesPayload]
+            ? tableData[columnKeys[0] as keyof MorningReportData]
             : undefined;
     const rowCount = Array.isArray(firstColumn) ? firstColumn.length : 0;
 
