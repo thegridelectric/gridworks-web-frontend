@@ -190,7 +190,6 @@ function MorningReportPageContent() {
 
         setIsLoading(true);
         try {
-            // TODO implement multi-installation request
             const messagesResponse = await GridworksApi.get<(Glitch | GridworksEventProblem)[]>(
                 `/api/v2/installations/${encodeURIComponent(houseAliasParam || '*')}/messages`, 
                 {

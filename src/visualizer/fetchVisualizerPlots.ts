@@ -12,20 +12,10 @@ export async function fetchVisualizerPlots(params: {
     // TODO use this
     const base = getVisualizerApiBaseUrl();
 
-    // TODO use just the selected channels
-    const selectedChannels = [
-        ...params.selectedChannels,
-        '^zone\\d+-.+-set$',
-        '^zone\\d+-.+-temp$',
-        '^zone\\d+-.+-heatcall$',
-        '^buffer-depth\\d$',
-        '^tank\\d-depth\\d$',
-    ]
-
     const urlParams = new URLSearchParams();
     urlParams.append("start", params.startDate.toISO() || '');
     urlParams.append("end", params.endDate.toISO() || '');
-    urlParams.append("channels", selectedChannels.join(','));
+    urlParams.append("channels", params.selectedChannels.join(','));
 
     const token = getRequiredAuthToken();
     

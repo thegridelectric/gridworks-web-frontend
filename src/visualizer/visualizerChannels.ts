@@ -35,7 +35,8 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
     {
         category: 'Zones',
         channels: [
-            { id: 'zone-heat-calls', label: 'Heat calls' },
+            { id: '^zone\\d+-.+-heatcall$', label: 'Heat calls' },
+            { id: '^zone\\d+-.+-set$,^zone\\d+-.+-temp$', label: 'Zone temperatures' },
             { id: 'oat', label: 'Outside air temperature' },
         ],
     },
@@ -50,7 +51,7 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
     {
         category: 'Storage',
         channels: [
-            { id: 'storage-depths', label: 'Storage depths' },
+            { id: '^tank\\d-depth\\d$', label: 'Storage depths' },
             { id: 'store-hot-pipe', label: 'Hot pipe' },
             { id: 'store-cold-pipe', label: 'Cold pipe' },
             { id: 'store-flow', label: 'Storage pump flow rate' },

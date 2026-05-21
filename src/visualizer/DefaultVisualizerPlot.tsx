@@ -263,10 +263,11 @@ export default function DefaultVisualizerPlot(props: DefaultPlotParams) {
     const { plotConfig, readingsBundleData } = props;
     const readingsTimes = readingsBundleData.TimestampList.map(formatIsoTimeForDisplay);
 
+    const selectedChannels = props.selectedChannels.flatMap(c => c.split(',')).map(c => c.startsWith('^') && c.endsWith('$') ? new RegExp(c) : c);
+
     const tracesWithData: TraceWithData[] = [
         ...readingsBundleData.ChannelReadingsList
-            // TODO reinstate this filter
-            // .filter(cr => props.selectedChannels.some(sc => sc == cr.ChannelName))
+            .filter(cr => selectedChannels.some(sc => matchChannelName(cr.ChannelName, sc)))
             .map(cr => ({
                 seriesName: cr.ChannelName,
                 unit: cr.Unit,
