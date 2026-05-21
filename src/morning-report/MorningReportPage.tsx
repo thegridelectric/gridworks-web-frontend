@@ -11,7 +11,7 @@ import {
     getNowInNewYork,
     wallDateTimeToUtc,
 } from '../_util/newYorkTime';
-import GridworksApi from '../_util/GridWorksApi';
+import GridWorksApi from '../_util/GridWorksApi';
 
 import './MorningReportPage.css';
 import { DateTime } from 'luxon';
@@ -190,16 +190,13 @@ function MorningReportPageContent() {
 
         setIsLoading(true);
         try {
-            const messagesResponse = await GridworksApi.get<(Glitch | GridworksEventProblem)[]>(
+            const messagesResponse = await GridWorksApi.get<(Glitch | GridworksEventProblem)[]>(
                 `/api/v2/installations/${encodeURIComponent(houseAliasParam || '*')}/messages`, 
                 {
                     params: {
                         start: startDate.toISO(),
                         end: endDate.toISO(),
                         message_types: [...selectedTypes].join(','),
-                    },
-                    headers: {
-                        Authorization: `Bearer ${token}`
                     }
                 }
             );

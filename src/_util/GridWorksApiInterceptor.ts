@@ -4,12 +4,27 @@ import { useNavigate } from 'react-router';
 import GridWorksApi from './GridWorksApi.ts';
 import { clearAuth } from '../auth/auth';
 import type { AxiosError, AxiosResponse } from 'axios';
+import { getRequiredAuthToken } from '../auth/auth.ts';
 
 export default function GridWorksApiInterceptor({ children }: React.PropsWithChildren): React.ReactNode {
 
     const navigate = useNavigate();
 
     useEffect(() => {
+
+        const requestInterceptor = GridWorksApi.interceptors.request.use(
+            (request) => {
+                const token = getRequiredAuthToken();
+                if (token) {
+                    request.headers['Authorization'] = `Bearer ${token}`;
+                }
+                return request;
+            },
+            (error) => {
+                return Promise.reject(error);
+            }
+        );
+
         const responseInterceptor = GridWorksApi.interceptors.response.use(
             (response: AxiosResponse) => {
                 // If the response is good, just return it
@@ -29,6 +44,7 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
 
         // Eject the interceptor when the component unmounts
         return () => {
+            GridWorksApi.interceptors.request.eject(requestInterceptor);
             GridWorksApi.interceptors.response.eject(responseInterceptor);
         };
     }, [navigate]);

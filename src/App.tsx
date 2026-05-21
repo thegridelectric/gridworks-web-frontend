@@ -5,7 +5,7 @@ import SessionContext, { canViewAdminPages, canViewRealTimePage, type Session } 
 import HeaderLayout from "./_layout/HeaderLayout";
 import { getAuthToken } from "./auth/auth";
 import { useEffect, useState } from "react";
-import GridworksApi from './_util/GridWorksApi';
+import GridWorksApi from './_util/GridWorksApi';
 
 
 
@@ -23,11 +23,7 @@ export default function App({ children }: React.PropsWithChildren) {
             if (!session && isSessionRequired) {
                 setIsLoadingSession(true);
                 try {
-                    const sessionResponse = await GridworksApi.get<Session>('/api/v2/sessions/me', {
-                        headers: {
-                            Authorization: `Bearer ${authToken}`
-                        }
-                    });
+                    const sessionResponse = await GridWorksApi.get<Session>('/api/v2/sessions/me');
                     setSession(sessionResponse.data);
                 }
                 catch {

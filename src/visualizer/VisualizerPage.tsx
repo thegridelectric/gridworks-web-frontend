@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import './VisualizerPage.css';
 import InstallationPicker from "../_shared/InstallationPicker";
-import SessionContext, { canViewDataFromDate, installationRoleForGNode } from "../_util/SessionContext";
+import SessionContext, { canViewDataFromDate } from "../_util/SessionContext";
 import {
     formatDate,
     formatTime,
@@ -10,7 +10,7 @@ import {
 } from "../_util/newYorkTime";
 import { getIsDarkMode } from "../_util/theme";
 import { useRouteInfo } from "../_util/useRouteInfo";
-import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
+import GridWorksApi from '../_util/GridWorksApi';
 import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
 import type { ReadingsBundleApiResponse } from "./visualizerApiTypes";
 import { VisualizerOptionsPanel } from "./VisualizerControls";
@@ -83,18 +83,22 @@ export default function VisualizerPage() {
         setPlotError(null);
         setReadingsBundleData(null);
         try {
-            const apiResult = await fetchVisualizerPlots({
-                installationGNode,
-                startDate,
-                endDate,
-                selectedChannels,
-            })
+            const apiResult = await GridWorksApi.get<ReadingsBundleApiResponse>(
+                `/api/v2/installations/${installationGNode}/synced.readings.bundle`,
+                {
+                    params: {
+                        start: startDate.toISO(),
+                        end: endDate.toISO(),
+                        channels: selectedChannels.join(','),
+                    }
+                }
+            );
             setPlottedParams({
                 startDate: startDate,
                 endDate: endDate,
                 installationGNode
             })
-            setReadingsBundleData(apiResult as ReadingsBundleApiResponse);
+            setReadingsBundleData(apiResult.data);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
