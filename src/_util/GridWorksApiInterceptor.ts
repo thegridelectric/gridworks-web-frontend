@@ -8,6 +8,25 @@ import { getRequiredAuthToken } from '../auth/auth.ts';
 
 export default function GridWorksApiInterceptor({ children }: React.PropsWithChildren): React.ReactNode {
 
+    function getFilenameFromHeader(header) {
+        if (!header) return null;
+
+        // Try to match the UTF-8 version (filename*) first
+        const utf8Match = header.match(/filename\*=utf-8''([^;]+)/i);
+        if (utf8Match) {
+            return decodeURIComponent(utf8Match[1]);
+        }
+
+        // Fallback to standard filename=
+        const standardMatch = header.match(/filename="?([^";]+)"?/i);
+        if (standardMatch) {
+            return standardMatch[1];
+        }
+
+        return null;
+    }
+
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -27,7 +46,23 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
 
         const responseInterceptor = GridWorksApi.interceptors.response.use(
             (response: AxiosResponse) => {
-                // If the response is good, just return it
+
+                const contentDisposition = response.headers['content-disposition'];
+                if (contentDisposition) {
+                    const filename = getFilenameFromHeader(contentDisposition);
+                    if (filename) {
+                        const blob = new Blob([response.data]);
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        a.click();
+                        URL.revokeObjectURL(url);
+
+                        return null;
+                    }
+                }
+
                 return response;
             },
             (error: AxiosError) => {

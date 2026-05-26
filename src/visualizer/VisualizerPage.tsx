@@ -11,7 +11,6 @@ import {
 import { getIsDarkMode } from "../_util/theme";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import GridWorksApi from '../_util/GridWorksApi';
-import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
 import type { ReadingsBundleApiResponse } from "./visualizerApiTypes";
 import { VisualizerOptionsPanel } from "./VisualizerControls";
 import { CLIENT_ONLY_VISUALIZER_CHANNEL_IDS } from "./visualizerChannels";
@@ -175,15 +174,22 @@ export default function VisualizerPage() {
         }
 
         const endDate = wallDateTimeToUtc(endDateTime);
-        if (!isEndDateOldEnoughUtc(endDate, 10, installationGNode)) {
+        if (!canViewDataFromDate(session, [installationGNode], endDate)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
 
         setIsFloLoading(true);
         try {
-            // TODO
-            await downloadVisualizerFlo({ houseAlias: installationGNode, timeMs: endDate.toMillis() });
+            await GridWorksApi.get(
+                `/api/v2/installations/${installationGNode}/flo.download`,
+                {
+                    responseType: 'blob',
+                    params: {
+                        time: endDate.toISO(),
+                    }
+                }
+            );
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
