@@ -1,24 +1,24 @@
 import { useContext, useState, type CSSProperties } from 'react';
 
 import { getRequiredAuthToken } from '../auth/auth';
-import SessionContext, { installationRoleForGNode } from '../_util/SessionContext';
+import SessionContext, { canViewDataFromDate } from '../_util/SessionContext';
 import {
   formatDate,
   formatTime,
   getDefaultDate,
   getNowInNewYork,
-  wallDateTimeToUtcMs,
+  wallDateTimeToUtc,
 } from '../_util/newYorkTime';
 import { useRouteInfo } from '../_util/useRouteInfo';
 import InstallationPicker from '../_shared/InstallationPicker';
-import { requestChannelDataCsv } from './requestChannelDataCsv';
 import {
   ALL_CHANNEL_IDS,
+  ALL_CHANNELS_SORTED,
   CHANNEL_SECTIONS,
-  triggerBlobDownload,
 } from './dataExportShared';
 
 import './DataExportPage.css';
+import GridWorksApi from '../_util/GridWorksApi';
 
 const LABEL_MUTED: CSSProperties = {
   fontSize: '0.875rem',
@@ -68,45 +68,48 @@ export default function ChannelDataExportPage() {
       setError('Select a house first.');
       return;
     }
-    const selected = [...channelIds];
+    
+    const selected = [...channelIds]
+      .flatMap(s => s.split(','))
+      .sort((a, b) => ALL_CHANNELS_SORTED.indexOf(a) - ALL_CHANNELS_SORTED.indexOf(b));
+
     if (selected.length === 0) {
       setError('Select at least one channel.');
       return;
     }
-    const startMs = wallDateTimeToUtcMs(channelStart);
-    const endMs = wallDateTimeToUtcMs(channelEnd);
-    if (!isEndDateOldEnough(endMs, 10, houseGNode)) {
-      setError('End time must be at least 10 days in the past for viewer access to this installation.');
+
+    const startDate = wallDateTimeToUtc(channelStart);
+    const endDate = wallDateTimeToUtc(channelEnd);
+
+    if (startDate == null || endDate == null) {
+        return;
+    }
+
+    if (!canViewDataFromDate(session, [installationGNode], startDate)) {
+
+      setError('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
       return;
     }
 
     setChannelBusy(true);
+
     try {
-      let confirmWithUser = false;
-      for (;;) {
-        const result = await requestChannelDataCsv({
-          token,
-          houseAlias: installationGNode,
-          startMs,
-          endMs,
-          selectedChannels: selected,
-          timestep: timestep.trim() || '1',
-          confirmWithUser,
-        });
-        if (result.type === 'file') {
-          triggerBlobDownload(result.blob, result.filename);
-          return;
+      await GridWorksApi.get(
+        `/api/v2/installations/${installationGNode}/synced.readings.bundle`,
+        {
+          params: {
+            dl: true,
+            start: startDate.toISO(),
+            end: endDate.toISO(),
+            channels: selected.join(','),
+            time_step: timestep
+          },
+          responseType: 'blob'
         }
-        if (result.type === 'confirm') {
-          if (window.confirm(result.message)) {
-            confirmWithUser = true;
-            continue;
-          }
-          return;
-        }
-        setError(result.message);
-        return;
-      }
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setError(message);
     } finally {
       setChannelBusy(false);
     }

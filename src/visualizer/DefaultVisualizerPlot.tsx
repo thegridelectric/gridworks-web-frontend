@@ -31,8 +31,8 @@ const UNIT_CONVERSIONS: Record<string, ConverterFunction> = {
 
 const UNIT_HOVER_FORMATS: Record<string, string> = {
     'FahrenheitX100': '%{y:.1f}°F',
-    'WaterTempCTimes1000': '%{y:.1f}°C',
-    'AirTempCTimes1000': '%{y:.1f}°C',
+    'WaterTempCTimes1000': '%{y:.1f}°F',
+    'AirTempCTimes1000': '%{y:.1f}°F',
     'WaterTempFTimes1000': '%{y:.1f}°F',
     'AirTempFTimes1000': '%{y:.1f}°F',
     'PowerW': '%{y:.1f} kW',

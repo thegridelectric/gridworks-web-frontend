@@ -65,12 +65,24 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
 
                 return response;
             },
-            (error: AxiosError) => {
+            async (error: AxiosError) => {
                 // Handle errors, specifically 401 Unauthorized
                 if (error.response && error.response.status === 401) {
                     clearAuth();
                     navigate('/login/');
                     return new Promise(() => {});
+                }
+                if (error.response && error.response.data instanceof Blob) {
+                    try {
+                        const textError = await error.response.data.text()
+                        const jsonError = JSON.parse(textError);
+                        if (jsonError && jsonError.detail && jsonError.detail[0] && jsonError.detail[0].msg) {
+                            return Promise.reject(new Error(jsonError.detail[0].msg));
+                        }
+                    }
+                    catch (ex) {
+                        console.log(ex);
+                    }
                 }
                 // Reject the promise so the error propagates to the component's catch block
                 return Promise.reject(error);

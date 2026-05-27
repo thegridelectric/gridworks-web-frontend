@@ -57,7 +57,7 @@ export function hasUnlimitedLookback(session: Session, installationGNodes: strin
     return !!session && installationGNodes.some(n => ['owner', 'admin'].includes(getRoleForInstallation(session, n) || 'missing'));
 }
 
-/** Only admins and owners can view data older than 10 days. */
+/** Only admins and owners can view data newer than 10 days. */
 export function canViewDataFromDate(session: Session | null, installationGNodes: string[], date: DateTime) {
     if (!session) {
         return false;
@@ -67,5 +67,5 @@ export function canViewDataFromDate(session: Session | null, installationGNodes:
         return true;
     }
 
-    return DateTime.now().minus({days: 10}) < date;
+    return date < DateTime.now().minus({days: 10});
 }

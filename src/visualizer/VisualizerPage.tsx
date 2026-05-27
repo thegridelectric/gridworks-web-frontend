@@ -66,7 +66,7 @@ export default function VisualizerPage() {
             return;
         }
 
-        if (!canViewDataFromDate(session, [installationGNode], startDate)) {
+        if (!canViewDataFromDate(session, [installationGNode], endDate)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
@@ -89,6 +89,7 @@ export default function VisualizerPage() {
                         start: startDate.toISO(),
                         end: endDate.toISO(),
                         channels: selectedChannels.join(','),
+                        time_step: 60,
                     }
                 }
             );

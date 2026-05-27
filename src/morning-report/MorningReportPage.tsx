@@ -184,7 +184,7 @@ function MorningReportPageContent() {
         const endDate = wallDateTimeToUtc(endDateTime);
 
         if (!canViewDataFromDate(session, aliasesForDateLookback, startDate)) {
-            setError('End time must be at least 10 days in the past when viewer access applies to any selected installation.');
+            setError('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
 
