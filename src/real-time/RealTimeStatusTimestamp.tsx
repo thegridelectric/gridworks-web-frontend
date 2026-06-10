@@ -5,13 +5,15 @@ import { NEW_YORK_TIME_ZONE } from "../_util/newYorkTime";
 
 interface RealTimeStatusTimestampProps {
     updateTime: Date;
-    /** When false, loader uses two 30s halves per minute (:00 and :30 alignments). */
-    autoSnapshotEnabled: boolean;
-    /** Step in seconds (1–30); used when `autoSnapshotEnabled` is true. */
-    snapshotStepSeconds: number;
+    // [auto-snapshot] re-enable together with the controls in RealTimeStatusPage.tsx
+    // /** When false, loader uses two 30s halves per minute (:00 and :30 alignments). */
+    // autoSnapshotEnabled: boolean;
+    // /** Step in seconds (1–30); used when `autoSnapshotEnabled` is true. */
+    // snapshotStepSeconds: number;
 }
 
-function loaderProgressManualHalfMinute(currentTime: Date): number {
+/** SCADAs push a snapshot roughly every 30s; loader uses two 30s halves per minute (:00 and :30 alignments). */
+function loaderProgressHalfMinute(currentTime: Date): number {
     const seconds = currentTime.getSeconds();
     const milliseconds = currentTime.getMilliseconds();
     if (seconds < 30) {
@@ -20,41 +22,43 @@ function loaderProgressManualHalfMinute(currentTime: Date): number {
     return (((seconds - 30) + milliseconds / 1000) / 30) * 100;
 }
 
-/** Progress 0–100 between consecutive ticks at i·x seconds from minute start (i·x < 60) and the minute end. */
-function loaderProgressAutoSnapshotGrid(currentTime: Date, xSeconds: number): number {
-    const nowMs = currentTime.getTime();
-    const periodMs = xSeconds * 1000;
-    const d = new Date(nowMs);
-    d.setMilliseconds(0);
-    d.setSeconds(0);
-    const baseMs = d.getTime();
-    const ticks: number[] = [];
-    for (let i = 0; i * xSeconds < 60; i++) {
-        ticks.push(baseMs + i * periodMs);
-    }
-    const minuteEnd = baseMs + 60_000;
-    if (ticks.length === 0 || ticks[ticks.length - 1] < minuteEnd) {
-        ticks.push(minuteEnd);
-    }
-    for (let j = 0; j < ticks.length - 1; j++) {
-        if (nowMs >= ticks[j] && nowMs < ticks[j + 1]) {
-            const span = ticks[j + 1] - ticks[j];
-            if (span <= 0) {
-                return 0;
-            }
-            return ((nowMs - ticks[j]) / span) * 100;
-        }
-    }
-    if (ticks.length > 0 && nowMs >= ticks[ticks.length - 1]) {
-        return 0;
-    }
-    return 0;
-}
+// [auto-snapshot]
+// /** Progress 0–100 between consecutive ticks at i·x seconds from minute start (i·x < 60) and the minute end. */
+// function loaderProgressAutoSnapshotGrid(currentTime: Date, xSeconds: number): number {
+//     const nowMs = currentTime.getTime();
+//     const periodMs = xSeconds * 1000;
+//     const d = new Date(nowMs);
+//     d.setMilliseconds(0);
+//     d.setSeconds(0);
+//     const baseMs = d.getTime();
+//     const ticks: number[] = [];
+//     for (let i = 0; i * xSeconds < 60; i++) {
+//         ticks.push(baseMs + i * periodMs);
+//     }
+//     const minuteEnd = baseMs + 60_000;
+//     if (ticks.length === 0 || ticks[ticks.length - 1] < minuteEnd) {
+//         ticks.push(minuteEnd);
+//     }
+//     for (let j = 0; j < ticks.length - 1; j++) {
+//         if (nowMs >= ticks[j] && nowMs < ticks[j + 1]) {
+//             const span = ticks[j + 1] - ticks[j];
+//             if (span <= 0) {
+//                 return 0;
+//             }
+//             return ((nowMs - ticks[j]) / span) * 100;
+//         }
+//     }
+//     if (ticks.length > 0 && nowMs >= ticks[ticks.length - 1]) {
+//         return 0;
+//     }
+//     return 0;
+// }
 
 export default function RealTimeStatusTimestamp({
     updateTime,
-    autoSnapshotEnabled,
-    snapshotStepSeconds,
+    // [auto-snapshot]
+    // autoSnapshotEnabled,
+    // snapshotStepSeconds,
 }: RealTimeStatusTimestampProps) {
 
     const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -85,10 +89,12 @@ export default function RealTimeStatusTimestamp({
         fontWeight: isDataFresh ? '' : 'bold'
     };
 
-    const step = Math.min(30, Math.max(1, Math.round(snapshotStepSeconds)));
-    const progress = autoSnapshotEnabled
-        ? loaderProgressAutoSnapshotGrid(currentTime, step)
-        : loaderProgressManualHalfMinute(currentTime);
+    const progress = loaderProgressHalfMinute(currentTime);
+    // [auto-snapshot] replaces the line above:
+    // const step = Math.min(30, Math.max(1, Math.round(snapshotStepSeconds)));
+    // const progress = autoSnapshotEnabled
+    //     ? loaderProgressAutoSnapshotGrid(currentTime, step)
+    //     : loaderProgressHalfMinute(currentTime);
 
     const loaderProgressStyle = { width: Math.min(100, Math.max(0, progress)) + '%' };
 

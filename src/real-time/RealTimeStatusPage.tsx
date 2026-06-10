@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
 import './RealTimeStatusPage.css';
 import RealTimeStatusHeader from "./RealTimeStatusHeader";
@@ -93,29 +93,36 @@ type DashboardInbound =
 /** Set true to log each raw WebSocket frame (very noisy during snapshots). */
 const LOG_RAW_DASHBOARD_WS_INBOUND = false;
 
-/**
- * Milliseconds until the next local snapshot tick on the minute grid: offsets i·x seconds from
- * each minute start for i ≥ 0 while i·x ≤ 60. The next tick is strictly after `fromMs`.
- */
-function msUntilNextSnapshotGridTick(fromMs: number, xSeconds: number): number {
-    const periodMs = xSeconds * 1000;
-    const d = new Date(fromMs);
-    d.setMilliseconds(0);
-    d.setSeconds(0);
-    let baseMs = d.getTime();
-    for (let guard = 0; guard < 4; guard++) {
-        for (let i = 0; i * xSeconds <= 60; i++) {
-            const t = baseMs + i * periodMs;
-            if (t > fromMs) {
-                return t - fromMs;
-            }
-        }
-        baseMs += 60_000;
-    }
-    return periodMs;
-}
-
-const DEFAULT_SNAPSHOT_INTERVAL_SEC = 2;
+// ── [auto-snapshot] Disabled: the centralized gateway pushes snapshots on the SCADA's
+// ~30s cadence, so on-demand polling is unnecessary. To restore, uncomment everything
+// tagged [auto-snapshot] in this file (and in RealTimeStatusTimestamp.tsx), and re-add
+// `useCallback` to the react import. Note: against the gateway, `request_snapshot` is
+// answered from its cache (no SCADA round-trip), so polling faster than ~30s only
+// re-sends the same cached snapshot.
+//
+// /**
+//  * Milliseconds until the next local snapshot tick on the minute grid: offsets i·x seconds from
+//  * each minute start for i ≥ 0 while i·x ≤ 60. The next tick is strictly after `fromMs`.
+//  */
+// function msUntilNextSnapshotGridTick(fromMs: number, xSeconds: number): number {
+//     const periodMs = xSeconds * 1000;
+//     const d = new Date(fromMs);
+//     d.setMilliseconds(0);
+//     d.setSeconds(0);
+//     let baseMs = d.getTime();
+//     for (let guard = 0; guard < 4; guard++) {
+//         for (let i = 0; i * xSeconds <= 60; i++) {
+//             const t = baseMs + i * periodMs;
+//             if (t > fromMs) {
+//                 return t - fromMs;
+//             }
+//         }
+//         baseMs += 60_000;
+//     }
+//     return periodMs;
+// }
+//
+// const DEFAULT_SNAPSHOT_INTERVAL_SEC = 2;
 
 /** True when `hardware_layout` has `"sieg": true` (JSON string or already-parsed object). */
 function hardwareLayoutHasSiegEnabled(hardwareLayout: unknown): boolean {
@@ -172,11 +179,13 @@ function RealTimeStatusConnection({
     const [latestReadings, setLatestReadings] = useState<Record<string, number> | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [err, setErr] = useState<string | null>(null);
-    const [snapshotIntervalSec, setSnapshotIntervalSec] = useState<number | ''>(DEFAULT_SNAPSHOT_INTERVAL_SEC);
-    const [autoSnapshotEnabled, setAutoSnapshotEnabled] = useState(false);
+    // [auto-snapshot]
+    // const [snapshotIntervalSec, setSnapshotIntervalSec] = useState<number | ''>(DEFAULT_SNAPSHOT_INTERVAL_SEC);
+    // const [autoSnapshotEnabled, setAutoSnapshotEnabled] = useState(false);
     /** Sieg loop is driven only by `hardware_layout` (no UI toggle). */
     const siegLoopEnabled = defaultSiegLoop;
 
+    /** Kept (although currently only written) so the [auto-snapshot] code can be restored. */
     const wsRef = useRef<WebSocket | null>(null);
     const hasLoggedSpruceChannelsRef = useRef(false);
     const diagramReadings = latestReadings ?? {};
@@ -272,78 +281,80 @@ function RealTimeStatusConnection({
         hasLoggedSpruceChannelsRef.current = false;
     }, [currentInstallationId, houseAlias, isSpruce]);
 
-    const requestSnapshot = useCallback(() => {
-        const ws = wsRef.current;
-        if (!ws || ws.readyState !== WebSocket.OPEN) {
-            return;
-        }
-        ws.send(JSON.stringify({ type: 'request_snapshot', data: {} }));
-    }, []);
-
-    useEffect(() => {
-        if (!autoSnapshotEnabled || !isConnected || snapshotIntervalSec === '') {
-            return;
-        }
-        const sec = snapshotIntervalSec;
-        if (sec < 1 || sec > 30) {
-            return;
-        }
-        let cancelled = false;
-        /** DOM timers use numeric handles; avoids Node `Timeout` vs `number` mismatch under `tsc -b`. */
-        let timeoutId: number | undefined;
-
-        const scheduleNext = () => {
-            if (cancelled) {
-                return;
-            }
-            const delay = msUntilNextSnapshotGridTick(Date.now(), sec);
-            timeoutId = window.setTimeout(() => {
-                if (cancelled) {
-                    return;
-                }
-                requestSnapshot();
-                scheduleNext();
-            }, delay);
-        };
-
-        scheduleNext();
-        return () => {
-            cancelled = true;
-            if (timeoutId !== undefined) {
-                window.clearTimeout(timeoutId);
-            }
-        };
-    }, [autoSnapshotEnabled, isConnected, snapshotIntervalSec, requestSnapshot]);
-
-    useEffect(() => {
-        if (autoSnapshotEnabled && snapshotIntervalSec === '') {
-            setSnapshotIntervalSec(DEFAULT_SNAPSHOT_INTERVAL_SEC);
-        }
-    }, [autoSnapshotEnabled, snapshotIntervalSec]);
-
-    useEffect(() => {
-        const disableAutoSnapshot = () => {
-            setAutoSnapshotEnabled(false);
-        };
-        const onVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') {
-                disableAutoSnapshot();
-            }
-        };
-        // `visibilitychange` covers switching tabs / minimizing; it does not fire when another
-        // browser window is focused on top while this tab stays "visible" in the background window.
-        document.addEventListener('visibilitychange', onVisibilityChange);
-        window.addEventListener('blur', disableAutoSnapshot);
-        return () => {
-            document.removeEventListener('visibilitychange', onVisibilityChange);
-            window.removeEventListener('blur', disableAutoSnapshot);
-        };
-    }, []);
+    // [auto-snapshot]
+    // const requestSnapshot = useCallback(() => {
+    //     const ws = wsRef.current;
+    //     if (!ws || ws.readyState !== WebSocket.OPEN) {
+    //         return;
+    //     }
+    //     ws.send(JSON.stringify({ type: 'request_snapshot', data: {} }));
+    // }, []);
+    //
+    // useEffect(() => {
+    //     if (!autoSnapshotEnabled || !isConnected || snapshotIntervalSec === '') {
+    //         return;
+    //     }
+    //     const sec = snapshotIntervalSec;
+    //     if (sec < 1 || sec > 30) {
+    //         return;
+    //     }
+    //     let cancelled = false;
+    //     /** DOM timers use numeric handles; avoids Node `Timeout` vs `number` mismatch under `tsc -b`. */
+    //     let timeoutId: number | undefined;
+    //
+    //     const scheduleNext = () => {
+    //         if (cancelled) {
+    //             return;
+    //         }
+    //         const delay = msUntilNextSnapshotGridTick(Date.now(), sec);
+    //         timeoutId = window.setTimeout(() => {
+    //             if (cancelled) {
+    //                 return;
+    //             }
+    //             requestSnapshot();
+    //             scheduleNext();
+    //         }, delay);
+    //     };
+    //
+    //     scheduleNext();
+    //     return () => {
+    //         cancelled = true;
+    //         if (timeoutId !== undefined) {
+    //             window.clearTimeout(timeoutId);
+    //         }
+    //     };
+    // }, [autoSnapshotEnabled, isConnected, snapshotIntervalSec, requestSnapshot]);
+    //
+    // useEffect(() => {
+    //     if (autoSnapshotEnabled && snapshotIntervalSec === '') {
+    //         setSnapshotIntervalSec(DEFAULT_SNAPSHOT_INTERVAL_SEC);
+    //     }
+    // }, [autoSnapshotEnabled, snapshotIntervalSec]);
+    //
+    // useEffect(() => {
+    //     const disableAutoSnapshot = () => {
+    //         setAutoSnapshotEnabled(false);
+    //     };
+    //     const onVisibilityChange = () => {
+    //         if (document.visibilityState === 'hidden') {
+    //             disableAutoSnapshot();
+    //         }
+    //     };
+    //     // `visibilitychange` covers switching tabs / minimizing; it does not fire when another
+    //     // browser window is focused on top while this tab stays "visible" in the background window.
+    //     document.addEventListener('visibilitychange', onVisibilityChange);
+    //     window.addEventListener('blur', disableAutoSnapshot);
+    //     return () => {
+    //         document.removeEventListener('visibilitychange', onVisibilityChange);
+    //         window.removeEventListener('blur', disableAutoSnapshot);
+    //     };
+    // }, []);
 
     return (
         <div className="card visualizer-card mb-4">
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="card-title mb-0">Real-time</h5>
+                {/* [auto-snapshot] controls — see note at top of file
                 <div className="d-flex align-items-center gap-2">
                     <input
                         type="checkbox"
@@ -402,7 +413,6 @@ function RealTimeStatusConnection({
                         />
                         <span className="small text-muted mb-0 text-nowrap">seconds</span>
                     </div>
-                    {/* Manual snapshot button — restore when needed
                     <button
                         type="button"
                         className="btn btn-sm btn-outline-secondary"
@@ -413,8 +423,8 @@ function RealTimeStatusConnection({
                     >
                         Snapshot
                     </button>
-                    */}
                 </div>
+                */}
             </div>
             <div className="p-4">
                 <div className="mb-4">
@@ -427,8 +437,9 @@ function RealTimeStatusConnection({
                 {updateTime &&
                     <RealTimeStatusTimestamp
                         updateTime={updateTime}
-                        autoSnapshotEnabled={autoSnapshotEnabled}
-                        snapshotStepSeconds={typeof snapshotIntervalSec === 'number' ? snapshotIntervalSec : DEFAULT_SNAPSHOT_INTERVAL_SEC}
+                        // [auto-snapshot]
+                        // autoSnapshotEnabled={autoSnapshotEnabled}
+                        // snapshotStepSeconds={typeof snapshotIntervalSec === 'number' ? snapshotIntervalSec : DEFAULT_SNAPSHOT_INTERVAL_SEC}
                     />
                 }
                 <RealTimeStatusSystemDiagram
@@ -565,6 +576,7 @@ export default function RealTimeStatusPage() {
             <div className="card visualizer-card mb-4">
                 <div className="card-header d-flex justify-content-between align-items-center">
                     <h5 className="card-title mb-0">Real-time</h5>
+                    {/* [auto-snapshot] disabled placeholder controls
                     <div className="d-flex align-items-center gap-2">
                         <input
                             type="checkbox"
@@ -585,16 +597,8 @@ export default function RealTimeStatusPage() {
                             />
                             <span className="small text-muted mb-0 text-nowrap">seconds</span>
                         </div>
-                        {/* <button
-                            type="button"
-                            className="btn btn-sm btn-outline-secondary"
-                            title="Request snapshot"
-                            aria-label="Request snapshot"
-                            disabled
-                        >
-                            Snapshot
-                        </button> */}
                     </div>
+                    */}
                 </div>
                 <div className="p-4">
                     <div className="mb-4">
@@ -619,6 +623,7 @@ export default function RealTimeStatusPage() {
             <div className="card visualizer-card mb-4">
                 <div className="card-header d-flex justify-content-between align-items-center">
                     <h5 className="card-title mb-0">Real-time</h5>
+                    {/* [auto-snapshot] disabled placeholder controls
                     <div className="d-flex align-items-center gap-2">
                         <input
                             type="checkbox"
@@ -639,16 +644,8 @@ export default function RealTimeStatusPage() {
                             />
                             <span className="small text-muted mb-0 text-nowrap">seconds</span>
                         </div>
-                        {/* <button
-                            type="button"
-                            className="btn btn-sm btn-outline-secondary"
-                            title="Request snapshot"
-                            aria-label="Request snapshot"
-                            disabled
-                        >
-                            Snapshot
-                        </button> */}
                     </div>
+                    */}
                 </div>
                 <div className="p-4">
                     <div className="mb-4">
