@@ -9,5 +9,5 @@ export function getVisualizerApiBaseUrl(): string {
 const DASHBOARD_WS_ORIGIN = 'wss://visualizer.electricity.works';
 
 export function getDashboardWebSocketUrl(shortAlias: string): string {
-    return `${DASHBOARD_WS_ORIGIN}/ws${shortAlias}`;
+    return `${DASHBOARD_WS_ORIGIN}/realtime/${shortAlias}`;
 }
