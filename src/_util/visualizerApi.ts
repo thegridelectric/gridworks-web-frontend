@@ -3,10 +3,10 @@ export function getVisualizerApiBaseUrl(): string {
     if (typeof fromEnv === 'string' && fromEnv.trim() !== '') {
         return fromEnv.replace(/\/$/, '');
     }
-    return 'https://visualizer.electricity.works';
+    return 'https://web-backend.electricity.works';
 }
 
-const DASHBOARD_WS_ORIGIN = 'wss://visualizer.electricity.works';
+const DASHBOARD_WS_ORIGIN = 'wss://web-backend.electricity.works';
 
 export function getDashboardWebSocketUrl(shortAlias: string): string {
     return `${DASHBOARD_WS_ORIGIN}/realtime/${shortAlias}`;
