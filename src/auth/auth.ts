@@ -84,6 +84,44 @@ export function clearAuth(): void {
     localStorage.removeItem(AUTH_ROLES_KEY);
 }
 
+/** Verify the stored token with the API; clears auth and throws if invalid or unreachable. */
+export async function validateAuthSession(): Promise<string> {
+    const token = getAuthToken();
+    if (!token) {
+        throw new Error('Not signed in');
+    }
+
+    const base = getVisualizerApiBaseUrl();
+    let res: Response;
+    try {
+        res = await fetch(`${base}/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+    } catch {
+        clearAuth();
+        throw new Error('Could not reach the API');
+    }
+
+    if (res.status === 401) {
+        clearAuth();
+        throw new Error('Session expired');
+    }
+    if (!res.ok) {
+        clearAuth();
+        throw new Error(`Session check failed (${res.status})`);
+    }
+
+    const data = JSON.parse(await res.text()) as { username?: string };
+    const username =
+        typeof data.username === 'string' && data.username.trim() !== ''
+            ? data.username.trim()
+            : getAuthUsername();
+    if (username) {
+        localStorage.setItem(AUTH_USERNAME_KEY, username);
+    }
+    return username ?? '';
+}
+
 export function getAuthToken(): string | null {
     return localStorage.getItem(AUTH_TOKEN_KEY);
 }
@@ -101,7 +139,7 @@ export function getAuthUsername(): string | null {
 }
 
 export function getDisplayUserName(): string {
-    return getAuthUsername() || 'Visualizer user';
+    return getAuthUsername() ?? '';
 }
 
 /** Roles from login only (persisted). Keys are role names, values are installation strings. */

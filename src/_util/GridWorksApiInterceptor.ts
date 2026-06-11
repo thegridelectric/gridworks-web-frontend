@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import GridWorksApi from './GridWorksApi.ts';
+import { clearAuth } from '../auth/auth';
 import type { AxiosError, AxiosResponse } from 'axios';
 
 export default function GridWorksApiInterceptor({ children }: React.PropsWithChildren): React.ReactNode {
@@ -17,10 +18,7 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
             (error: AxiosError) => {
                 // Handle errors, specifically 401 Unauthorized
                 if (error.response && error.response.status === 401) {
-                    //   console.log('401 error caught by interceptor. Redirecting to login.');
-                    //   // Clear local storage or Redux store if necessary
-                    //   localStorage.clear(); 
-                    // Redirect to the login page and never resolve the promise (so we don't get a flash of error message)
+                    clearAuth();
                     navigate('/login/');
                     return new Promise(() => {});
                 }

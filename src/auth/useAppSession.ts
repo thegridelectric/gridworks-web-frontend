@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 
-import GridworksApi from '../_util/GridWorksApi';
 import type { BasicInstallationInfo, Session } from '../_util/SessionContext';
-import { getAuthToken, getAuthUserInstallations, getDisplayUserName, isAdminUser } from './auth';
+import {
+    clearAuth,
+    getAuthToken,
+    getAuthUserInstallations,
+    isAdminUser,
+    validateAuthSession,
+} from './auth';
 import { fetchFallbackInstallations } from './fetchFallbackInstallations';
 
 interface UseAppSessionResult {
@@ -48,37 +53,6 @@ export function useAppSession(loadSession: boolean): UseAppSessionResult {
 
         (async () => {
             try {
-                const sessionRes = await GridworksApi.get<Session>('/api/v2/session');
-                if (cancelled) return;
-
-                let installations = sessionRes.data.installations ?? [];
-                let userName = sessionRes.data.userName;
-                let homesError: string | null = null;
-                const token = getAuthToken();
-
-                if (installations.length === 0 && token) {
-                    try {
-                        const installationsFromFallback = await fetchFallbackInstallations(token);
-                        if (!cancelled) {
-                            installations = installationsFromFallback;
-                            userName = getDisplayUserName();
-                        }
-                    } catch (e) {
-                        if (!cancelled) {
-                            homesError = e instanceof Error ? e.message : 'Unknown error';
-                        }
-                    }
-                }
-                installations = filterInstallationsForCurrentUser(installations);
-
-                if (!cancelled) {
-                    setSession({
-                        userName,
-                        installations,
-                        homesError,
-                    });
-                }
-            } catch {
                 const token = getAuthToken();
                 if (!token) {
                     if (!cancelled) {
@@ -87,20 +61,36 @@ export function useAppSession(loadSession: boolean): UseAppSessionResult {
                     return;
                 }
 
+                const userName = await validateAuthSession();
+                if (cancelled) {
+                    return;
+                }
+
+                let installations: BasicInstallationInfo[] = [];
+                let homesError: string | null = null;
                 try {
-                    const installationsFromFallback = await fetchFallbackInstallations(token);
-                    if (!cancelled) {
-                        const visibleInstallations = filterInstallationsForCurrentUser(installationsFromFallback);
-                        setSession({
-                            userName: getDisplayUserName(),
-                            installations: visibleInstallations,
-                            homesError: null,
-                        });
+                    installations = await fetchFallbackInstallations(token);
+                } catch (e) {
+                    if (e instanceof Error && e.message === 'Unauthorized') {
+                        clearAuth();
+                        if (!cancelled) {
+                            setSession(null);
+                        }
+                        return;
                     }
-                } catch {
-                    if (!cancelled) {
-                        setSession(null);
-                    }
+                    homesError = e instanceof Error ? e.message : 'Unknown error';
+                }
+
+                if (!cancelled) {
+                    setSession({
+                        userName,
+                        installations: filterInstallationsForCurrentUser(installations),
+                        homesError,
+                    });
+                }
+            } catch {
+                if (!cancelled) {
+                    setSession(null);
                 }
             } finally {
                 if (!cancelled) {

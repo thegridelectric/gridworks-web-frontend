@@ -1,5 +1,6 @@
 import type { BasicInstallationInfo } from '../_util/SessionContext';
 import type { HouseParameters } from '../parameters/types';
+import { clearAuth } from './auth';
 import { getVisualizerApiBaseUrl } from '../_util/visualizerApi';
 
 interface FallbackHouse {
@@ -77,6 +78,7 @@ export async function fetchFallbackInstallations(token: string): Promise<BasicIn
         headers: { Authorization: `Bearer ${token}` },
     });
     if (res.status === 401) {
+        clearAuth();
         throw new Error('Unauthorized');
     }
     if (!res.ok) {
