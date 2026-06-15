@@ -9,6 +9,13 @@ export interface SnapshotPayload {
     LatestStateList?: SnapshotState[];
 }
 
+export function isLastHeardFresh(snapshotTimeUnixMs: number | null, nowMs: number): boolean {
+    if (snapshotTimeUnixMs == null) {
+        return false;
+    }
+    return nowMs - snapshotTimeUnixMs < 60_000;
+}
+
 /** Minutes since snapshot time, matching the real-time dashboard's last-snapshot age. */
 export function lastHeardLabel(snapshotTimeUnixMs: number | null, nowMs: number): string {
     if (snapshotTimeUnixMs == null) {

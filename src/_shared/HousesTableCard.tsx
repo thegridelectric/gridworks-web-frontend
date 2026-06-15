@@ -5,7 +5,7 @@ import SessionContext, { type BasicInstallationInfo } from "../_util/SessionCont
 import { useHouseTableSelection } from "../_util/useHouseTableSelection";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { useHouseRealtimeData, type HouseRealtimeData } from "../real-time/useHouseRealtimeData";
-import { lastHeardLabel } from "../real-time/snapshotState";
+import { isLastHeardFresh, lastHeardLabel } from "../real-time/snapshotState";
 
 import "../installations/InstallationsPage.css";
 
@@ -41,6 +41,30 @@ function formatHouseModeLabel(realtime: HouseRealtimeData | null): string {
         return "—";
     }
     return `${realtime.control ?? "—"}, ${realtime.mode ?? "—"}`;
+}
+
+function snapshotTimeUnixMsForHouse(
+    h: BasicInstallationInfo,
+    realtimeDataByAlias: Record<string, HouseRealtimeData>,
+): number | null {
+    const alias = houseAliasForInstallation(h);
+    if (!alias || !hasRealTimeAccessForInstallationAlias(alias)) {
+        return null;
+    }
+    return realtimeDataForAlias(alias, realtimeDataByAlias).snapshotTimeUnixMs;
+}
+
+function aliasBadgeClassForHouse(
+    h: BasicInstallationInfo,
+    realtimeDataByAlias: Record<string, HouseRealtimeData>,
+    nowMs: number,
+): string {
+    // [alert-status-badge] from backoffice `alert_status`:
+    // const alert = h.alertStatus;
+    // return alert === "ok" ? "bg-success" : alert === "alert" ? "bg-danger" : "bg-secondary";
+    return isLastHeardFresh(snapshotTimeUnixMsForHouse(h, realtimeDataByAlias), nowMs)
+        ? "bg-success"
+        : "bg-danger";
 }
 
 function compareInstallations(
@@ -104,6 +128,7 @@ function compareInstallations(
 function useHousesTableState(
     homes: BasicInstallationInfo[],
     realtimeDataByAlias: Record<string, HouseRealtimeData>,
+    nowMs: number,
 ) {
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [aliasFilter, setAliasFilter] = useState("");
@@ -113,13 +138,29 @@ function useHousesTableState(
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
     const okCount = useMemo(
-        () => homes.filter((h) => h.alertStatus === "ok").length,
-        [homes],
+        () =>
+            homes.filter((h) =>
+                isLastHeardFresh(snapshotTimeUnixMsForHouse(h, realtimeDataByAlias), nowMs),
+            ).length,
+        [homes, realtimeDataByAlias, nowMs],
     );
     const alertCount = useMemo(
-        () => homes.filter((h) => h.alertStatus === "alert").length,
-        [homes],
+        () =>
+            homes.filter(
+                (h) =>
+                    !isLastHeardFresh(snapshotTimeUnixMsForHouse(h, realtimeDataByAlias), nowMs),
+            ).length,
+        [homes, realtimeDataByAlias, nowMs],
     );
+    // [alert-status-badge]
+    // const okCount = useMemo(
+    //     () => homes.filter((h) => h.alertStatus === "ok").length,
+    //     [homes],
+    // );
+    // const alertCount = useMemo(
+    //     () => homes.filter((h) => h.alertStatus === "alert").length,
+    //     [homes],
+    // );
 
     const filteredSorted = useMemo(() => {
         const af = aliasFilter.trim().toLowerCase();
@@ -377,13 +418,7 @@ function HousesCardTable({
                 </thead>
                 <tbody>
                     {homes.map((h) => {
-                        const alert = h.alertStatus;
-                        const badgeClass =
-                            alert === "ok"
-                                ? "bg-success"
-                                : alert === "alert"
-                                  ? "bg-danger"
-                                  : "bg-secondary";
+                        const badgeClass = aliasBadgeClassForHouse(h, realtimeDataByAlias, nowMs);
                         const alias = houseAliasForInstallation(h);
                         const hasRealtimeAccess =
                             Boolean(alias && hasRealTimeAccessForInstallationAlias(alias));
@@ -474,7 +509,7 @@ export default function HousesTableCard() {
         clearFilters,
         showNoSearchResults,
         sortClass,
-    } = useHousesTableState(homes, realtimeDataByAlias);
+    } = useHousesTableState(homes, realtimeDataByAlias, nowMs);
 
     function selectHouse(h: BasicInstallationInfo) {
         const root = pathRoot ?? "installations";
