@@ -11,6 +11,7 @@ import SessionContext, { installationForRouteId } from "../_util/SessionContext"
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketUrl } from "../_util/visualizerApi";
 import { hasRealTimeAccessForInstallationAlias } from "../auth/auth";
+import { controlFromSnapshot, type SnapshotPayload } from "./snapshotState";
 
 interface RelayInfo {
     name: string;
@@ -18,16 +19,6 @@ interface RelayInfo {
     display_name: string;
     state: string;
     last_update: number;
-}
-
-interface Reading {
-    ChannelName: string;
-    Value: number;
-}
-
-interface SnapshotPayload {
-    SnapshotTimeUnixMs: number;
-    LatestReadingList: Reading[];
 }
 
 /** Map SCADA names like `hp-failsafe-relay5` to diagram keys `relay5` (see `LatestReadingList`). */
@@ -177,6 +168,7 @@ function RealTimeStatusConnection({
     const [relays, setRelays] = useState<Record<string, RelayInfo>>({});
     const [updateTime, setUpdateTime] = useState<Date | null>(null);
     const [latestReadings, setLatestReadings] = useState<Record<string, number> | null>(null);
+    const [control, setControl] = useState<string | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [err, setErr] = useState<string | null>(null);
     // [auto-snapshot]
@@ -245,6 +237,7 @@ function RealTimeStatusConnection({
                         hasLoggedSpruceChannelsRef.current = true;
                     }
                     setUpdateTime(new Date(snapshot.SnapshotTimeUnixMs));
+                    setControl(controlFromSnapshot(snapshot));
                     setLatestReadings((previous) => {
                         const next = Object.fromEntries(
                             (snapshot.LatestReadingList || []).map((r) => [r.ChannelName, r.Value]),
@@ -433,7 +426,12 @@ function RealTimeStatusConnection({
                         <InstallationPicker />
                     </div>
                 </div>
-                <RealTimeStatusHeader err={err} isConnected={isConnected} targetGNode={targetGNode} />
+                <RealTimeStatusHeader
+                    err={err}
+                    isConnected={isConnected}
+                    targetGNode={targetGNode}
+                    control={control}
+                />
                 {updateTime &&
                     <RealTimeStatusTimestamp
                         updateTime={updateTime}

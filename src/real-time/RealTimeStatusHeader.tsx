@@ -1,10 +1,16 @@
 interface RealTimeStatusHeaderProps {
     err: string | null,
     isConnected: boolean,
-    targetGNode: string | null
+    targetGNode: string | null,
+    control?: string | null,
 }
 
-export default function RealTimeStatusHeader({ err, isConnected, targetGNode }: RealTimeStatusHeaderProps) {
+export default function RealTimeStatusHeader({
+    err,
+    isConnected,
+    targetGNode,
+    control,
+}: RealTimeStatusHeaderProps) {
 
     let statusLeft, statusRight;
     if (err) {
@@ -29,6 +35,11 @@ export default function RealTimeStatusHeader({ err, isConnected, targetGNode }: 
     return <div id="dashboard-status">
         <div id="dashboard-status-left">
             {statusLeft}
+            {control &&
+                <div id="dashboard-control" className="text-muted" style={{ fontSize: '0.9em', marginTop: '0.25rem' }}>
+                    Control: <b>{control}</b>
+                </div>
+            }
         </div>
         <div id="dashboard-status-right">
             {statusRight}

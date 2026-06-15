@@ -1,21 +1,75 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { getAuthToken } from "../auth/auth";
+import { getAuthToken, hasRealTimeAccessForInstallationAlias } from "../auth/auth";
 import SessionContext, { type BasicInstallationInfo } from "../_util/SessionContext";
 import { useHouseTableSelection } from "../_util/useHouseTableSelection";
 import { useRouteInfo } from "../_util/useRouteInfo";
+import { useHouseRealtimeData, type HouseRealtimeData } from "../real-time/useHouseRealtimeData";
+import { lastHeardLabel } from "../real-time/snapshotState";
 
 import "../installations/InstallationsPage.css";
 
-type SortColumn = "short_alias" | "address" | "commit";
+type SortColumn = "short_alias" | "address" | /* "commit" | */ "mode" | "last_heard";
 type SortDirection = "asc" | "desc";
+
+function houseAliasForInstallation(h: BasicInstallationInfo): string {
+    return (h.houseAlias ?? h.displayName ?? "").trim();
+}
+
+function realtimeDataForAlias(
+    alias: string,
+    realtimeDataByAlias: Record<string, HouseRealtimeData>,
+): HouseRealtimeData {
+    return realtimeDataByAlias[alias] ?? {
+        control: null,
+        mode: null,
+        snapshotTimeUnixMs: null,
+    };
+}
+
+function useNowMs(tickMs = 60_000): number {
+    const [nowMs, setNowMs] = useState(() => Date.now());
+    useEffect(() => {
+        const id = window.setInterval(() => setNowMs(Date.now()), tickMs);
+        return () => window.clearInterval(id);
+    }, [tickMs]);
+    return nowMs;
+}
+
+function formatHouseModeLabel(realtime: HouseRealtimeData | null): string {
+    if (!realtime || (realtime.control == null && realtime.mode == null)) {
+        return "—";
+    }
+    return `${realtime.control ?? "—"}, ${realtime.mode ?? "—"}`;
+}
 
 function compareInstallations(
     a: BasicInstallationInfo,
     b: BasicInstallationInfo,
     column: SortColumn,
     direction: SortDirection,
+    realtimeDataByAlias: Record<string, HouseRealtimeData>,
 ): number {
+    if (column === "last_heard") {
+        const aliasA = houseAliasForInstallation(a);
+        const aliasB = houseAliasForInstallation(b);
+        const realtimeA =
+            aliasA && hasRealTimeAccessForInstallationAlias(aliasA)
+                ? realtimeDataForAlias(aliasA, realtimeDataByAlias)
+                : null;
+        const realtimeB =
+            aliasB && hasRealTimeAccessForInstallationAlias(aliasB)
+                ? realtimeDataForAlias(aliasB, realtimeDataByAlias)
+                : null;
+        const timeA = realtimeA?.snapshotTimeUnixMs ?? 0;
+        const timeB = realtimeB?.snapshotTimeUnixMs ?? 0;
+        let cmp = timeA - timeB;
+        if (direction === "desc") {
+            cmp = -cmp;
+        }
+        return cmp;
+    }
+
     const cell = (h: BasicInstallationInfo) => {
         if (column === "short_alias") {
             return (h.displayName || "").trim();
@@ -23,7 +77,14 @@ function compareInstallations(
         if (column === "address") {
             return (h.locationLabel || "N/A").trim();
         }
-        return (h.commit || "N/A").trim();
+        const alias = houseAliasForInstallation(h);
+        const hasAccess = Boolean(alias && hasRealTimeAccessForInstallationAlias(alias));
+        const realtime = hasAccess ? realtimeDataForAlias(alias, realtimeDataByAlias) : null;
+        if (column === "mode") {
+            return formatHouseModeLabel(realtime).trim();
+        }
+        // [commit-column] return (h.commit || "N/A").trim();
+        return "";
     };
     let av = cell(a);
     let bv = cell(b);
@@ -40,11 +101,14 @@ function compareInstallations(
     return cmp;
 }
 
-function useHousesTableState(homes: BasicInstallationInfo[]) {
+function useHousesTableState(
+    homes: BasicInstallationInfo[],
+    realtimeDataByAlias: Record<string, HouseRealtimeData>,
+) {
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [aliasFilter, setAliasFilter] = useState("");
     const [cityFilter, setCityFilter] = useState("");
-    const [commitFilter, setCommitFilter] = useState("");
+    // [commit-column] const [commitFilter, setCommitFilter] = useState("");
     const [sortColumn, setSortColumn] = useState<SortColumn>("short_alias");
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
@@ -60,28 +124,29 @@ function useHousesTableState(homes: BasicInstallationInfo[]) {
     const filteredSorted = useMemo(() => {
         const af = aliasFilter.trim().toLowerCase();
         const cf = cityFilter.trim().toLowerCase();
-        const cof = commitFilter.trim().toLowerCase();
+        // [commit-column] const cof = commitFilter.trim().toLowerCase();
         let list = homes.filter((h) => {
             const alias = (h.displayName || "").toLowerCase();
             const city = (h.locationLabel || "N/A").toLowerCase();
-            const commit = (h.commit || "N/A").toLowerCase();
+            // [commit-column] const commit = (h.commit || "N/A").toLowerCase();
             return (
                 alias.startsWith(af) &&
-                city.startsWith(cf) &&
-                commit.startsWith(cof)
+                city.startsWith(cf)
+                // [commit-column] && commit.startsWith(cof)
             );
         });
         list = [...list].sort((a, b) =>
-            compareInstallations(a, b, sortColumn, sortDirection),
+            compareInstallations(a, b, sortColumn, sortDirection, realtimeDataByAlias),
         );
         return list;
     }, [
         homes,
         aliasFilter,
         cityFilter,
-        commitFilter,
+        // commitFilter,
         sortColumn,
         sortDirection,
+        realtimeDataByAlias,
     ]);
 
     function onSortHeaderClick(column: SortColumn) {
@@ -96,7 +161,7 @@ function useHousesTableState(homes: BasicInstallationInfo[]) {
     function clearFilters() {
         setAliasFilter("");
         setCityFilter("");
-        setCommitFilter("");
+        // [commit-column] setCommitFilter("");
     }
 
     const showNoSearchResults =
@@ -116,8 +181,8 @@ function useHousesTableState(homes: BasicInstallationInfo[]) {
         setAliasFilter,
         cityFilter,
         setCityFilter,
-        commitFilter,
-        setCommitFilter,
+        // [commit-column] commitFilter,
+        // [commit-column] setCommitFilter,
         okCount,
         alertCount,
         filteredSorted,
@@ -168,19 +233,19 @@ function HousesCardFilters({
     filtersVisible,
     aliasFilter,
     cityFilter,
-    commitFilter,
+    // [commit-column] commitFilter,
     setAliasFilter,
     setCityFilter,
-    setCommitFilter,
+    // [commit-column] setCommitFilter,
     clearFilters,
 }: {
     filtersVisible: boolean;
     aliasFilter: string;
     cityFilter: string;
-    commitFilter: string;
+    // [commit-column] commitFilter: string;
     setAliasFilter: (value: string) => void;
     setCityFilter: (value: string) => void;
-    setCommitFilter: (value: string) => void;
+    // [commit-column] setCommitFilter: (value: string) => void;
     clearFilters: () => void;
 }) {
     return (
@@ -213,6 +278,7 @@ function HousesCardFilters({
                     />
                 </div>
             </div>
+            {/* [commit-column]
             <div className="search-group commit">
                 <div className="search-input-wrapper">
                     <i className="bi bi-search search-icon" aria-hidden />
@@ -227,6 +293,7 @@ function HousesCardFilters({
                     />
                 </div>
             </div>
+            */}
             <button
                 type="button"
                 className="clear-filters-btn"
@@ -242,6 +309,8 @@ function HousesCardFilters({
 
 function HousesCardTable({
     homes,
+    realtimeDataByAlias,
+    nowMs,
     sortClass,
     onSortHeaderClick,
     onRowActivate,
@@ -249,6 +318,8 @@ function HousesCardTable({
     showNoSearchResults,
 }: {
     homes: BasicInstallationInfo[];
+    realtimeDataByAlias: Record<string, HouseRealtimeData>;
+    nowMs: number;
     sortClass: (column: SortColumn) => string;
     onSortHeaderClick: (column: SortColumn) => void;
     onRowActivate: (home: BasicInstallationInfo) => void;
@@ -276,6 +347,7 @@ function HousesCardTable({
                         >
                             Location
                         </th>
+                        {/* [commit-column]
                         <th
                             data-sort="commit"
                             className={sortClass("commit")}
@@ -283,6 +355,23 @@ function HousesCardTable({
                             onClick={() => onSortHeaderClick("commit")}
                         >
                             Commit
+                        </th>
+                        */}
+                        <th
+                            data-sort="mode"
+                            className={sortClass("mode")}
+                            scope="col"
+                            onClick={() => onSortHeaderClick("mode")}
+                        >
+                            Mode
+                        </th>
+                        <th
+                            data-sort="last_heard"
+                            className={sortClass("last_heard")}
+                            scope="col"
+                            onClick={() => onSortHeaderClick("last_heard")}
+                        >
+                            Last heard
                         </th>
                     </tr>
                 </thead>
@@ -295,6 +384,12 @@ function HousesCardTable({
                                 : alert === "alert"
                                   ? "bg-danger"
                                   : "bg-secondary";
+                        const alias = houseAliasForInstallation(h);
+                        const hasRealtimeAccess =
+                            Boolean(alias && hasRealTimeAccessForInstallationAlias(alias));
+                        const realtime = hasRealtimeAccess
+                            ? realtimeDataForAlias(alias, realtimeDataByAlias)
+                            : null;
                         return (
                             <tr
                                 key={h.id}
@@ -315,15 +410,23 @@ function HousesCardTable({
                                     </span>
                                 </td>
                                 <td>{h.locationLabel || "N/A"}</td>
+                                {/* [commit-column]
                                 <td className="json-cell text-muted">
                                     {h.commit || "N/A"}
+                                </td>
+                                */}
+                                <td className="text-muted">
+                                    {formatHouseModeLabel(realtime)}
+                                </td>
+                                <td className="text-muted">
+                                    {lastHeardLabel(realtime?.snapshotTimeUnixMs ?? null, nowMs)}
                                 </td>
                             </tr>
                         );
                     })}
                     {showNoSearchResults && (
                         <tr className="no-results-row">
-                            <td colSpan={3}>
+                            <td colSpan={4}>
                                 <span>No results found</span>
                             </td>
                         </tr>
@@ -348,6 +451,13 @@ export default function HousesTableCard() {
     );
     const hasTable = token && !session?.homesError && homes.length > 0;
 
+    const houseAliases = useMemo(
+        () => homes.map(houseAliasForInstallation).filter(Boolean),
+        [homes],
+    );
+    const realtimeDataByAlias = useHouseRealtimeData(houseAliases);
+    const nowMs = useNowMs();
+
     const {
         filtersVisible,
         setFiltersVisible,
@@ -355,8 +465,8 @@ export default function HousesTableCard() {
         setAliasFilter,
         cityFilter,
         setCityFilter,
-        commitFilter,
-        setCommitFilter,
+        // [commit-column] commitFilter,
+        // [commit-column] setCommitFilter,
         okCount,
         alertCount,
         filteredSorted,
@@ -364,7 +474,7 @@ export default function HousesTableCard() {
         clearFilters,
         showNoSearchResults,
         sortClass,
-    } = useHousesTableState(homes);
+    } = useHousesTableState(homes, realtimeDataByAlias);
 
     function selectHouse(h: BasicInstallationInfo) {
         const root = pathRoot ?? "installations";
@@ -423,15 +533,15 @@ export default function HousesTableCard() {
                         filtersVisible={filtersVisible}
                         aliasFilter={aliasFilter}
                         cityFilter={cityFilter}
-                        commitFilter={commitFilter}
                         setAliasFilter={setAliasFilter}
                         setCityFilter={setCityFilter}
-                        setCommitFilter={setCommitFilter}
                         clearFilters={clearFilters}
                     />
 
                     <HousesCardTable
                         homes={filteredSorted}
+                        realtimeDataByAlias={realtimeDataByAlias}
+                        nowMs={nowMs}
                         sortClass={sortClass}
                         onSortHeaderClick={onSortHeaderClick}
                         onRowActivate={onRowActivate}
