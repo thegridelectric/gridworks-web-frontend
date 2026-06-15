@@ -1,6 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
+    type ReactNode,
+} from 'react';
 
 import { hasRealTimeAccessForInstallationAlias } from '../auth/auth';
+import SessionContext from '../_util/SessionContext';
 import { getDashboardWebSocketUrl } from '../_util/visualizerApi';
 import { controlFromSnapshot, type SnapshotPayload } from './snapshotState';
 
@@ -16,6 +24,8 @@ const EMPTY_REALTIME_DATA: HouseRealtimeData = {
     snapshotTimeUnixMs: null,
 };
 
+const HouseRealtimeDataContext = createContext<Record<string, HouseRealtimeData> | null>(null);
+
 function systemModeFromStatus(payload: unknown): string | null {
     if (payload === null || typeof payload !== 'object') {
         return null;
@@ -27,26 +37,33 @@ function systemModeFromStatus(payload: unknown): string | null {
     return systemMode;
 }
 
-export function useHouseRealtimeData(houseAliases: string[]): Record<string, HouseRealtimeData> {
+function houseAliasesFromInstallations(
+    installations: { houseAlias?: string; displayName: string }[],
+): string[] {
+    const unique = new Set<string>();
+    for (const installation of installations) {
+        const alias = (installation.houseAlias ?? installation.displayName ?? '').trim();
+        if (!alias || !hasRealTimeAccessForInstallationAlias(alias)) {
+            continue;
+        }
+        unique.add(alias);
+    }
+    return [...unique].sort();
+}
+
+export function HouseRealtimeDataProvider({ children }: { children: ReactNode }) {
+    const session = useContext(SessionContext);
     const [dataByAlias, setDataByAlias] = useState<Record<string, HouseRealtimeData>>({});
 
-    const subscribedAliases = useMemo(() => {
-        const unique = new Set<string>();
-        for (const alias of houseAliases) {
-            const trimmed = alias.trim();
-            if (!trimmed || !hasRealTimeAccessForInstallationAlias(trimmed)) {
-                continue;
-            }
-            unique.add(trimmed);
-        }
-        return [...unique].sort();
-    }, [houseAliases]);
+    const subscribedAliases = useMemo(
+        () => houseAliasesFromInstallations(session?.installations ?? []),
+        [session?.installations],
+    );
 
     const subscriptionKey = subscribedAliases.join('\0');
 
     useEffect(() => {
         if (subscribedAliases.length === 0) {
-            setDataByAlias({});
             return;
         }
 
@@ -103,7 +120,19 @@ export function useHouseRealtimeData(houseAliases: string[]): Record<string, Hou
                 ws.close();
             }
         };
-    }, [subscriptionKey]);
+    }, [subscriptionKey, subscribedAliases]);
 
+    return (
+        <HouseRealtimeDataContext.Provider value={dataByAlias}>
+            {children}
+        </HouseRealtimeDataContext.Provider>
+    );
+}
+
+export function useHouseRealtimeData(): Record<string, HouseRealtimeData> {
+    const dataByAlias = useContext(HouseRealtimeDataContext);
+    if (dataByAlias === null) {
+        throw new Error('useHouseRealtimeData must be used within HouseRealtimeDataProvider');
+    }
     return dataByAlias;
 }

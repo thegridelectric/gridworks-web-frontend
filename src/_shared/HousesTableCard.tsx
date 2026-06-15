@@ -4,7 +4,7 @@ import { getAuthToken, hasRealTimeAccessForInstallationAlias } from "../auth/aut
 import SessionContext, { type BasicInstallationInfo } from "../_util/SessionContext";
 import { useHouseTableSelection } from "../_util/useHouseTableSelection";
 import { useRouteInfo } from "../_util/useRouteInfo";
-import { useHouseRealtimeData, type HouseRealtimeData } from "../real-time/useHouseRealtimeData";
+import { useHouseRealtimeData, type HouseRealtimeData } from "../real-time/HouseRealtimeDataProvider";
 import { isLastHeardFresh, lastHeardLabel } from "../real-time/snapshotState";
 
 import "../installations/InstallationsPage.css";
@@ -450,9 +450,7 @@ function HousesCardTable({
                                     {h.commit || "N/A"}
                                 </td>
                                 */}
-                                <td className="text-muted">
-                                    {formatHouseModeLabel(realtime)}
-                                </td>
+                                <td>{formatHouseModeLabel(realtime)}</td>
                                 <td className="text-muted">
                                     {lastHeardLabel(realtime?.snapshotTimeUnixMs ?? null, nowMs)}
                                 </td>
@@ -486,11 +484,7 @@ export default function HousesTableCard() {
     );
     const hasTable = token && !session?.homesError && homes.length > 0;
 
-    const houseAliases = useMemo(
-        () => homes.map(houseAliasForInstallation).filter(Boolean),
-        [homes],
-    );
-    const realtimeDataByAlias = useHouseRealtimeData(houseAliases);
+    const realtimeDataByAlias = useHouseRealtimeData();
     const nowMs = useNowMs();
 
     const {

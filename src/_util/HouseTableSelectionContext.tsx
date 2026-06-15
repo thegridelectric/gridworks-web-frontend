@@ -1,5 +1,6 @@
 import {
     useCallback,
+    useEffect,
     useMemo,
     useState,
 } from 'react';
@@ -14,23 +15,16 @@ export function HouseTableSelectionProvider({ children }: React.PropsWithChildre
     const isMulti = pathRoot === 'morning-report' || pathRoot === 'data-export-hourly';
     const selectionScopeKey = isMulti ? pathRoot : 'single-select';
 
-    return (
-        <HouseTableSelectionProviderInner key={selectionScopeKey} isSelectionMode={isMulti}>
-            {children}
-        </HouseTableSelectionProviderInner>
-    );
-}
-
-function HouseTableSelectionProviderInner({
-    children,
-    isSelectionMode,
-}: React.PropsWithChildren<{ isSelectionMode: boolean }>) {
     const [selectedInstallationIds, setSelectedInstallationIds] = useState<Set<string>>(
         () => new Set(),
     );
 
+    useEffect(() => {
+        setSelectedInstallationIds(new Set());
+    }, [selectionScopeKey]);
+
     const toggleInstallationSelection = useCallback((installationId: string) => {
-        if (!isSelectionMode) {
+        if (!isMulti) {
             return;
         }
         setSelectedInstallationIds((prev) => {
@@ -42,7 +36,7 @@ function HouseTableSelectionProviderInner({
             }
             return next;
         });
-    }, [isSelectionMode]);
+    }, [isMulti]);
 
     const clearInstallationSelection = useCallback(() => {
         setSelectedInstallationIds(new Set());
@@ -50,12 +44,12 @@ function HouseTableSelectionProviderInner({
 
     const value = useMemo<HouseTableSelectionContextValue>(
         () => ({
-            isSelectionMode,
-            selectedInstallationIds: isSelectionMode ? selectedInstallationIds : new Set(),
+            isSelectionMode: isMulti,
+            selectedInstallationIds: isMulti ? selectedInstallationIds : new Set(),
             toggleInstallationSelection,
             clearInstallationSelection,
         }),
-        [isSelectionMode, selectedInstallationIds, toggleInstallationSelection, clearInstallationSelection],
+        [isMulti, selectedInstallationIds, toggleInstallationSelection, clearInstallationSelection],
     );
 
     return (
