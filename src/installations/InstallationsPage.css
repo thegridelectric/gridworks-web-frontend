@@ -279,3 +279,52 @@
     background-color: #6c757d;
     color: white;
 }
+
+@media (max-width: 767.98px) {
+    .houses-table-at-top {
+        width: 100%;
+    }
+
+    .houses-card.card {
+        border-radius: 0.5rem;
+    }
+
+    .houses-card .card-header {
+        padding: 0.75rem 0.75rem;
+    }
+
+    .houses-card .search-container {
+        padding: 0 0.75rem 1.25rem;
+    }
+
+    .houses-card .table-responsive {
+        overflow-x: visible;
+    }
+
+    .houses-card .table-responsive > .table {
+        font-size: 0.7rem;
+    }
+
+    .houses-card .table-responsive > .table > thead > tr > th {
+        font-size: 0.7rem;
+        padding: 0.5rem 0.5rem;
+    }
+
+    .houses-card .table-responsive > .table > tbody > tr > td {
+        font-size: 0.7rem;
+        padding: 0.5rem 0.5rem;
+    }
+
+    .houses-card .badge {
+        font-size: 0.625rem;
+        padding: 0.2em 0.4em;
+    }
+
+    .houses-card .status-badge {
+        font-size: 0.625rem;
+    }
+
+    .houses-card .status-badge-count {
+        padding: 0.3rem 0.5rem;
+    }
+}

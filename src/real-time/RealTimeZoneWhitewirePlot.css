@@ -39,3 +39,16 @@ html[data-them="dark"] .realtime-zone-whitewire-plot rect.inactive-period {
     padding-bottom: 0.35rem;
     vertical-align: middle;
 }
+
+@media (max-width: 767.98px) {
+    .houses-heat-call-cell {
+        width: 4.25rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.25rem;
+    }
+
+    .realtime-zone-whitewire-plot--compact svg {
+        height: 16px;
+        min-width: 72px;
+    }
+}
