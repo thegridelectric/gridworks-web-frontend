@@ -5,11 +5,12 @@ import SessionContext, { type BasicInstallationInfo } from "../_util/SessionCont
 import { useHouseTableSelection } from "../_util/useHouseTableSelection";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { useHouseRealtimeData, type HouseRealtimeData } from "../real-time/HouseRealtimeDataProvider";
-import { isLastHeardFresh, lastHeardLabel } from "../real-time/snapshotState";
+import { isLastHeardFresh } from "../real-time/snapshotState";
+import RealTimeZoneWhitewirePlot from "../real-time/RealTimeZoneWhitewirePlot";
 
 import "../installations/InstallationsPage.css";
 
-type SortColumn = "short_alias" | "address" | /* "commit" | */ "mode" | "last_heard";
+type SortColumn = "short_alias" | "address" | /* "commit" | */ "mode";
 type SortDirection = "asc" | "desc";
 
 function houseAliasForInstallation(h: BasicInstallationInfo): string {
@@ -24,6 +25,7 @@ function realtimeDataForAlias(
         control: null,
         mode: null,
         snapshotTimeUnixMs: null,
+        zoneWhitewireSeries: null,
     };
 }
 
@@ -74,26 +76,6 @@ function compareInstallations(
     direction: SortDirection,
     realtimeDataByAlias: Record<string, HouseRealtimeData>,
 ): number {
-    if (column === "last_heard") {
-        const aliasA = houseAliasForInstallation(a);
-        const aliasB = houseAliasForInstallation(b);
-        const realtimeA =
-            aliasA && hasRealTimeAccessForInstallationAlias(aliasA)
-                ? realtimeDataForAlias(aliasA, realtimeDataByAlias)
-                : null;
-        const realtimeB =
-            aliasB && hasRealTimeAccessForInstallationAlias(aliasB)
-                ? realtimeDataForAlias(aliasB, realtimeDataByAlias)
-                : null;
-        const timeA = realtimeA?.snapshotTimeUnixMs ?? 0;
-        const timeB = realtimeB?.snapshotTimeUnixMs ?? 0;
-        let cmp = timeA - timeB;
-        if (direction === "desc") {
-            cmp = -cmp;
-        }
-        return cmp;
-    }
-
     const cell = (h: BasicInstallationInfo) => {
         if (column === "short_alias") {
             return (h.displayName || "").trim();
@@ -406,14 +388,7 @@ function HousesCardTable({
                         >
                             Mode
                         </th>
-                        <th
-                            data-sort="last_heard"
-                            className={sortClass("last_heard")}
-                            scope="col"
-                            onClick={() => onSortHeaderClick("last_heard")}
-                        >
-                            Last heard
-                        </th>
+                        <th scope="col">Last hour heat call</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -451,8 +426,13 @@ function HousesCardTable({
                                 </td>
                                 */}
                                 <td>{formatHouseModeLabel(realtime)}</td>
-                                <td className="text-muted">
-                                    {lastHeardLabel(realtime?.snapshotTimeUnixMs ?? null, nowMs)}
+                                <td className="houses-heat-call-cell">
+                                    {realtime?.zoneWhitewireSeries && (
+                                        <RealTimeZoneWhitewirePlot
+                                            series={realtime.zoneWhitewireSeries}
+                                            compact
+                                        />
+                                    )}
                                 </td>
                             </tr>
                         );

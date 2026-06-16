@@ -6,7 +6,6 @@ import RealTimeStatusTimestamp from "./RealTimeStatusTimestamp";
 import RealTimeStatusThermostatTable from "./RealTimeStatusThermostatTable";
 import { Spinner } from "react-bootstrap";
 import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
-import RealTimeZoneWhitewirePlot, { type ZoneWhitewireSeries } from "./RealTimeZoneWhitewirePlot";
 import InstallationPicker from "../_shared/InstallationPicker";
 import SessionContext, { installationForRouteId } from "../_util/SessionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
@@ -76,18 +75,15 @@ interface DashboardErrorMessage {
     message?: string;
 }
 
-interface DashboardZoneWhitewireSeriesMessage {
-    type: 'zone_whitewire_series';
-    channel_name?: string;
-    timestamps?: number[];
-    values?: number[];
+interface DashboardErrorMessage {
+    type: 'error';
+    message?: string;
 }
 
 type DashboardInbound =
     | DashboardStatusMessage
     | DashboardMqttMessage
     | DashboardErrorMessage
-    | DashboardZoneWhitewireSeriesMessage
     | { type: string };
 
 /** Set true to log each raw WebSocket frame (very noisy during snapshots). */
@@ -178,7 +174,6 @@ function RealTimeStatusConnection({
     const [updateTime, setUpdateTime] = useState<Date | null>(null);
     const [latestReadings, setLatestReadings] = useState<Record<string, number> | null>(null);
     const [control, setControl] = useState<string | null>(null);
-    const [zoneWhitewireSeries, setZoneWhitewireSeries] = useState<ZoneWhitewireSeries | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const [err, setErr] = useState<string | null>(null);
     // [auto-snapshot]
@@ -264,23 +259,6 @@ function RealTimeStatusConnection({
                         }
                         setRelays(relayMapFromScadaReadings(next));
                         return next;
-                    });
-                }
-            } else if (data.type === 'zone_whitewire_series') {
-                const seriesMessage = data as DashboardZoneWhitewireSeriesMessage;
-                const timestamps = seriesMessage.timestamps;
-                const values = seriesMessage.values;
-                const channelName = seriesMessage.channel_name;
-                if (
-                    typeof channelName === 'string' &&
-                    Array.isArray(timestamps) &&
-                    Array.isArray(values) &&
-                    timestamps.length === values.length
-                ) {
-                    setZoneWhitewireSeries({
-                        channel_name: channelName,
-                        timestamps,
-                        values,
                     });
                 }
             } else if (data.type === 'error') {
@@ -567,9 +545,6 @@ function RealTimeStatusConnection({
                                 </table>
                             </div>
                         </div>
-                        {zoneWhitewireSeries &&
-                            <RealTimeZoneWhitewirePlot series={zoneWhitewireSeries} />
-                        }
                     </> :
                     shouldShowLoadingSpinner ?
                         <div className="p-3 text-center">

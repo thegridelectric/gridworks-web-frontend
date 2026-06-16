@@ -11,17 +11,23 @@ import { hasRealTimeAccessForInstallationAlias } from '../auth/auth';
 import SessionContext from '../_util/SessionContext';
 import { getDashboardWebSocketUrl } from '../_util/visualizerApi';
 import { controlFromSnapshot, type SnapshotPayload } from './snapshotState';
+import {
+    parseZoneWhitewireSeriesMessage,
+    type ZoneWhitewireSeries,
+} from './RealTimeZoneWhitewirePlot';
 
 export interface HouseRealtimeData {
     control: string | null;
     mode: string | null;
     snapshotTimeUnixMs: number | null;
+    zoneWhitewireSeries: ZoneWhitewireSeries | null;
 }
 
 const EMPTY_REALTIME_DATA: HouseRealtimeData = {
     control: null,
     mode: null,
     snapshotTimeUnixMs: null,
+    zoneWhitewireSeries: null,
 };
 
 const HouseRealtimeDataContext = createContext<Record<string, HouseRealtimeData> | null>(null);
@@ -76,7 +82,8 @@ export function HouseRealtimeDataProvider({ children }: { children: ReactNode })
                 if (
                     current.control === next.control &&
                     current.mode === next.mode &&
-                    current.snapshotTimeUnixMs === next.snapshotTimeUnixMs
+                    current.snapshotTimeUnixMs === next.snapshotTimeUnixMs &&
+                    current.zoneWhitewireSeries === next.zoneWhitewireSeries
                 ) {
                     return previous;
                 }
@@ -97,6 +104,11 @@ export function HouseRealtimeDataProvider({ children }: { children: ReactNode })
                 }
                 if (parsed.type === 'status') {
                     patchAlias(alias, { mode: systemModeFromStatus(parsed) });
+                    return;
+                }
+                const zoneSeries = parseZoneWhitewireSeriesMessage(parsed);
+                if (zoneSeries) {
+                    patchAlias(alias, { zoneWhitewireSeries: zoneSeries });
                     return;
                 }
                 if (
