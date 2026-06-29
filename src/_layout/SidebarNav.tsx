@@ -1,4 +1,4 @@
-import { BarChart, List, Table, Settings, Sun, Clock, Info } from 'feather-icons-react';
+import { BarChart, List, Table, Settings, Sun, Clock, Info, Bell } from 'feather-icons-react';
 import { NavLink as ReactRouterNavLink } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 import { useContext } from 'react';
@@ -61,6 +61,11 @@ export default function SidebarNav() {
                 {isAdmin && (
                     <li className="nav-item">
                         <Nav.Link as={ReactRouterNavLink} to="/morning-report/"><Sun />Morning Report</Nav.Link>
+                    </li>
+                )}
+                {isAdmin && (
+                    <li className="nav-item">
+                        <Nav.Link as={ReactRouterNavLink} to="/alerts/"><Bell />Alerts</Nav.Link>
                     </li>
                 )}
                 <hr />

@@ -1,0 +1,29 @@
+.alerts-subtitle {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+#alerts-table-container {
+    overflow-x: auto;
+}
+
+#alerts-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#alerts-table-container th,
+#alerts-table-container td {
+    border: 1px solid var(--border-color);
+    padding: 8px;
+    text-align: left;
+    font-size: 0.9rem;
+    background: var(--card-background);
+    color: var(--text-color);
+}
+
+#alerts-table-container th {
+    background: var(--table-header-bg);
+    color: var(--text-muted);
+}
