@@ -1,19 +1,42 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { DateTime } from 'luxon';
 import { RefreshCw } from 'feather-icons-react';
 
 import { getRequiredAuthToken } from '../auth/auth';
+import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
+import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import { NEW_YORK_TIME_ZONE } from '../_util/newYorkTime';
 import { fetchAlertsHistory, type AlertRow } from './fetchAlerts';
 
 import './AlertsPage.css';
 
 const LOOKBACK_DAYS = 10;
+const EMPTY_INSTALLATIONS: BasicInstallationInfo[] = [];
+
+function selectedAliasList(
+    selectedIds: ReadonlySet<string>,
+    installations: BasicInstallationInfo[],
+): string[] {
+    if (selectedIds.size === 0) {
+        return [];
+    }
+    const aliases: string[] = [];
+    for (const inst of installations) {
+        if (!selectedIds.has(String(inst.id))) {
+            continue;
+        }
+        const a = (inst.houseAlias || inst.displayName || '').trim();
+        if (a) {
+            aliases.push(a);
+        }
+    }
+    return aliases;
+}
 
 const STATE_BADGE_CLASS: Record<string, string> = {
-    notified: 'badge bg-secondary',
+    notified: 'badge bg-warning text-dark',
     acknowledged: 'badge bg-success',
-    muted: 'badge bg-warning text-dark',
+    muted: 'badge bg-success',
 };
 
 function formatTimestamp(seconds: number): string {
@@ -24,6 +47,9 @@ function formatTimestamp(seconds: number): string {
 
 export default function AlertsPage() {
     const token = getRequiredAuthToken();
+    const session = useContext(SessionContext);
+    const { selectedInstallationIds } = useHouseTableSelection();
+    const installations = session?.installations ?? EMPTY_INSTALLATIONS;
     const [alerts, setAlerts] = useState<AlertRow[] | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -52,13 +78,25 @@ export default function AlertsPage() {
         loadAlerts();
     }, [loadAlerts]);
 
-    // Newest first.
+    const selectedAliases = useMemo(
+        () => selectedAliasList(selectedInstallationIds, installations),
+        [selectedInstallationIds, installations],
+    );
+
+    const selectedHouseDisplay = selectedAliases.join(', ');
+
+    // Newest first, filtered to the selected houses (all houses when none selected).
     const rows = useMemo(() => {
         if (!alerts) {
             return [];
         }
-        return [...alerts].sort((a, b) => b.time_received - a.time_received);
-    }, [alerts]);
+        const sorted = [...alerts].sort((a, b) => b.time_received - a.time_received);
+        if (selectedAliases.length === 0) {
+            return sorted;
+        }
+        const allowed = new Set(selectedAliases);
+        return sorted.filter((r) => allowed.has(r.site_alias));
+    }, [alerts, selectedAliases]);
 
     return (
         <div className="card visualizer-card" id="alerts-card">
@@ -83,7 +121,20 @@ export default function AlertsPage() {
                 </div>
             </div>
             <div className="p-4">
-                <p className="alerts-subtitle">Alerts from the last {LOOKBACK_DAYS} days.</p>
+                <div className="mb-4">
+                    <label className="form-label alerts-selected-house-label" htmlFor="alerts-selected-house">
+                        Selected House(s)
+                    </label>
+                    <input
+                        id="alerts-selected-house"
+                        type="text"
+                        className="form-control text-light border-secondary"
+                        readOnly
+                        placeholder="All houses in the table"
+                        value={selectedHouseDisplay}
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    />
+                </div>
 
                 {error && (
                     <div className="alert alert-danger mb-0" role="alert">
@@ -92,7 +143,7 @@ export default function AlertsPage() {
                 )}
 
                 {!error && !isLoading && rows.length === 0 && (
-                    <div className="text-muted">No alerts in the last {LOOKBACK_DAYS} days.</div>
+                    <div className="text-muted">No alerts in the last {LOOKBACK_DAYS} days for the selected houses.</div>
                 )}
 
                 {rows.length > 0 && (
@@ -115,7 +166,9 @@ export default function AlertsPage() {
                                         <td>{r.alert_alias}</td>
                                         <td>{r.message}</td>
                                         <td>
-                                            <span className={STATE_BADGE_CLASS[r.state] ?? 'badge bg-secondary'}>
+                                            <span
+                                                className={`${STATE_BADGE_CLASS[r.state] ?? 'badge bg-secondary'} text-capitalize`}
+                                            >
                                                 {r.state}
                                             </span>
                                         </td>

@@ -10,6 +10,7 @@ const ROUTE_SECTIONS = [
     'data-export-hourly',
     'morning-report',
     'parameters',
+    'alerts',
 ] as const;
 
 type RouteSection = (typeof ROUTE_SECTIONS)[number];
@@ -25,6 +26,7 @@ function useMatchedSection(): RouteSection | undefined {
         useMatch('/data-export-hourly/:homeId?/'),
         useMatch('/morning-report/:homeId?/'),
         useMatch('/parameters/:homeId?/'),
+        useMatch('/alerts/'),
     ];
 
     const index = matches.findIndex(Boolean);

@@ -12,7 +12,10 @@ import {
 
 export function HouseTableSelectionProvider({ children }: React.PropsWithChildren) {
     const { pathRoot } = useRouteInfo();
-    const isMulti = pathRoot === 'morning-report' || pathRoot === 'data-export-hourly';
+    const isMulti =
+        pathRoot === 'morning-report' ||
+        pathRoot === 'data-export-hourly' ||
+        pathRoot === 'alerts';
     const selectionScopeKey = isMulti ? pathRoot : 'single-select';
 
     const [selectedInstallationIds, setSelectedInstallationIds] = useState<Set<string>>(
