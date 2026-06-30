@@ -34,13 +34,19 @@ function selectedAliasList(
 }
 
 const STATE_BADGE_CLASS: Record<string, string> = {
+    processed: 'badge bg-secondary',
+    sent: 'badge bg-warning text-dark',
     notified: 'badge bg-warning text-dark',
     acknowledged: 'badge bg-success',
     muted: 'badge bg-success',
 };
 
 function formatTimestamp(seconds: number): string {
-    return DateTime.fromSeconds(seconds, { zone: NEW_YORK_TIME_ZONE }).toFormat(
+    const unixSeconds = Number(seconds);
+    if (!Number.isFinite(unixSeconds)) {
+        return '—';
+    }
+    return DateTime.fromSeconds(unixSeconds, { zone: NEW_YORK_TIME_ZONE }).toFormat(
         'yyyy-LL-dd HH:mm:ss',
     );
 }
@@ -90,7 +96,7 @@ export default function AlertsPage() {
         if (!alerts) {
             return [];
         }
-        const sorted = [...alerts].sort((a, b) => b.time_received - a.time_received);
+        const sorted = [...alerts].sort((a, b) => b.time_sent - a.time_sent);
         if (selectedAliases.length === 0) {
             return sorted;
         }
@@ -151,7 +157,7 @@ export default function AlertsPage() {
                         <table className="data-table">
                             <thead>
                                 <tr>
-                                    <th>Time received</th>
+                                    <th>Time sent</th>
                                     <th>Site</th>
                                     <th>Alert</th>
                                     <th>Message</th>
@@ -160,8 +166,8 @@ export default function AlertsPage() {
                             </thead>
                             <tbody>
                                 {rows.map((r, i) => (
-                                    <tr key={`${r.time_received}-${r.site_alias}-${r.alert_alias}-${i}`}>
-                                        <td>{formatTimestamp(r.time_received)}</td>
+                                    <tr key={`${r.time_sent}-${r.site_alias}-${r.alert_alias}-${i}`}>
+                                        <td>{formatTimestamp(r.time_sent)}</td>
                                         <td>{r.site_alias}</td>
                                         <td>{r.alert_alias}</td>
                                         <td>{r.message}</td>
