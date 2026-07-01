@@ -6,7 +6,7 @@ import RealTimeStatusTimestamp from "./RealTimeStatusTimestamp";
 import RealTimeStatusThermostatTable from "./RealTimeStatusThermostatTable";
 import { Spinner } from "react-bootstrap";
 import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
-import InstallationPicker from "../_shared/InstallationPicker";
+import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
 import SessionContext, { canConnectRealTimeData, installationRoleForGNode } from "../_util/SessionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketUrl } from "../_util/visualizerApi";
@@ -428,7 +428,7 @@ function RealTimeStatusConnection({
                 <div className="mb-4">
                     <label className="form-label">Selected House</label>
                     <div className="selected-house-picker">
-                        <InstallationPicker />
+                        <SingleInstallationPicker />
                     </div>
                 </div>
                 <RealTimeStatusHeader
@@ -608,7 +608,7 @@ export default function RealTimeStatusPage() {
                     <div className="mb-4">
                         <label className="form-label">Selected House</label>
                         <div className="selected-house-picker">
-                            <InstallationPicker />
+                            <SingleInstallationPicker />
                         </div>
                     </div>
                     {installationUnknown &&
@@ -655,7 +655,7 @@ export default function RealTimeStatusPage() {
                     <div className="mb-4">
                         <label className="form-label">Selected House</label>
                         <div className="selected-house-picker">
-                            <InstallationPicker />
+                            <SingleInstallationPicker />
                         </div>
                     </div>
                     <p className="text-danger mb-0">

@@ -10,7 +10,7 @@ import {
   wallDateTimeToUtc,
 } from '../_util/newYorkTime';
 import { useRouteInfo } from '../_util/useRouteInfo';
-import InstallationPicker from '../_shared/InstallationPicker';
+import SingleInstallationPicker from '../_shared/SingleInstallationPicker';
 import {
   ALL_CHANNEL_IDS,
   ALL_CHANNELS_SORTED,
@@ -137,7 +137,7 @@ export default function ChannelDataExportPage() {
               Selected House
             </label>
             <div className="selected-house-picker">
-              <InstallationPicker />
+              <SingleInstallationPicker />
             </div>
           </div>
 

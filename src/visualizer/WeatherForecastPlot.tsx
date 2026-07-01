@@ -8,7 +8,7 @@ import { formatForDisplay, formatHourStartSForDisplay, type PlotConfig } from ".
 import { PlotlyWrapper } from "./PlotlyWrapper";
 import { generateDefaultPlotInfo, type TraceWithData } from "./DefaultVisualizerPlot";
 import type { DateTime } from "luxon";
-import { fetchMessages } from "./messages-api";
+import GridWorksApi from "../_util/GridWorksApi";
 
 
 export interface WeatherForecastPlotParams {
@@ -89,13 +89,18 @@ export default function WeatherForecastPlot(props: WeatherForecastPlotParams) {
             setPlotError(null);
             setWeatherData(null);
             try {
-                const apiResult = await fetchMessages({
-                    installationGNode,
-                    startDate: startDate.minus({ hours: 24 }),
-                    endDate,
-                    messageTypes: ['weather.forecast']
-                });
-                const weatherMessages = apiResult.map(r => r as WeatherForecastMessage).filter(m => !!m);
+                const apiResult = await GridWorksApi.get<WeatherForecastMessage[]>(
+                    `/api/v2/installations/${installationGNode}/messages`, 
+                    {
+                        params: {
+                            start: startDate.minus({ hours: 24 }).toISO(),
+                            end: endDate.toISO(),
+                            message_types: 'weather.forecast'
+                        }
+                    }
+                )
+
+                const weatherMessages = apiResult.data.filter(m => !!m);
                 const parsedData = parseWeatherForecastMessages(weatherMessages);
                 setWeatherData(parsedData);
             } catch (error) {

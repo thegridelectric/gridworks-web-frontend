@@ -1,6 +1,6 @@
 import { useContext, useMemo, useState } from 'react';
 
-import InstallationPicker from '../_shared/InstallationPicker';
+import SingleInstallationPicker from '../_shared/SingleInstallationPicker';
 import SessionContext, { installationRoleForGNode } from '../_util/SessionContext';
 import { useRouteInfo } from '../_util/useRouteInfo';
 
@@ -76,7 +76,7 @@ export default function InformationPage() {
         <div className="mb-4">
           <label className="form-label">Selected House</label>
           <div className="selected-house-picker">
-            <InstallationPicker />
+            <SingleInstallationPicker />
           </div>
         </div>
 

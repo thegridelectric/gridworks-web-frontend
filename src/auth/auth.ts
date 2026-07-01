@@ -1,3 +1,5 @@
+import GridWorksApi from '../_util/GridWorksApi';
+
 const AUTH_TOKEN_KEY = 'token';
 
 export interface LoginResponseBody {
@@ -10,30 +12,21 @@ export async function login(username: string, password: string): Promise<void> {
 
     clearAuth();
 
-    // const base = getVisualizerApiBaseUrl();
-    const base = 'http://localhost:8000'
-    const loginUrl = `${base}/api/v2/sessions`;
-    const res = await fetch(loginUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
+    try {
+        const sessionResponse = await GridWorksApi.post<LoginResponseBody>('/api/v2/sessions', new URLSearchParams({
             username: username.trim(),
             password,
-        }),
-    });
+        }));
 
-    if (!res.ok) {
+        if (!sessionResponse.data.access_token) {
+            throw new Error('Login response did not include access_token');
+        }
+
+        localStorage.setItem(AUTH_TOKEN_KEY, sessionResponse.data.access_token);
+    }
+    catch {
         throw new Error('Invalid username or password');
     }
-
-    const data = JSON.parse(await res.text()) as Partial<LoginResponseBody>;
-    if (!data.access_token) {
-        throw new Error('Login response did not include access_token');
-    }
-
-    localStorage.setItem(AUTH_TOKEN_KEY, data.access_token);
 }
 
 export function clearAuth(): void {

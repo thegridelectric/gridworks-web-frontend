@@ -1,11 +1,11 @@
-import React from "react";
 import HousesTableCard from "../_shared/HousesTableCard";
 import { HouseTableSelectionProvider } from "../_util/HouseTableSelectionContext";
 import { HouseRealtimeDataProvider } from "../real-time/HouseRealtimeDataProvider";
 import Header from "./Header";
 import SidebarNav from "./SidebarNav";
+import { Outlet } from "react-router";
 
-export default function SidebarNavLayout({ children }: React.PropsWithChildren) {
+export default function SidebarNavLayoutWithHouseSelection() {
 
     return <>
         <Header />
@@ -17,7 +17,7 @@ export default function SidebarNavLayout({ children }: React.PropsWithChildren) 
                         <HouseTableSelectionProvider>
                             <main>
                                 <HousesTableCard />
-                                {children}
+                                <Outlet />
                             </main>
                         </HouseTableSelectionProvider>
                     </HouseRealtimeDataProvider>

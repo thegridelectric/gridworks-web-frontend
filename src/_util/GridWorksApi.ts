@@ -14,9 +14,6 @@ function gridWorksApiBaseUrl(): string {
 
 const api = axios.create({
   baseURL: gridWorksApiBaseUrl(),
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 export default api;

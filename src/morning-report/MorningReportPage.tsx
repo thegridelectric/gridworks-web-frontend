@@ -1,7 +1,6 @@
 import { useContext, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 
-import { getRequiredAuthToken } from '../auth/auth';
 import SessionContext, { canViewDataFromDate, type InstallationRole, type Session } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
@@ -15,12 +14,12 @@ import GridWorksApi from '../_util/GridWorksApi';
 
 import './MorningReportPage.css';
 import { DateTime } from 'luxon';
+import MultiInstallationDisplay from '../_shared/MultiInstallationDisplay';
 
 const MESSAGE_TYPES = [
     { value: 'gridworks.event.problem', label: 'gridworks.event.problem' },
     { value: 'glitch', label: 'glitch' },
 ] as const;
-const EMPTY_INSTALLATIONS: InstallationRole[] = [];
 
 function dataColumnKeys(data: MorningReportData): string[] {
     return Object.keys(data).filter(
@@ -57,26 +56,6 @@ function aliasesForQuery(
         return aliases[0];
     }
     return aliases.join(',');
-}
-
-function selectedHouseFieldValue(
-    selectedIds: ReadonlySet<string>,
-    installations: InstallationRole[],
-): string {
-    if (selectedIds.size === 0) {
-        return '';
-    }
-    const aliases: string[] = [];
-    for (const inst of installations) {
-        if (!selectedIds.has(String(inst.gNodeAlias))) {
-            continue;
-        }
-        const a = (inst.gNodeAlias || inst.displayName || '').trim();
-        if (a) {
-            aliases.push(a);
-        }
-    }
-    return aliases.join(', ');
 }
 
 interface Glitch {
@@ -119,6 +98,12 @@ function MorningReportPageContent() {
     const session = useContext(SessionContext);
     const { selectedInstallationIds } = useHouseTableSelection();
 
+    const installations = session?.installationRoles ?? [];
+    const houseAliasParam = useMemo(
+        () => aliasesForQuery(selectedInstallationIds, installations),
+        [selectedInstallationIds, installations],
+    );
+
     const [startDateTime, setStartDateTime] = useState(() => getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(() => getDefaultDate(false));
     const [selectedTypes, setSelectedTypes] = useState<Set<string>>(
@@ -128,19 +113,6 @@ function MorningReportPageContent() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [detailRowIndex, setDetailRowIndex] = useState<number | null>(null);
-
-    const token = getRequiredAuthToken();
-    const installations = session?.installationRoles ?? EMPTY_INSTALLATIONS;
-
-    const houseAliasParam = useMemo(
-        () => aliasesForQuery(selectedInstallationIds, installations),
-        [selectedInstallationIds, installations],
-    );
-
-    const selectedHouseDisplay = useMemo(
-        () => selectedHouseFieldValue(selectedInstallationIds, installations),
-        [selectedInstallationIds, installations],
-    );
 
     const aliasesForDateLookback = useMemo(() => {
         if (houseAliasParam.trim()) {
@@ -294,15 +266,7 @@ function MorningReportPageContent() {
                             >
                                 Selected House(s)
                             </label>
-                            <input
-                                id="morning-selected-house"
-                                type="text"
-                                className="form-control text-light border-secondary"
-                                readOnly
-                                placeholder="All houses in the table"
-                                value={selectedHouseDisplay}
-                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                            />
+                            <MultiInstallationDisplay installations={installations} selectedInstallationIds={selectedInstallationIds} />
                         </div>
 
                         <table className="table table-borderless mb-4 data-query-form">
@@ -396,7 +360,7 @@ function MorningReportPageContent() {
                             <button
                                 type="submit"
                                 className="btn btn-sm btn-outline-secondary"
-                                disabled={isLoading || !token}
+                                disabled={isLoading}
                             >
                                 Get messages
                             </button>

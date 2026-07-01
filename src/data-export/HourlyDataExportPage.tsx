@@ -2,94 +2,33 @@ import { useContext, useEffect, useMemo, useRef, useState, type CSSProperties } 
 import JSZip from 'jszip';
 
 import { getRequiredAuthToken } from '../auth/auth';
-import SessionContext, { type InstallationRole } from '../_util/SessionContext';
+import SessionContext, { canViewDataFromDate, type InstallationRole } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
   formatDate,
   formatTime,
   getDefaultDate,
   getNowInNewYork,
+  wallDateTimeToUtc,
   wallDateTimeToUtcMs,
 } from '../_util/newYorkTime';
 import { getIsDarkMode } from '../_util/theme';
 import {
-  downloadHourlyDataCsv,
-} from './downloadHourlyDataCsv';
-import {
   fetchHourlyPlots,
 } from './fetchHourlyPlots';
-import {
-  triggerBlobDownload,
-} from './dataExportShared';
 
 import './DataExportPage.css';
+import GridWorksApi from '../_util/GridWorksApi';
+import MultiInstallationDisplay from '../_shared/MultiInstallationDisplay';
 
-const LABEL_MUTED: CSSProperties = {
-  fontSize: '0.875rem',
-  color: 'var(--text-muted)',
-};
 const EMPTY_INSTALLATIONS: InstallationRole[] = [];
 
 export default function HourlyDataExportPage() {
   const session = useContext(SessionContext);
   const { selectedInstallationIds } = useHouseTableSelection();
 
-  const token = getRequiredAuthToken();
-
-  const hourlyPlotHostRef = useRef<HTMLDivElement>(null);
-  const hourlyPlotBlobUrlsRef = useRef<string[]>([]);
-
   const installations = session?.installationRoles ?? EMPTY_INSTALLATIONS;
 
-  function aliasesForHourlyQuery(selectedIds: ReadonlySet<string>, installs: InstallationRole[]): string[] {
-    if (installs.length === 0) {
-      return [];
-    }
-    if (selectedIds.size === 0) {
-      const all: string[] = [];
-      for (const inst of installs) {
-        const a = (inst.gNodeAlias || inst.displayName || '').trim();
-        if (a) {
-          all.push(a);
-        }
-      }
-      return all;
-    }
-    const out: string[] = [];
-    for (const inst of installs) {
-      if (!selectedIds.has(String(inst.gNodeAlias))) {
-        continue;
-      }
-      const a = (inst.gNodeAlias || inst.displayName || '').trim();
-      if (a) {
-        out.push(a);
-      }
-    }
-    return out;
-  }
-
-  function selectedHouseFieldValue(selectedIds: ReadonlySet<string>, installs: InstallationRole[]): string {
-    if (selectedIds.size === 0) {
-      return '';
-    }
-    const aliases: string[] = [];
-    for (const inst of installs) {
-      if (!selectedIds.has(String(inst.gNodeAlias))) {
-        continue;
-      }
-      const a = (inst.gNodeAlias || inst.displayName || '').trim();
-      if (a) {
-        aliases.push(a);
-      }
-    }
-    return aliases.join(', ');
-  }
-
-  const hourlyAliases = useMemo(() => aliasesForHourlyQuery(selectedInstallationIds, installations), [selectedInstallationIds, installations]);
-  const hourlySelectedHouseDisplay = useMemo(
-    () => selectedHouseFieldValue(selectedInstallationIds, installations),
-    [selectedInstallationIds, installations],
-  );
 
   const [hourlyStart, setHourlyStart] = useState(() => getDefaultDate(true));
   const [hourlyEnd, setHourlyEnd] = useState(() => getDefaultDate(false));
@@ -100,31 +39,6 @@ export default function HourlyDataExportPage() {
 
   const hourlyActionsBusy = hourlyCsvBusy || hourlyPlotBusy;
 
-  useEffect(() => {
-    return () => {
-      for (const u of hourlyPlotBlobUrlsRef.current) {
-        URL.revokeObjectURL(u);
-      }
-      hourlyPlotBlobUrlsRef.current = [];
-    };
-  }, []);
-
-  function revokeHourlyPlotBlobUrls() {
-    for (const u of hourlyPlotBlobUrlsRef.current) {
-      URL.revokeObjectURL(u);
-    }
-    hourlyPlotBlobUrlsRef.current = [];
-  }
-
-  function clearHourlyPlots() {
-    revokeHourlyPlotBlobUrls();
-    const host = hourlyPlotHostRef.current;
-    if (host) {
-      host.innerHTML = '';
-    }
-    setHourlyPlotVisible(false);
-  }
-
   function setNowEnd(setter: (d: Date) => void) {
     const nyDate = getNowInNewYork();
     nyDate.setMinutes(nyDate.getMinutes() + 1);
@@ -133,28 +47,41 @@ export default function HourlyDataExportPage() {
 
   async function onHourlyCsv() {
     setError(null);
-    if (hourlyAliases.length === 0) {
+    if (selectedInstallationIds.size === 0) {
       setError('No house aliases available for hourly export.');
       return;
     }
-    const startMs = wallDateTimeToUtcMs(hourlyStart);
-    const endMs = wallDateTimeToUtcMs(hourlyEnd);
-    if (!isEndDateOldEnough(endMs, 10, hourlyAliases)) {
-      setError('End time must be at least 10 days in the past when viewer access applies to any selected installation.');
+    const startDate = wallDateTimeToUtc(hourlyStart);
+    const endDate = wallDateTimeToUtc(hourlyEnd);
+
+    if (startDate == null || endDate == null) {
       return;
     }
 
-    setHourlyCsvBusy(true);
+    if (!canViewDataFromDate(session, [...selectedInstallationIds], startDate)) {
+
+      setError('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
+      return;
+    }
+
+    const url = selectedInstallationIds.size === 1 ?
+      `/api/v2/installations/${[...selectedInstallationIds][0]}/hourly.data` :
+      `/api/v2/installations/${[...selectedInstallationIds].sort().join(',')}/hourly.electricity`;
+
     try {
-      const { blob, filename } = await downloadHourlyDataCsv({
-        token,
-        selectedShortAliases: hourlyAliases,
-        startMs,
-        endMs,
-      });
-      triggerBlobDownload(blob, filename);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Hourly CSV download failed.');
+      await GridWorksApi.get(url,
+        {
+          params: {
+            start: startDate.toISO(),
+            end: endDate.toISO(),
+            dl: true
+          },
+          responseType: 'blob'
+        }
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setError(message);
     } finally {
       setHourlyCsvBusy(false);
     }
@@ -267,25 +194,23 @@ export default function HourlyDataExportPage() {
           <h5 className="card-title mb-0">Download hourly data</h5>
           <div className="status-badges">
             <div className="loader" style={{ display: hourlyActionsBusy ? 'inline-block' : 'none' }} aria-hidden={!hourlyActionsBusy} />
-            <button type="button" className="filter-toggle" onClick={clearHourlyPlots}>
+            <button type="button" className="filter-toggle" onClick={undefined}>
               <span>Clear</span>
             </button>
           </div>
         </div>
 
-        <div className="p-4" style={{ borderBottom: '1px solid var(--border-color)' }}>
+        <div className="p-4">
           <div className="mb-4">
-            <label className="form-label" style={LABEL_MUTED} htmlFor="data-export-hourly-house">
-              Selected House(s)
-            </label>
-            <input
-              id="data-export-hourly-house"
-              type="text"
-              className="form-control text-light border-secondary data-export-hourly-house-input"
-              readOnly
-              placeholder="All houses in the table"
-              value={hourlySelectedHouseDisplay}
-            />
+            <div className="mb-4">
+              <label
+                className="form-label morning-selected-house-label"
+                htmlFor="morning-selected-house"
+              >
+                Selected House(s)
+              </label>
+              <MultiInstallationDisplay installations={installations} selectedInstallationIds={selectedInstallationIds} />
+            </div>
           </div>
 
           <table className="table table-borderless mb-4 data-query-form">
@@ -359,7 +284,7 @@ export default function HourlyDataExportPage() {
             <button
               type="button"
               className="btn btn-sm btn-outline-secondary"
-              disabled={hourlyActionsBusy || !token || hourlyAliases.length === 0}
+              disabled={hourlyActionsBusy || selectedInstallationIds.size === 0}
               style={{ opacity: hourlyActionsBusy ? 0.5 : 1 }}
               onClick={onHourlyPlot}
             >
@@ -368,7 +293,7 @@ export default function HourlyDataExportPage() {
             <button
               type="button"
               className="btn btn-sm btn-outline-secondary"
-              disabled={hourlyActionsBusy || !token || hourlyAliases.length === 0}
+              disabled={hourlyActionsBusy || selectedInstallationIds.size === 0}
               style={{ opacity: hourlyActionsBusy ? 0.5 : 1 }}
               onClick={onHourlyCsv}
             >
@@ -386,9 +311,9 @@ export default function HourlyDataExportPage() {
           </div>
         </div>
 
-        <div id="data-export-electricity-plot-container" className="plot-container" style={{ display: hourlyPlotVisible ? 'flex' : 'none' }}>
+        {/* <div id="data-export-electricity-plot-container" className="plot-container" style={{ display: hourlyPlotVisible ? 'flex' : 'none' }}>
           <div ref={hourlyPlotHostRef} className="plot-div visualizer-server-plots-root" />
-        </div>
+        </div> */}
       </div>
     </div>
   );

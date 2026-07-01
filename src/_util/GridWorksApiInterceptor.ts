@@ -33,6 +33,10 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
 
         const requestInterceptor = GridWorksApi.interceptors.request.use(
             (request) => {
+                if (request.url?.toLowerCase() === '/api/v2/sessions' && request.method?.toLowerCase() === 'post') {
+                    return request;
+                }
+
                 const token = getRequiredAuthToken();
                 if (token) {
                     request.headers['Authorization'] = `Bearer ${token}`;

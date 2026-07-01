@@ -35,7 +35,7 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
     {
         category: 'Zones',
         channels: [
-            { id: '^zone\\d+-.+-heatcall$', label: 'Heat calls' },
+            { id: '^zone\\d+-.+-heat-call$', label: 'Heat calls' },
             { id: '^zone\\d+-.+-set$,^zone\\d+-.+-temp$', label: 'Zone temperatures' },
             { id: 'oat', label: 'Outside air temperature' },
         ],

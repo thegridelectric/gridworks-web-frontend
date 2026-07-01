@@ -1,6 +1,6 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import './VisualizerPage.css';
-import InstallationPicker from "../_shared/InstallationPicker";
+import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
 import SessionContext, { canViewDataFromDate } from "../_util/SessionContext";
 import {
     formatDate,
@@ -264,7 +264,7 @@ export default function VisualizerPage() {
                 <div className="mb-4">
                     <label className="form-label">Selected House</label>
                     <div className="selected-house-picker">
-                        <InstallationPicker />
+                        <SingleInstallationPicker />
                     </div>
                 </div>
 

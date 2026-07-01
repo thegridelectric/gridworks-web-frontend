@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 
-import InstallationPicker from '../_shared/InstallationPicker';
+import SingleInstallationPicker from '../_shared/SingleInstallationPicker';
 import SessionContext, {
     installationRoleForGNode,
     type BasicInstallationInfo,
@@ -92,7 +92,7 @@ function ParametersCard({ installation }: { installation: BasicInstallationInfo 
                 <div className="mb-4">
                     <label className="form-label">Selected House</label>
                     <div className="selected-house-picker">
-                        <InstallationPicker />
+                        <SingleInstallationPicker />
                     </div>
                 </div>
 

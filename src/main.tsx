@@ -9,13 +9,11 @@ import './_shared/toolCard.css'
 import GridWorksApiInterceptor from './_util/GridWorksApiInterceptor.ts';
 
 import App from './App.tsx';
-import AuthedSidebarOutletLayout from './_layout/AuthedSidebarOutletLayout.tsx';
 
 import LoginPage from './auth/LoginPage.tsx';
 import InstallationsPage from './installations/InstallationsPage.tsx';
 import RealTimeStatusPage from './real-time/RealTimeStatusPage.tsx';
 import VisualizerPage from './visualizer/VisualizerPage.tsx';
-import DataExportPage from './data-export/DataExportPage.tsx';
 import ChannelDataExportPage from './data-export/ChannelDataExportPage.tsx';
 import HourlyDataExportPage from './data-export/HourlyDataExportPage.tsx';
 import InformationPage from './information/InformationPage.tsx';
@@ -23,6 +21,7 @@ import MorningReportPage from './morning-report/MorningReportPage.tsx';
 import AlertsPage from './alerts/AlertsPage.tsx';
 import ParametersPage from './parameters/ParametersPage.tsx';
 import { StrictMode } from 'react';
+import SidebarNavLayoutWithHouseSelection from './_layout/SidebarNavLayoutWithHouseSelection.tsx';
 
 
 
@@ -34,12 +33,11 @@ createRoot(document.getElementById('root')!).render(
 				<Routes>
 					<Route path="/login/" element={<LoginPage />} />
 
-					<Route element={<AuthedSidebarOutletLayout />}>
+					<Route element={<SidebarNavLayoutWithHouseSelection />}>
 						<Route path="/installations/:gNode?/" element={<InstallationsPage />} />
 						<Route path="/real-time/:gNode?/" element={<RealTimeStatusPage />} />
 						<Route path="/visualizer/:gNode?/" element={<VisualizerPage />} />
 						<Route path="/information/:gNode?/" element={<InformationPage />} />
-						<Route path="/data-export/:gNode?/" element={<DataExportPage />} />
 						<Route path="/data-export-channel/:gNode?/" element={<ChannelDataExportPage />} />
 						<Route path="/data-export-hourly/:gNode?/" element={<HourlyDataExportPage />} />
 						<Route path="/morning-report/:gNode?/" element={<MorningReportPage />} />

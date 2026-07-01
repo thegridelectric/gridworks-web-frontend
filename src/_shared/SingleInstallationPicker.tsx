@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import SessionContext from "../_util/SessionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
 
-export default function InstallationPicker() {
+export default function SingleInstallationPicker() {
 
     const session = useContext(SessionContext);
     const navigate = useNavigate();
