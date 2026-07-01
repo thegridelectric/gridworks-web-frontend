@@ -71,8 +71,13 @@ export default function AlertsPage() {
                 startSeconds: start,
                 endSeconds: end,
             });
+            console.log('[alerts-debug] AlertsPage loadAlerts received', {
+                count: data.length,
+                rows: data,
+            });
             setAlerts(data);
         } catch (err) {
+            console.error('[alerts-debug] AlertsPage loadAlerts failed', err);
             setError(err instanceof Error ? err.message : 'Failed to load alerts.');
         } finally {
             setIsLoading(false);
@@ -98,10 +103,26 @@ export default function AlertsPage() {
         }
         const sorted = [...alerts].sort((a, b) => b.time_sent - a.time_sent);
         if (selectedAliases.length === 0) {
+            console.log('[alerts-debug] AlertsPage table rows (no house filter)', {
+                apiCount: alerts.length,
+                displayedCount: sorted.length,
+                siteAliasesInApi: [...new Set(alerts.map((a) => a.site_alias))],
+            });
             return sorted;
         }
         const allowed = new Set(selectedAliases);
-        return sorted.filter((r) => allowed.has(r.site_alias));
+        const filtered = sorted.filter((r) => allowed.has(r.site_alias));
+        const excluded = sorted.filter((r) => !allowed.has(r.site_alias));
+        console.log('[alerts-debug] AlertsPage table rows (house filter active)', {
+            selectedAliases,
+            apiCount: alerts.length,
+            displayedCount: filtered.length,
+            excludedCount: excluded.length,
+            siteAliasesInApi: [...new Set(alerts.map((a) => a.site_alias))],
+            excludedRows: excluded,
+            displayedRows: filtered,
+        });
+        return filtered;
     }, [alerts, selectedAliases]);
 
     return (

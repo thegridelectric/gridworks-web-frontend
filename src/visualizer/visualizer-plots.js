@@ -425,7 +425,9 @@ const STORAGE_TANK_KEYS = [
                 if (!ww_times || !ww_values || !ww_times.length) continue;
                 const zone_number = z.zone_number;
                 const zone_color = zoneColors[zone_number - 1] || '#888888';
-                const active = ww_values.map((v) => Math.abs(v) > threshold);
+                const active = z.source === 'heat_call'
+                    ? ww_values.map((v) => v === 1)
+                    : ww_values.map((v) => Math.abs(v) > threshold);
                 const anyActive = active.some(Boolean);
                 if (!anyActive) {
                     traces.push({

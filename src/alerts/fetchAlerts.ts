@@ -21,8 +21,11 @@ function parseUnixSeconds(value: unknown): number | null {
     return null;
 }
 
-function normalizeAlertRow(raw: unknown): AlertRow | null {
+function normalizeAlertRow(raw: unknown, index: number): AlertRow | null {
+    const logPrefix = `[alerts-debug] row ${index}`;
+
     if (typeof raw !== 'object' || raw === null) {
+        console.log(logPrefix, 'dropped: not an object', raw);
         return null;
     }
 
@@ -32,10 +35,16 @@ function normalizeAlertRow(raw: unknown): AlertRow | null {
             ? (row.alert as Record<string, unknown>)
             : null;
 
-    const timeSent = parseUnixSeconds(
-        nested?.time_sent ?? row.time_sent ?? nested?.time_received ?? row.time_received,
-    );
+    const timeSentRaw =
+        nested?.time_sent ?? row.time_sent ?? nested?.time_received ?? row.time_received;
+    const timeSent = parseUnixSeconds(timeSentRaw);
     if (timeSent === null) {
+        console.log(logPrefix, 'dropped: invalid time_sent/time_received', {
+            raw,
+            timeSentRaw,
+            topLevelKeys: Object.keys(row),
+            nestedKeys: nested ? Object.keys(nested) : null,
+        });
         return null;
     }
 
@@ -45,16 +54,23 @@ function normalizeAlertRow(raw: unknown): AlertRow | null {
     const state = String(row.state ?? '');
 
     if (!siteAlias || !alertAlias) {
+        console.log(logPrefix, 'dropped: missing site_alias or alert_alias', {
+            raw,
+            siteAlias,
+            alertAlias,
+        });
         return null;
     }
 
-    return {
+    const normalized = {
         time_sent: timeSent,
         site_alias: siteAlias,
         alert_alias: alertAlias,
         message,
         state,
     };
+    console.log(logPrefix, 'accepted', normalized);
+    return normalized;
 }
 
 /**
@@ -71,10 +87,23 @@ export async function fetchAlertsHistory(params: {
 }): Promise<AlertRow[]> {
     const base = getVisualizerApiBaseUrl();
     const url = `${base}/alerts-history?start=${params.startSeconds}&end=${params.endSeconds}`;
+    console.log('[alerts-debug] fetchAlertsHistory request', {
+        url,
+        startSeconds: params.startSeconds,
+        endSeconds: params.endSeconds,
+        startIso: new Date(params.startSeconds * 1000).toISOString(),
+        endIso: new Date(params.endSeconds * 1000).toISOString(),
+    });
+
     const res = await fetch(url, {
         headers: {
             Authorization: `Bearer ${params.token}`,
         },
+    });
+
+    console.log('[alerts-debug] fetchAlertsHistory response', {
+        status: res.status,
+        ok: res.ok,
     });
 
     if (res.status === 401) {
@@ -85,12 +114,25 @@ export async function fetchAlertsHistory(params: {
     }
 
     const raw = (await res.json()) as unknown;
+    console.log('[alerts-debug] fetchAlertsHistory raw JSON', raw);
+
     if (!Array.isArray(raw)) {
+        console.log('[alerts-debug] fetchAlertsHistory invalid payload type', typeof raw);
         throw new Error('Alerts response was not an array');
     }
 
-    return raw.flatMap((item) => {
-        const row = normalizeAlertRow(item);
+    console.log('[alerts-debug] fetchAlertsHistory raw array length', raw.length);
+
+    const normalized = raw.flatMap((item, index) => {
+        const row = normalizeAlertRow(item, index);
         return row ? [row] : [];
     });
+
+    console.log('[alerts-debug] fetchAlertsHistory normalized', {
+        acceptedCount: normalized.length,
+        droppedCount: raw.length - normalized.length,
+        rows: normalized,
+    });
+
+    return normalized;
 }
