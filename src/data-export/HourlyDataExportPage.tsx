@@ -20,8 +20,19 @@ import {
 import './DataExportPage.css';
 import GridWorksApi from '../_util/GridWorksApi';
 import MultiInstallationDisplay from '../_shared/MultiInstallationDisplay';
+import { PlotlyWrapper } from '../visualizer/PlotlyWrapper';
+import Plot, { type PlotParams } from 'react-plotly.js';
+import type { Config, Layout, PlotData } from 'plotly.js';
+import { formatForDisplay, getDefaultPlotLayout } from '../visualizer/plot-configs';
+import { DateTime } from 'luxon';
 
 const EMPTY_INSTALLATIONS: InstallationRole[] = [];
+
+interface HourlyElectricityApiResponseItem {
+  0: string,
+  1: number,
+  2: number
+}
 
 export default function HourlyDataExportPage() {
   const session = useContext(SessionContext);
@@ -34,8 +45,8 @@ export default function HourlyDataExportPage() {
   const [hourlyEnd, setHourlyEnd] = useState(() => getDefaultDate(false));
   const [hourlyCsvBusy, setHourlyCsvBusy] = useState(false);
   const [hourlyPlotBusy, setHourlyPlotBusy] = useState(false);
-  const [hourlyPlotVisible, setHourlyPlotVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [plotData, setPlotData] = useState<HourlyElectricityApiResponseItem[] | null>(null);
 
   const hourlyActionsBusy = hourlyCsvBusy || hourlyPlotBusy;
 
@@ -68,6 +79,7 @@ export default function HourlyDataExportPage() {
       `/api/v2/installations/${[...selectedInstallationIds][0]}/hourly.data` :
       `/api/v2/installations/${[...selectedInstallationIds].sort().join(',')}/hourly.electricity`;
 
+    setHourlyCsvBusy(true);
     try {
       await GridWorksApi.get(url,
         {
@@ -89,97 +101,126 @@ export default function HourlyDataExportPage() {
 
   async function onHourlyPlot() {
     setError(null);
-    if (hourlyAliases.length === 0) {
+    if (selectedInstallationIds.size === 0) {
       setError('No house aliases available for hourly plot.');
       return;
     }
-    const startMs = wallDateTimeToUtcMs(hourlyStart);
-    const endMs = wallDateTimeToUtcMs(hourlyEnd);
-    if (!isEndDateOldEnough(endMs, 10, hourlyAliases)) {
-      setError('End time must be at least 10 days in the past when viewer access applies to any selected installation.');
+    const startDate = wallDateTimeToUtc(hourlyStart);
+    const endDate = wallDateTimeToUtc(hourlyEnd);
+
+    if (startDate == null || endDate == null) {
+      return;
+    }
+
+    if (!canViewDataFromDate(session, [...selectedInstallationIds], startDate)) {
+
+      setError('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
       return;
     }
 
     setHourlyPlotBusy(true);
     try {
-      revokeHourlyPlotBlobUrls();
-      const host = hourlyPlotHostRef.current;
-      if (host) {
-        host.innerHTML = '';
-      }
-
-      const result = await fetchHourlyPlots({
-        token,
-        selectedShortAliases: hourlyAliases,
-        startMs,
-        endMs,
-        darkmode: getIsDarkMode(),
-      });
-
-      if (result.kind === 'json_error') {
-        if (result.message) {
-          window.alert(result.message);
+      const apiResult = await GridWorksApi.get(`/api/v2/installations/${[...selectedInstallationIds].sort().join(',')}/hourly.electricity`,
+        {
+          params: {
+            start: startDate.toISO(),
+            end: endDate.toISO(),
+          },
         }
-        setHourlyPlotVisible(true);
-        const mount = hourlyPlotHostRef.current;
-        if (mount) {
-          const el = document.createElement('div');
-          el.style.cssText = 'color: var(--text-muted); text-align: center; padding: 2rem; font-size: 0.875rem;';
-          el.textContent = 'Could not find data for the selected house(s) during this period.';
-          mount.appendChild(el);
-        }
-        return;
-      }
-
-      const zip = await JSZip.loadAsync(result.blob);
-      setHourlyPlotVisible(true);
-      const plotHost = hourlyPlotHostRef.current;
-      if (!plotHost) {
-        return;
-      }
-
-      plotHost.innerHTML = '';
-
-      let hasPlots = false;
-      const narrow = typeof window !== 'undefined' && window.innerWidth < 650;
-
-      for (const filename of Object.keys(zip.files)) {
-        if (!filename.endsWith('.html') || zip.files[filename].dir) {
-          continue;
-        }
-        const text = await zip.files[filename].async('text');
-        hasPlots = true;
-        const htmlBlob = new Blob([text], { type: 'text/html' });
-        const htmlUrl = URL.createObjectURL(htmlBlob);
-        hourlyPlotBlobUrlsRef.current.push(htmlUrl);
-
-        const iframe = document.createElement('iframe');
-        iframe.src = htmlUrl;
-        iframe.style.width = narrow ? '100%' : '97.5%';
-        iframe.style.height = '375px';
-        iframe.style.maxWidth = '1500px';
-        iframe.style.border = 'none';
-        plotHost.appendChild(iframe);
-      }
-
-      if (!hasPlots) {
-        const d = document.createElement('div');
-        d.style.cssText = 'color: var(--danger-color); text-align: center; padding: 2rem; font-size: 0.875rem;';
-        d.textContent = 'Could not find data for this house and time frame';
-        plotHost.appendChild(d);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Hourly plot failed.');
-      revokeHourlyPlotBlobUrls();
-      const h = hourlyPlotHostRef.current;
-      if (h) {
-        h.innerHTML = '';
-      }
-      setHourlyPlotVisible(false);
+      );
+      setPlotData(apiResult.data as HourlyElectricityApiResponseItem[]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setError(message);
     } finally {
       setHourlyPlotBusy(false);
     }
   }
+
+
+  let plotContent: React.ReactNode;
+  if (plotData) {
+
+    const isDarkMode = getIsDarkMode();
+
+    const timeValues = plotData.map(p => DateTime.fromISO(p[0]));
+    const usageValues = plotData.map(p => p[1]);
+    const priceValues = plotData.map(p => p[2]);
+
+    const usagePlotData: Partial<PlotData> = {
+      type: 'bar',
+      x: timeValues.map(dt => formatForDisplay(dt.plus({ minutes: 30 }))),
+      y: usageValues,
+      opacity: isDarkMode ? 0.6 : 0.3,
+      marker: {
+        color: '#2a4ca2',
+        line: {
+          width: 0
+        }
+      },
+      name: 'Electricity Used',
+      showlegend: true,
+      hovertemplate: "%{x|%H}:00-%{x|%H}:59 | %{y:.1f} kWh<extra></extra>",
+      width: Array(timeValues.length).fill(3600000 / 1.2)
+    }
+
+    const pricePlotData: Partial<PlotData> = {
+      type: 'scatter',
+      x: timeValues.map(dt => formatForDisplay(dt)),
+      y: priceValues,
+      mode: 'lines',
+      opacity: 0.8,
+      line: {
+        color: 'red',
+        shape: 'hv'
+      },
+      name: 'Electricity Price',
+      showlegend: true,
+      hovertemplate: '%{x|%H:%M} | %{y:.2f} $/MWh<extra></extra>',
+      yaxis: 'y2'
+    }
+
+    const plotlyLayout: Partial<Layout> = getDefaultPlotLayout(isDarkMode);
+
+    plotlyLayout.title = {
+      ...plotlyLayout.title,
+      text: ''
+    };
+    plotlyLayout.yaxis = {
+      ...plotlyLayout.yaxis,
+      title: {
+        ...plotlyLayout?.yaxis?.title,
+        text: 'Quantity [kWh]',
+
+      },
+      range: [0, 1.3 * Math.max(3, ...usageValues)],
+    };
+    plotlyLayout.yaxis2 = {
+      ...plotlyLayout.yaxis2,
+      title: {
+        ...plotlyLayout?.yaxis2?.title,
+        text: 'Price [$/MWh]',
+
+      },
+      range: [0, 1.3 * Math.max(10, ...priceValues)],
+    };
+
+    const plotParams: Partial<PlotParams> = {
+      config: {
+        displayModeBar: false,
+        responsive: true,
+      },
+      style: { width: '100%', height: '100%' },
+      useResizeHandler: true
+    }
+
+
+    plotContent = <Plot data={[usagePlotData, pricePlotData]} layout={plotlyLayout} {...plotParams} />
+
+  } else if (hourlyPlotBusy) {
+    plotContent = <div className="loader" aria-label="Loading plot data" />;
+  }
+
 
   return (
     <div className="data-export-page">
@@ -310,6 +351,10 @@ export default function HourlyDataExportPage() {
             </button>
           </div>
         </div>
+
+        {plotContent &&
+          <PlotlyWrapper>{plotContent}</PlotlyWrapper>
+        }
 
         {/* <div id="data-export-electricity-plot-container" className="plot-container" style={{ display: hourlyPlotVisible ? 'flex' : 'none' }}>
           <div ref={hourlyPlotHostRef} className="plot-div visualizer-server-plots-root" />
