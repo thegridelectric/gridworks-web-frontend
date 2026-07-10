@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import type { InstallationRole } from "../_util/SessionContext";
+import type { InstallationSummary } from "../_util/SessionContext";
 
 export default function MultiInstallationDisplay({ installations, selectedInstallationIds }: { 
-    installations: InstallationRole[],
+    installations: InstallationSummary[],
     selectedInstallationIds: ReadonlySet<string> 
 }) {
 
@@ -13,17 +13,17 @@ export default function MultiInstallationDisplay({ installations, selectedInstal
 
     function selectedHouseFieldValue(
         selectedIds: ReadonlySet<string>,
-        installations: InstallationRole[],
+        installations: InstallationSummary[],
     ): string {
         if (selectedIds.size === 0) {
             return '';
         }
         const aliases: string[] = [];
         for (const inst of installations) {
-            if (!selectedIds.has(String(inst.gNodeAlias))) {
+            if (!selectedIds.has(String(inst.GNodeAlias))) {
                 continue;
             }
-            const a = (inst.displayName || inst.gNodeAlias || '').trim();
+            const a = (inst.DisplayName || inst.GNodeAlias || '').trim();
             if (a) {
                 aliases.push(a);
             }

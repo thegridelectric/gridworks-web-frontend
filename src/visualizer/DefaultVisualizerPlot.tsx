@@ -1,5 +1,5 @@
 import type { PlotParams } from "react-plotly.js";
-import type { ReadingsBundleApiResponse } from "./visualizerApiTypes";
+import type { ReadingsBundleApiResponse } from "../sema";
 import { formatForDisplay, formatIsoTimeForDisplay, getDefaultPlotLayout, getThemeColor, type PlotAxisConfig, type PlotConfig, type PlotTraceConfig } from "./plot-configs";
 import type { Datum, PlotData, Shape } from "plotly.js";
 import { DateTime } from "luxon";
@@ -378,7 +378,7 @@ export default function DefaultVisualizerPlot(props: DefaultPlotParams) {
     };
 
     plotlyLayout.shapes = [
-        ...readingsBundleData.LatePersistenceList.map(([start, end]): Partial<Shape> => ({
+        ...readingsBundleData.LatePersistenceTimePeriodList.map(([start, end]): Partial<Shape> => ({
             type: 'rect',
             xref: 'x',
             yref: 'paper',

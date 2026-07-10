@@ -1,33 +1,32 @@
 import { DateTime } from 'luxon';
 import { createContext } from 'react';
 
-/** Only these role keys are accepted; any other keys from the API are ignored. */
-const ALLOWED_ROLE_NAMES = new Set(['admin', 'viewer', 'owner']);
-
-
 export function installationRoleForGNode(
-    installationRoles: InstallationRole[] | undefined,
+    installationRoles: InstallationSummary[] | undefined,
     gNode: string | undefined,
-): InstallationRole | undefined {
+): InstallationSummary | undefined {
     if (!installationRoles?.length || gNode == null || gNode === '') {
         return undefined;
     }
     const needle = decodeURIComponent(gNode).trim();
-    return installationRoles.find((i) => i.gNodeAlias === needle);
-}
-
-export interface InstallationRole {
-    role: string;
-    gNodeAlias: string;
-    displayName: string;
-    alertStatus: any;
-    address: any;
-    commit: string;
+    return installationRoles.find((i) => i.GNodeAlias === needle);
 }
 
 export interface Session {
-    username: string;
-    installationRoles: InstallationRole[];
+    refreshTime: DateTime;
+    installations: InstallationSummary[];
+}
+
+export interface InstallationSummary {
+    Role: string;
+    GNodeAlias: string;
+    DisplayName: string;
+    Address: any;
+    LatestSnapshotTime: string;
+    LongestRunningZoneName: string;
+    LongestRunningZoneStartTime: string;
+    SystemMode: string;
+    MainAutoState: string;
 }
 
 export default createContext<Session | null>(null);
@@ -37,11 +36,11 @@ export function getRoleForInstallation(session: Session | null, installationGNod
         return null;
     }
 
-    return session.installationRoles.find(r => r.gNodeAlias == installationGNode)?.role || null;
+    return session.installations.find(ins => ins.GNodeAlias == installationGNode)?.Role || null;
 }
 
 export function canViewRealTimePage(session: Session | null): boolean {
-    return !!session && session.installationRoles.some(r => ['owner', 'admin'].includes(r.role));
+    return !!session && session.installations.some(ins => ['owner', 'admin'].includes(ins.Role));
 }
 
 export function canConnectRealTimeData(session: Session | null, installationGNode: string) : boolean {
@@ -50,7 +49,7 @@ export function canConnectRealTimeData(session: Session | null, installationGNod
 }
 
 export function canViewAdminPages(session: Session | null): boolean {
-    return !!session && session.installationRoles.some(r => r.role === 'admin');
+    return !!session && session.installations.some(ins => ins.Role === 'admin');
 }
 
 export function hasUnlimitedLookback(session: Session, installationGNodes: string[]) {
@@ -63,7 +62,7 @@ export function canViewDataFromDate(session: Session | null, installationGNodes:
         return false;
     }
 
-    if (installationGNodes.every(n => ['owner', 'admin'].includes(session.installationRoles.find(r => r.gNodeAlias == n)?.role || 'missing'))) {
+    if (installationGNodes.every(n => ['owner', 'admin'].includes(session.installations.find(ins => ins.GNodeAlias == n)?.Role || 'missing'))) {
         return true;
     }
 

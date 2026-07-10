@@ -1,11 +1,12 @@
 import { Navigate, useLocation } from "react-router";
 import { Spinner } from "react-bootstrap";
 
-import SessionContext, { canViewAdminPages, canViewRealTimePage, type Session } from "./_util/SessionContext";
+import SessionContext, { canViewAdminPages, canViewRealTimePage, type InstallationSummary, type Session } from "./_util/SessionContext";
 import HeaderLayout from "./_layout/HeaderLayout";
 import { getAuthToken } from "./auth/auth";
 import { useEffect, useState } from "react";
 import GridWorksApi from './_util/GridWorksApi';
+import { DateTime } from "luxon";
 
 
 
@@ -23,8 +24,19 @@ export default function App({ children }: React.PropsWithChildren) {
             if (!session && isSessionRequired) {
                 setIsLoadingSession(true);
                 try {
-                    const sessionResponse = await GridWorksApi.get<Session>('/api/v2/sessions/me');
-                    setSession(sessionResponse.data);
+                    const refreshTime = DateTime.now();
+                    // For now, a session is an array of installation summaries and the time that we fetched them.
+                    // TODO implement auto-refresh with something like this:
+                        // useEffect(() => {
+                        //     const id = window.setInterval(() => setNowMs(Date.now()), tickMs);
+                        //     return () => window.clearInterval(id);
+                        // }, [tickMs]);
+
+                    const installationSummariesResponse = await GridWorksApi.get<InstallationSummary[]>('/api/v2/installations/*/summaries');
+                    setSession({ 
+                        refreshTime,
+                        installations: installationSummariesResponse.data 
+                    });
                 }
                 catch {
                     console.log('Authentication failed')

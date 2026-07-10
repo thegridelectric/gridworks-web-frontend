@@ -1,7 +1,7 @@
 import { useContext, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 
-import SessionContext, { canViewDataFromDate, type InstallationRole, type Session } from '../_util/SessionContext';
+import SessionContext, { canViewDataFromDate, type InstallationSummary, type Session } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
     formatDate,
@@ -34,17 +34,17 @@ function dataColumnKeys(data: MorningReportData): string[] {
 
 function aliasesForQuery(
     selectedIds: ReadonlySet<string>,
-    installations: InstallationRole[],
+    installations: InstallationSummary[],
 ): string {
     if (selectedIds.size === 0) {
         return '';
     }
     const aliases: string[] = [];
     for (const inst of installations) {
-        if (!selectedIds.has(String(inst.gNodeAlias))) {
+        if (!selectedIds.has(String(inst.GNodeAlias))) {
             continue;
         }
-        const a = (inst.gNodeAlias || inst.displayName || '').trim();
+        const a = (inst.GNodeAlias || inst.DisplayName || '').trim();
         if (a) {
             aliases.push(a);
         }
@@ -91,14 +91,14 @@ function formatMillisForTable(millis: number) {
 }
 
 function tryFindDisplayName(session: Session, nodeName: string) {
-    return session.installationRoles.find(r => nodeName.includes(r.gNodeAlias))?.displayName || nodeName;
+    return session.installations.find(r => nodeName.includes(r.GNodeAlias))?.DisplayName || nodeName;
 }
 
 function MorningReportPageContent() {
     const session = useContext(SessionContext);
-    const { selectedInstallationIds } = useHouseTableSelection();
+    const { selectedInstallationIds, clearInstallationSelection } = useHouseTableSelection();
 
-    const installations = session?.installationRoles ?? [];
+    const installations = session?.installations ?? [];
     const houseAliasParam = useMemo(
         () => aliasesForQuery(selectedInstallationIds, installations),
         [selectedInstallationIds, installations],
@@ -119,7 +119,7 @@ function MorningReportPageContent() {
             return houseAliasParam.split(',').map((s) => s.trim()).filter((s) => s.length > 0);
         }
         return installations
-            .map((i) => (i.gNodeAlias || i.displayName || '').trim())
+            .map((i) => (i.GNodeAlias || i.DisplayName || '').trim())
             .filter((s) => s.length > 0);
     }, [houseAliasParam, installations]);
 
@@ -226,6 +226,7 @@ function MorningReportPageContent() {
         setTableData(null);
         setError(null);
         setDetailRowIndex(null);
+        clearInstallationSelection();
     }
 
     const columnKeys = tableData ? dataColumnKeys(tableData) : [];

@@ -3,7 +3,7 @@ import { DateTime } from 'luxon';
 import { RefreshCw } from 'feather-icons-react';
 
 import { getRequiredAuthToken } from '../auth/auth';
-import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
+import SessionContext, { type InstallationSummary } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import { NEW_YORK_TIME_ZONE } from '../_util/newYorkTime';
 import { fetchAlertsHistory, type AlertRow } from './fetchAlerts';
@@ -11,21 +11,21 @@ import { fetchAlertsHistory, type AlertRow } from './fetchAlerts';
 import './AlertsPage.css';
 
 const LOOKBACK_DAYS = 10;
-const EMPTY_INSTALLATIONS: BasicInstallationInfo[] = [];
+const EMPTY_INSTALLATIONS: InstallationSummary[] = [];
 
 function selectedAliasList(
     selectedIds: ReadonlySet<string>,
-    installations: BasicInstallationInfo[],
+    installations: InstallationSummary[],
 ): string[] {
     if (selectedIds.size === 0) {
         return [];
     }
     const aliases: string[] = [];
     for (const inst of installations) {
-        if (!selectedIds.has(String(inst.id))) {
+        if (!selectedIds.has(String(inst.GNodeAlias))) {
             continue;
         }
-        const a = (inst.houseAlias || inst.displayName || '').trim();
+        const a = (inst.GNodeAlias || inst.DisplayName || '').trim();
         if (a) {
             aliases.push(a);
         }

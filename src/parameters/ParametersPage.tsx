@@ -4,7 +4,7 @@ import Plot from 'react-plotly.js';
 import SingleInstallationPicker from '../_shared/SingleInstallationPicker';
 import SessionContext, {
     installationRoleForGNode,
-    type BasicInstallationInfo,
+    type InstallationSummary,
 } from '../_util/SessionContext';
 import { getIsDarkMode } from '../_util/theme';
 import { useRouteInfo } from '../_util/useRouteInfo';
@@ -31,7 +31,7 @@ function useHtmlThemeMutationTick() {
     return tick;
 }
 
-function ParametersCard({ installation }: { installation: BasicInstallationInfo | undefined }) {
+function ParametersCard({ installation }: { installation: InstallationSummary | undefined }) {
     const hasHouse = Boolean(installation);
     const [params, setParams] = useState<HeatingParams>(() =>
         installation ? heatingParamsFromHouse(installation.houseParameters) : { ...DEFAULT_HEATING_PARAMS },

@@ -26,7 +26,7 @@ export default function SidebarNav() {
     }
 
     const { installationGNode } = useRouteInfo();
-    const installationName = installationRoleForGNode(session?.installationRoles, installationGNode)?.displayName ?? null;
+    const installationName = installationRoleForGNode(session?.installations, installationGNode)?.DisplayName ?? null;
     const installationHeading = installationName
         ? `${installationName.charAt(0).toUpperCase()}${installationName.slice(1)}`
         : null;
@@ -66,7 +66,7 @@ export default function SidebarNav() {
                         <Nav.Link as={ReactRouterNavLink} to="/morning-report/"><Sun />Morning Report</Nav.Link>
                     </li>
                 )}
-                {isAdmin && (
+                {showAdminNav && (
                     <li className="nav-item">
                         <Nav.Link as={ReactRouterNavLink} to="/alerts/"><Bell />Alerts</Nav.Link>
                     </li>

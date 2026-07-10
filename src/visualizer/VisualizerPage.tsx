@@ -11,7 +11,7 @@ import {
 import { getIsDarkMode } from "../_util/theme";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import GridWorksApi from '../_util/GridWorksApi';
-import type { ReadingsBundleApiResponse } from "./visualizerApiTypes";
+import type { ReadingsBundleApiResponse } from "../sema";
 import { VisualizerOptionsPanel } from "./VisualizerControls";
 import { CLIENT_ONLY_VISUALIZER_CHANNEL_IDS } from "./visualizerChannels";
 import { useVisualizerControls } from "./useVisualizerControls";

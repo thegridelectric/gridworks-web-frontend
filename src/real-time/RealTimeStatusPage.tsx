@@ -10,7 +10,6 @@ import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
 import SessionContext, { canConnectRealTimeData, installationRoleForGNode } from "../_util/SessionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketUrl } from "../_util/visualizerApi";
-import { hasRealTimeAccessForInstallationAlias } from "../auth/auth";
 import { controlFromSnapshot, type SnapshotPayload } from "./snapshotState";
 
 interface RelayInfo {
@@ -560,8 +559,8 @@ function RealTimeStatusConnection({
 export default function RealTimeStatusPage() {
     const { installationGNode } = useRouteInfo();
     const session = useContext(SessionContext);
-    const installation = installationRoleForGNode(session?.installationRoles, installationGNode);
-    const houseShortAlias = installation?.displayName || '';
+    const installation = installationRoleForGNode(session?.installations, installationGNode);
+    const houseShortAlias = installation?.DisplayName || '';
     const isSpruce = houseShortAlias.toLowerCase().includes('spruce');
 
     const installationUnknown =

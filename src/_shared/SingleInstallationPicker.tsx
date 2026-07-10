@@ -10,11 +10,11 @@ export default function SingleInstallationPicker() {
     const { pathRoot, installationGNode } = useRouteInfo();
 
     const installationsSorted = useMemo(() => {
-        const list = session?.installationRoles ?? [];
+        const list = session?.installations ?? [];
         return [...list].sort((a, b) =>
-            a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' }),
+            a.DisplayName.localeCompare(b.DisplayName, undefined, { sensitivity: 'base' }),
         );
-    }, [session?.installationRoles]);
+    }, [session?.installations]);
 
     function onInstallationChanged(evt: React.ChangeEvent<HTMLSelectElement, Element>) {
         evt.preventDefault();
@@ -32,7 +32,7 @@ export default function SingleInstallationPicker() {
             <option value=''>Select an installation</option>
         }
         {installationsSorted.map((i) => (
-            <option key={i.gNodeAlias} value={i.gNodeAlias}>{i.displayName}</option>
+            <option key={i.GNodeAlias} value={i.GNodeAlias}>{i.DisplayName}</option>
         ))}
     </select>
 

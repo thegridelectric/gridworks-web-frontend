@@ -1,8 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import JSZip from 'jszip';
 
-import { getRequiredAuthToken } from '../auth/auth';
-import SessionContext, { canViewDataFromDate, type InstallationRole } from '../_util/SessionContext';
+import SessionContext, { canViewDataFromDate, type InstallationSummary } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
   formatDate,
@@ -10,12 +9,8 @@ import {
   getDefaultDate,
   getNowInNewYork,
   wallDateTimeToUtc,
-  wallDateTimeToUtcMs,
 } from '../_util/newYorkTime';
 import { getIsDarkMode } from '../_util/theme';
-import {
-  fetchHourlyPlots,
-} from './fetchHourlyPlots';
 
 import './DataExportPage.css';
 import GridWorksApi from '../_util/GridWorksApi';
@@ -26,7 +21,7 @@ import type { Config, Layout, PlotData } from 'plotly.js';
 import { formatForDisplay, getDefaultPlotLayout } from '../visualizer/plot-configs';
 import { DateTime } from 'luxon';
 
-const EMPTY_INSTALLATIONS: InstallationRole[] = [];
+const EMPTY_INSTALLATIONS: InstallationSummary[] = [];
 
 interface HourlyElectricityApiResponseItem {
   0: string,
@@ -36,9 +31,9 @@ interface HourlyElectricityApiResponseItem {
 
 export default function HourlyDataExportPage() {
   const session = useContext(SessionContext);
-  const { selectedInstallationIds } = useHouseTableSelection();
+  const { selectedInstallationIds, clearInstallationSelection } = useHouseTableSelection();
 
-  const installations = session?.installationRoles ?? EMPTY_INSTALLATIONS;
+  const installations = session?.installations ?? EMPTY_INSTALLATIONS;
 
 
   const [hourlyStart, setHourlyStart] = useState(() => getDefaultDate(true));
@@ -235,7 +230,7 @@ export default function HourlyDataExportPage() {
           <h5 className="card-title mb-0">Download hourly data</h5>
           <div className="status-badges">
             <div className="loader" style={{ display: hourlyActionsBusy ? 'inline-block' : 'none' }} aria-hidden={!hourlyActionsBusy} />
-            <button type="button" className="filter-toggle" onClick={undefined}>
+            <button type="button" className="filter-toggle" onClick={evt => { evt.preventDefault(); clearInstallationSelection(); }}>
               <span>Clear</span>
             </button>
           </div>

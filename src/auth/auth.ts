@@ -91,85 +91,85 @@ export function getRequiredAuthToken(): string {
 //     return getAuthUsername() ?? '';
 // }
 
-// /** Roles from login only (persisted). Keys are role names, values are installation strings. */
-// export function getAuthRoles(): AuthRolesMap {
-//     const raw = localStorage.getItem(AUTH_ROLES_KEY);
-//     if (!raw) {
-//         return {};
-//     }
-//     try {
-//         const parsed = JSON.parse(raw) as unknown;
-//         const roles = parseRoles(parsed);
-//         return roles ?? {};
-//     } catch {
-//         return {};
-//     }
-// }
+/** Roles from login only (persisted). Keys are role names, values are installation strings. */
+export function getAuthRoles(): AuthRolesMap {
+    const raw = localStorage.getItem(AUTH_ROLES_KEY);
+    if (!raw) {
+        return {};
+    }
+    try {
+        const parsed = JSON.parse(raw) as unknown;
+        const roles = parseRoles(parsed);
+        return roles ?? {};
+    } catch {
+        return {};
+    }
+}
 
-// function hasRole(roleName: string): boolean {
-//     const key = roleName.trim().toLowerCase();
-//     return Object.prototype.hasOwnProperty.call(getAuthRoles(), key);
-// }
+function hasRole(roleName: string): boolean {
+    const key = roleName.trim().toLowerCase();
+    return Object.prototype.hasOwnProperty.call(getAuthRoles(), key);
+}
 
-// export function isAdminUser(): boolean {
-//     return hasRole('admin');
-// }
+export function isAdminUser(): boolean {
+    return hasRole('admin');
+}
 
-// /**
-//  * Account has only viewer roles (no owner, no admin). Used when no installation
-//  * context is available for date lookback (fallback: apply viewer restriction).
-//  */
-// export function isViewerUser(): boolean {
-//     return hasRole('viewer') && !hasRole('owner') && !hasRole('admin');
-// }
+/**
+ * Account has only viewer roles (no owner, no admin). Used when no installation
+ * context is available for date lookback (fallback: apply viewer restriction).
+ */
+export function isViewerUser(): boolean {
+    return hasRole('viewer') && !hasRole('owner') && !hasRole('admin');
+}
 
-// export function normalizeInstallationAlias(alias: string): string {
-//     return alias.trim().toLowerCase();
-// }
+export function normalizeInstallationAlias(alias: string): string {
+    return alias.trim().toLowerCase();
+}
 
-// /**
-//  * Effective access for a house alias from the role → installation map.
-//  * If both `owner` and `viewer` map to the same alias, owner wins.
-//  */
-// export function getAccessLevelForInstallationAlias(alias: string): 'admin' | 'owner' | 'viewer' | null {
-//     const n = normalizeInstallationAlias(alias);
-//     if (!n) {
-//         return null;
-//     }
-//     if (isAdminUser()) {
-//         return 'admin';
-//     }
-//     const roles = getAuthRoles();
-//     let matchedOwner = false;
-//     let matchedViewer = false;
-//     for (const [role, inst] of Object.entries(roles)) {
-//         if (role === 'admin') {
-//             continue;
-//         }
-//         if (normalizeInstallationAlias(inst) !== n) {
-//             continue;
-//         }
-//         if (role === 'owner') {
-//             matchedOwner = true;
-//         }
-//         if (role === 'viewer') {
-//             matchedViewer = true;
-//         }
-//     }
-//     if (matchedOwner) {
-//         return 'owner';
-//     }
-//     if (matchedViewer) {
-//         return 'viewer';
-//     }
-//     return null;
-// }
+/**
+ * Effective access for a house alias from the role → installation map.
+ * If both `owner` and `viewer` map to the same alias, owner wins.
+ */
+export function getAccessLevelForInstallationAlias(alias: string): 'admin' | 'owner' | 'viewer' | null {
+    const n = normalizeInstallationAlias(alias);
+    if (!n) {
+        return null;
+    }
+    if (isAdminUser()) {
+        return 'admin';
+    }
+    const roles = getAuthRoles();
+    let matchedOwner = false;
+    let matchedViewer = false;
+    for (const [role, inst] of Object.entries(roles)) {
+        if (role === 'admin') {
+            continue;
+        }
+        if (normalizeInstallationAlias(inst) !== n) {
+            continue;
+        }
+        if (role === 'owner') {
+            matchedOwner = true;
+        }
+        if (role === 'viewer') {
+            matchedViewer = true;
+        }
+    }
+    if (matchedOwner) {
+        return 'owner';
+    }
+    if (matchedViewer) {
+        return 'viewer';
+    }
+    return null;
+}
 
-// /** Real-time dashboard: owner or admin for that installation. */
-// export function hasRealTimeAccessForInstallationAlias(alias: string): boolean {
-//     const level = getAccessLevelForInstallationAlias(alias);
-//     return level === 'admin' || level === 'owner';
-// }
+/** Real-time dashboard: owner or admin for that installation. */
+export function hasRealTimeAccessForInstallationAlias(alias: string): boolean {
+    const level = getAccessLevelForInstallationAlias(alias);
+    return level === 'admin' || level === 'owner';
+}
 
 // /** Apply 10-day end-date rule for queries scoped to this installation. */
 // export function isViewerDateRestrictionForInstallationAlias(alias: string): boolean {
