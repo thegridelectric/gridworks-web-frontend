@@ -1,12 +1,13 @@
 import { Navigate, useLocation } from "react-router";
 import { Spinner } from "react-bootstrap";
 
-import SessionContext, { canViewAdminPages, canViewRealTimePage, type InstallationSummary, type Session } from "./_util/SessionContext";
+import SessionContext, { canViewAdminPages, canViewRealTimePage, type Session } from "./_util/SessionContext";
 import HeaderLayout from "./_layout/HeaderLayout";
-import { getAuthToken } from "./auth/auth";
+import { getAuthToken, parseUsernameFromAuthToken } from "./auth/auth";
 import { useEffect, useState } from "react";
 import GridWorksApi from './_util/GridWorksApi';
 import { DateTime } from "luxon";
+import type { InstallationSummary } from "./sema";
 
 
 
@@ -17,6 +18,7 @@ export default function App({ children }: React.PropsWithChildren) {
 
     const location = useLocation();
     const authToken = getAuthToken();
+
     const isSessionRequired = location.pathname !== '/login/';
 
     useEffect(() => {
@@ -33,7 +35,9 @@ export default function App({ children }: React.PropsWithChildren) {
                         // }, [tickMs]);
 
                     const installationSummariesResponse = await GridWorksApi.get<InstallationSummary[]>('/api/v2/installations/*/summaries');
+                    const username = parseUsernameFromAuthToken(authToken!);
                     setSession({ 
+                        username,
                         refreshTime,
                         installations: installationSummariesResponse.data 
                     });

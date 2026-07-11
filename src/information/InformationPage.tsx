@@ -6,49 +6,49 @@ import { useRouteInfo } from '../_util/useRouteInfo';
 
 import './InformationPage.css';
 
-type InfoSection = 'address' | 'contact' | 'status' | 'hardware';
+type InfoSection = 'Address' | 'contact' | 'status' | 'hardware';
 
 export default function InformationPage() {
   const session = useContext(SessionContext);
-  const { currentInstallationId } = useRouteInfo();
-  const installation = installationRoleForGNode(session?.installations, currentInstallationId);
+  const { installationGNode } = useRouteInfo();
+  const installation = installationRoleForGNode(session?.installations, installationGNode);
 
   const [activeSection, setActiveSection] = useState<InfoSection | null>(null);
 
-  const selectedHouseDisplay = (installation?.houseAlias || installation?.displayName || '').trim();
+  const selectedHouseDisplay = (installation?.GNodeAlias || installation?.DisplayName || '').trim();
   const statusValue = useMemo(() => {
-    const s = installation?.alertStatus;
+    const s = installation?.AlertStatus;
     if (s === 'ok') return 'OK';
     if (s === 'alert') return 'Alert';
     return 'Unknown';
-  }, [installation?.alertStatus]);
+  }, [installation?.AlertStatus]);
   const hasSelectedHouse = selectedHouseDisplay.length > 0;
-  const hardwareValue = installation?.hardwareLayout?.trim() || 'None';
+  const hardwareValue = installation?.HardwareLayout?.trim() || 'None';
 
-  const addressRows = [
-    ['Street', installation?.address?.street],
-    ['City', installation?.address?.city],
-    ['State', installation?.address?.state],
-    ['ZIP', installation?.address?.zip],
-    ['Country', installation?.address?.country],
+  const AddressRows = [
+    ['Street', installation?.Address?.street],
+    ['City', installation?.Address?.city],
+    ['State', installation?.Address?.state],
+    ['ZIP', installation?.Address?.zip],
+    ['Country', installation?.Address?.country],
     ['Coordinates',
-      installation?.address?.latitude != null && installation?.address?.longitude != null
-        ? `${installation.address.latitude}, ${installation.address.longitude}`
+      installation?.Address?.latitude != null && installation?.Address?.longitude != null
+        ? `${installation.Address.latitude}, ${installation.Address.longitude}`
         : undefined],
   ].filter(([, value]) => !!value);
 
   const primaryContactRows = [
-    ['First name', installation?.primaryContact?.firstName],
-    ['Last name', installation?.primaryContact?.lastName],
-    ['Email', installation?.primaryContact?.email],
-    ['Phone', installation?.primaryContact?.phone],
+    ['First name', installation?.PrimaryContact?.firstName],
+    ['Last name', installation?.PrimaryContact?.lastName],
+    ['Email', installation?.PrimaryContact?.email],
+    ['Phone', installation?.PrimaryContact?.phone],
   ].filter(([, value]) => !!value);
 
   const secondaryContactRows = [
-    ['First name', installation?.secondaryContact?.firstName],
-    ['Last name', installation?.secondaryContact?.lastName],
-    ['Email', installation?.secondaryContact?.email],
-    ['Phone', installation?.secondaryContact?.phone],
+    ['First name', installation?.SecondaryContact?.firstName],
+    ['Last name', installation?.SecondaryContact?.lastName],
+    ['Email', installation?.SecondaryContact?.email],
+    ['Phone', installation?.SecondaryContact?.phone],
   ].filter(([, value]) => !!value);
 
   function toggleSection(section: InfoSection) {
@@ -81,7 +81,7 @@ export default function InformationPage() {
         </div>
 
         <div className="d-flex gap-2 mb-4" style={{ marginBottom: '0 !important' }}>
-          <button className="btn btn-sm btn-outline-secondary" type="button" disabled={!hasSelectedHouse} onClick={() => toggleSection('address')}>
+          <button className="btn btn-sm btn-outline-secondary" type="button" disabled={!hasSelectedHouse} onClick={() => toggleSection('Address')}>
             Address
           </button>
           <button className="btn btn-sm btn-outline-secondary" type="button" disabled={!hasSelectedHouse} onClick={() => toggleSection('contact')}>
@@ -96,13 +96,13 @@ export default function InformationPage() {
         </div>
 
         <div className="details-grid info-details-grid" style={{ display: hasVisibleSections ? 'grid' : 'none' }}>
-          <div className="detail-item" style={{ display: activeSection === 'address' ? 'block' : 'none' }}>
+          <div className="detail-item" style={{ display: activeSection === 'Address' ? 'block' : 'none' }}>
             <div className="detail-label">Address</div>
             <div className="detail-value">
-              {hasSelectedHouse && addressRows.length > 0 ? (
+              {hasSelectedHouse && AddressRows.length > 0 ? (
                 <table className="detail-table">
                   <tbody>
-                    {addressRows.map(([label, value]) => (
+                    {AddressRows.map(([label, value]) => (
                       <tr key={label}>
                         <th>{label}</th>
                         <td>{value}</td>
@@ -159,21 +159,21 @@ export default function InformationPage() {
           <div className="detail-item" style={{ display: activeSection === 'status' ? 'block' : 'none' }}>
             <div className="detail-label">Status</div>
             <div className="detail-value">
-              {hasSelectedHouse && installation?.alertStatus ? (
+              {hasSelectedHouse && installation?.AlertStatus ? (
                 <>
                   <span
-                    className={`badge ${installation.alertStatus === 'ok' ? 'bg-success' : installation.alertStatus === 'alert' ? 'bg-danger' : 'bg-secondary'}`}
+                    className={`badge ${installation.AlertStatus === 'ok' ? 'bg-success' : installation.AlertStatus === 'alert' ? 'bg-danger' : 'bg-secondary'}`}
                   >
                     {statusValue.toLowerCase()}
-                    {installation.alertMessage && installation.alertStatus !== 'alert' ? (
+                    {installation.AlertMessage && installation.AlertStatus !== 'alert' ? (
                       <>
                         <br />
-                        <small>{installation.alertMessage}</small>
+                        <small>{installation.AlertMessage}</small>
                       </>
                     ) : null}
                   </span>
-                  {installation.alertMessage ? (
-                    <div className="mt-2 info-alert-message">Alert: {installation.alertMessage}</div>
+                  {installation.AlertMessage ? (
+                    <div className="mt-2 info-alert-message">Alert: {installation.AlertMessage}</div>
                   ) : null}
                 </>
               ) : 'None'}

@@ -1,6 +1,6 @@
 import { type PlotParams } from "react-plotly.js";
 import type { Config } from 'plotly.js';
-import type { ReadingsBundleApiResponse } from './visualizerApiTypes';
+import type { ReadingsBundleApiResponse } from '../sema';
 import { type PlotConfig } from "./plot-configs";
 import WeatherForecastPlot from './WeatherForecastPlot';
 import DefaultVisualizerPlot from './DefaultVisualizerPlot';

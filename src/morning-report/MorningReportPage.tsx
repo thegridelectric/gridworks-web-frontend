@@ -1,7 +1,7 @@
 import { useContext, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 
-import SessionContext, { canViewDataFromDate, type InstallationSummary, type Session } from '../_util/SessionContext';
+import SessionContext, { canViewDataFromDate, type Session } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
     formatDate,
@@ -15,6 +15,7 @@ import GridWorksApi from '../_util/GridWorksApi';
 import './MorningReportPage.css';
 import { DateTime } from 'luxon';
 import MultiInstallationDisplay from '../_shared/MultiInstallationDisplay';
+import type { InstallationSummary } from '../sema';
 
 const MESSAGE_TYPES = [
     { value: 'gridworks.event.problem', label: 'gridworks.event.problem' },

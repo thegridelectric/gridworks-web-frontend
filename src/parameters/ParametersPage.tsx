@@ -4,21 +4,21 @@ import Plot from 'react-plotly.js';
 import SingleInstallationPicker from '../_shared/SingleInstallationPicker';
 import SessionContext, {
     installationRoleForGNode,
-    type InstallationSummary,
 } from '../_util/SessionContext';
 import { getIsDarkMode } from '../_util/theme';
 import { useRouteInfo } from '../_util/useRouteInfo';
 import {
     applyCrossFieldConstraints,
     buildParametersFigures,
+    calcNoPowerRswt,
     clampParam,
     heatingParamsFromHouse,
     PARAM_SPECS,
 } from './parametersModel';
-import type { HeatingParams } from './types';
 import { DEFAULT_HEATING_PARAMS } from './types';
 
 import './ParametersPage.css';
+import type { InstallationSummary, SpaceheatParameters } from '../sema';
 
 function useHtmlThemeMutationTick() {
     const [tick, setTick] = useState(0);
@@ -33,8 +33,8 @@ function useHtmlThemeMutationTick() {
 
 function ParametersCard({ installation }: { installation: InstallationSummary | undefined }) {
     const hasHouse = Boolean(installation);
-    const [params, setParams] = useState<HeatingParams>(() =>
-        installation ? heatingParamsFromHouse(installation.houseParameters) : { ...DEFAULT_HEATING_PARAMS },
+    const [params, setParams] = useState<SpaceheatParameters>(() =>
+        installation ? heatingParamsFromHouse(installation.HeatingParameters) : { ...DEFAULT_HEATING_PARAMS },
     );
 
     const themeTick = useHtmlThemeMutationTick();
@@ -55,7 +55,7 @@ function ParametersCard({ installation }: { installation: InstallationSummary | 
         }
     }, [params, isDark]);
 
-    function onParamChange(key: keyof HeatingParams, raw: string) {
+    function onParamChange(key: keyof SpaceheatParameters, raw: string) {
         const num = parseFloat(raw);
         if (Number.isNaN(num)) {
             return;
@@ -68,10 +68,14 @@ function ParametersCard({ installation }: { installation: InstallationSummary | 
         if (!installation) {
             return;
         }
-        setParams(heatingParamsFromHouse(installation.houseParameters));
+        setParams(heatingParamsFromHouse(installation.HeatingParameters));
     }
 
-    const noPowerRswt = -params.alpha / params.beta;
+    if (!params) {
+        return null;
+    }
+
+    const noPowerRswt = calcNoPowerRswt(params);
 
     return (
         <div className="card visualizer-card">
@@ -167,9 +171,9 @@ function ParametersCard({ installation }: { installation: InstallationSummary | 
 }
 
 export default function ParametersPage() {
-    const { currentInstallationId } = useRouteInfo();
+    const { installationGNode } = useRouteInfo();
     const session = useContext(SessionContext);
-    const installation = installationRoleForGNode(session?.installations, currentInstallationId);
+    const installation = installationRoleForGNode(session?.installations, installationGNode);
 
-    return <ParametersCard key={installation?.id ?? '__none__'} installation={installation} />;
+    return <ParametersCard key={installation?.GNodeAlias ?? '__none__'} installation={installation} />;
 }

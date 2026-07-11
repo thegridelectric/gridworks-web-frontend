@@ -1,6 +1,5 @@
 import { useContext, useState, type CSSProperties } from 'react';
 
-import { getRequiredAuthToken } from '../auth/auth';
 import SessionContext, { canViewDataFromDate } from '../_util/SessionContext';
 import {
   formatDate,
@@ -28,8 +27,6 @@ const LABEL_MUTED: CSSProperties = {
 export default function ChannelDataExportPage() {
   const session = useContext(SessionContext);
   const { installationGNode } = useRouteInfo();
-
-  const token = getRequiredAuthToken();
 
   const [channelStart, setChannelStart] = useState(() => getDefaultDate(true));
   const [channelEnd, setChannelEnd] = useState(() => getDefaultDate(false));
@@ -212,7 +209,7 @@ export default function ChannelDataExportPage() {
             <button
               type="button"
               className="btn btn-sm btn-outline-secondary"
-              disabled={channelBusy || !token || !installationGNode}
+              disabled={channelBusy || !installationGNode}
               style={{ opacity: channelBusy ? 0.5 : 1 }}
               onClick={onChannelCsv}
             >

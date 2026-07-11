@@ -572,7 +572,7 @@ export default function RealTimeStatusPage() {
         showConnectedContent && !canConnectRealTimeData(session, installationGNode!);
 
     // TODO fix this
-    const defaultSiegLoop = hardwareLayoutHasSiegEnabled(installation?.hardwareLayout);
+    const defaultSiegLoop = hardwareLayoutHasSiegEnabled(installation?.HardwareLayout);
 
     if (!showConnectedContent) {
         return (

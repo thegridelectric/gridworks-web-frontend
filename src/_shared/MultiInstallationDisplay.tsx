@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { InstallationSummary } from "../_util/SessionContext";
+import type { InstallationSummary } from "../sema";
 
 export default function MultiInstallationDisplay({ installations, selectedInstallationIds }: { 
     installations: InstallationSummary[],

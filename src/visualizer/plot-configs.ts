@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import type { DTickValue, Layout, LayoutAxis } from "plotly.js";
+import type { DTickValue, Layout } from "plotly.js";
 
 export interface PlotAxisRange {
     staticRange?: number[] | undefined,

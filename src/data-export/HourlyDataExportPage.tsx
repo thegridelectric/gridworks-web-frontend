@@ -1,7 +1,6 @@
-import { useContext, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import JSZip from 'jszip';
+import { useContext, useState } from 'react';
 
-import SessionContext, { canViewDataFromDate, type InstallationSummary } from '../_util/SessionContext';
+import SessionContext, { canViewDataFromDate } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
   formatDate,
@@ -17,9 +16,10 @@ import GridWorksApi from '../_util/GridWorksApi';
 import MultiInstallationDisplay from '../_shared/MultiInstallationDisplay';
 import { PlotlyWrapper } from '../visualizer/PlotlyWrapper';
 import Plot, { type PlotParams } from 'react-plotly.js';
-import type { Config, Layout, PlotData } from 'plotly.js';
+import type { Layout, PlotData } from 'plotly.js';
 import { formatForDisplay, getDefaultPlotLayout } from '../visualizer/plot-configs';
 import { DateTime } from 'luxon';
+import type { InstallationSummary } from '../sema';
 
 const EMPTY_INSTALLATIONS: InstallationSummary[] = [];
 

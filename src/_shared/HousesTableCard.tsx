@@ -1,11 +1,12 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import SessionContext, { type InstallationSummary } from "../_util/SessionContext";
+import SessionContext from "../_util/SessionContext";
 import { useHouseTableSelection } from "../_util/useHouseTableSelection";
 import { useRouteInfo } from "../_util/useRouteInfo";
 
 import "../installations/InstallationsPage.css";
 import { DateTime } from "luxon";
+import type { InstallationSummary } from "../sema";
 
 type SortColumn = "short_alias" | "address" | /* "commit" | */ "mode";
 type SortDirection = "asc" | "desc";

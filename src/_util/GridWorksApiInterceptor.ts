@@ -8,7 +8,7 @@ import { getRequiredAuthToken } from '../auth/auth.ts';
 
 export default function GridWorksApiInterceptor({ children }: React.PropsWithChildren): React.ReactNode {
 
-    function getFilenameFromHeader(header) {
+    function getFilenameFromHeader(header: any | undefined) {
         if (!header) return null;
 
         // Try to match the UTF-8 version (filename*) first
@@ -49,9 +49,9 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
         );
 
         const responseInterceptor = GridWorksApi.interceptors.response.use(
-            (response: AxiosResponse) => {
+            (response: AxiosResponse): AxiosResponse | Promise<AxiosResponse> => {
 
-                const contentDisposition = response.headers['content-disposition'];
+                const contentDisposition = response?.headers['content-disposition'];
                 if (contentDisposition) {
                     const filename = getFilenameFromHeader(contentDisposition);
                     if (filename) {
@@ -63,10 +63,9 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
                         a.click();
                         URL.revokeObjectURL(url);
 
-                        return null;
+                        return Promise.reject("downloaded");
                     }
                 }
-
                 return response;
             },
             async (error: AxiosError) => {

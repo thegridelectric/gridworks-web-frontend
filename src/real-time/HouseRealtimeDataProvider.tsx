@@ -7,14 +7,14 @@ import {
     type ReactNode,
 } from 'react';
 
-import { hasRealTimeAccessForInstallationAlias } from '../auth/auth';
-import SessionContext from '../_util/SessionContext';
+import SessionContext, { canConnectRealTimeData, type Session } from '../_util/SessionContext';
 import { getDashboardWebSocketUrl } from '../_util/visualizerApi';
 import { controlFromSnapshot, type SnapshotPayload } from './snapshotState';
 import {
     parseZoneWhitewireSeriesMessage,
     type ZoneWhitewireSeries,
 } from './RealTimeZoneWhitewirePlot';
+import type { InstallationSummary } from '../sema';
 
 export interface HouseRealtimeData {
     control: string | null;
@@ -44,25 +44,29 @@ function systemModeFromStatus(payload: unknown): string | null {
 }
 
 function houseAliasesFromInstallations(
-    installations: { houseAlias?: string; displayName: string }[],
+    session: Session,
+    installations: InstallationSummary[],
 ): string[] {
     const unique = new Set<string>();
     for (const installation of installations) {
-        const alias = (installation.houseAlias ?? installation.displayName ?? '').trim();
-        if (!alias || !hasRealTimeAccessForInstallationAlias(alias)) {
+        if (!canConnectRealTimeData(session, installation.GNodeAlias)) {
             continue;
         }
-        unique.add(alias);
+        unique.add(installation.GNodeAlias);
     }
     return [...unique].sort();
 }
 
 export function HouseRealtimeDataProvider({ children }: { children: ReactNode }) {
     const session = useContext(SessionContext);
+    if (!session) {
+        return null;
+    }
+    
     const [dataByAlias, setDataByAlias] = useState<Record<string, HouseRealtimeData>>({});
 
     const subscribedAliases = useMemo(
-        () => houseAliasesFromInstallations(session?.installations ?? []),
+        () => houseAliasesFromInstallations(session, session?.installations ?? []),
         [session?.installations],
     );
 

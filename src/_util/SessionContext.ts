@@ -1,5 +1,6 @@
 import { DateTime } from 'luxon';
 import { createContext } from 'react';
+import type { InstallationSummary } from '../sema';
 
 export function installationRoleForGNode(
     installationRoles: InstallationSummary[] | undefined,
@@ -13,21 +14,12 @@ export function installationRoleForGNode(
 }
 
 export interface Session {
+    username: string;
     refreshTime: DateTime;
     installations: InstallationSummary[];
 }
 
-export interface InstallationSummary {
-    Role: string;
-    GNodeAlias: string;
-    DisplayName: string;
-    Address: any;
-    LatestSnapshotTime: string;
-    LongestRunningZoneName: string;
-    LongestRunningZoneStartTime: string;
-    SystemMode: string;
-    MainAutoState: string;
-}
+
 
 export default createContext<Session | null>(null);
 

@@ -3,12 +3,13 @@ import { DateTime } from 'luxon';
 import { RefreshCw } from 'feather-icons-react';
 
 import { getRequiredAuthToken } from '../auth/auth';
-import SessionContext, { type InstallationSummary } from '../_util/SessionContext';
+import SessionContext from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import { NEW_YORK_TIME_ZONE } from '../_util/newYorkTime';
 import { fetchAlertsHistory, type AlertRow } from './fetchAlerts';
 
 import './AlertsPage.css';
+import type { InstallationSummary } from '../sema';
 
 const LOOKBACK_DAYS = 10;
 const EMPTY_INSTALLATIONS: InstallationSummary[] = [];
