@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import GridWorksApi from './_util/GridWorksApi';
 import { DateTime } from "luxon";
 import type { InstallationSummary } from "./sema";
+import { useTimer } from "./_util/useTimer";
 
 
 
@@ -18,22 +19,15 @@ export default function App({ children }: React.PropsWithChildren) {
 
     const location = useLocation();
     const authToken = getAuthToken();
+    const refreshTime = useTimer(10_000);
 
     const isAuthRequired = location.pathname !== '/login/';
     const isSessionLoaded = !!session;
 
     useEffect(() => {
         (async function() {
-            if (!isSessionLoaded && authToken) {
+            if (authToken) {
                 try {
-                    const refreshTime = DateTime.now();
-                    // For now, a session is an array of installation summaries and the time that we fetched them.
-                    // TODO implement auto-refresh with something like this:
-                        // useEffect(() => {
-                        //     const id = window.setInterval(() => setNowMs(Date.now()), tickMs);
-                        //     return () => window.clearInterval(id);
-                        // }, [tickMs]);
-
                     const installationSummariesResponse = await GridWorksApi.get<InstallationSummary[]>('/api/v2/installations/*/summaries');
                     const username = parseUsernameFromAuthToken(authToken!);
                     setSession({ 
@@ -49,7 +43,7 @@ export default function App({ children }: React.PropsWithChildren) {
                 }
             }
         })();
-    }, [authToken, isSessionLoaded]);
+    }, [authToken, isSessionLoaded, refreshTime]);
 
     if (location.pathname === '/') {
         return <Navigate to="/installations/" />;
