@@ -6,7 +6,6 @@ import HeaderLayout from "./_layout/HeaderLayout";
 import { getAuthToken, parseUsernameFromAuthToken } from "./auth/auth";
 import { useEffect, useState } from "react";
 import GridWorksApi from './_util/GridWorksApi';
-import { DateTime } from "luxon";
 import type { InstallationSummary } from "./sema";
 import { useTimer } from "./_util/useTimer";
 
