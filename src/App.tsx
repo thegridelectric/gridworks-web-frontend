@@ -13,18 +13,18 @@ import type { InstallationSummary } from "./sema";
 
 export default function App({ children }: React.PropsWithChildren) {
 
-    const [isLoadingSession, setIsLoadingSession] = useState(true);
     const [session, setSession] = useState<Session | null>(null);
+    const [sessionLoadError, setSessionLoadError] = useState<string | null>(null);
 
     const location = useLocation();
     const authToken = getAuthToken();
 
-    const isSessionRequired = location.pathname !== '/login/';
+    const isAuthRequired = location.pathname !== '/login/';
+    const isSessionLoaded = !!session;
 
     useEffect(() => {
         (async function() {
-            if (!session && isSessionRequired) {
-                setIsLoadingSession(true);
+            if (!isSessionLoaded && authToken) {
                 try {
                     const refreshTime = DateTime.now();
                     // For now, a session is an array of installation summaries and the time that we fetched them.
@@ -42,15 +42,14 @@ export default function App({ children }: React.PropsWithChildren) {
                         installations: installationSummariesResponse.data 
                     });
                 }
-                catch {
-                    console.log('Authentication failed')
-                }
-                finally {
-                    setIsLoadingSession(false);
+                catch (ex: any) {
+                    console.warn('Authentication failed');
+                    console.warn(ex);
+                    setSessionLoadError('message' in ex ? ex.message : 'Unknown error')
                 }
             }
         })();
-    }, [session, isSessionRequired]);
+    }, [authToken, isSessionLoaded]);
 
     if (location.pathname === '/') {
         return <Navigate to="/installations/" />;
@@ -58,22 +57,21 @@ export default function App({ children }: React.PropsWithChildren) {
     if (!location.pathname.endsWith('/')) {
         return <Navigate to={`${location.pathname}/`} replace />;
     }
-    if (isSessionRequired && !authToken) {
+    if (isAuthRequired && !authToken) {
         return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
     }
 
-    if (isSessionRequired) {
-        if (isLoadingSession) {
+    if (authToken) {
+        if (sessionLoadError) {
+            return <Navigate to="/login/" replace state={{ from: location.pathname }} />;
+        }
+        else if (!session) {
+            // If we have an authToken but no session we must be loading the session...
             return <HeaderLayout>
                 <Spinner animation="border" role="status" />
             </HeaderLayout>
         }
-
-        if (!session) {
-            return <Navigate to="/login/" replace />;
-        }
-
-        if (!canViewAdminPages(session)) {
+        else if (!canViewAdminPages(session)) {
             const isAllowedPath =
                 location.pathname.startsWith('/installations/') ||
                 (location.pathname.startsWith('/real-time/') && canViewRealTimePage(session)) ||
@@ -83,7 +81,6 @@ export default function App({ children }: React.PropsWithChildren) {
             }
         }
     }
-
 
     return <SessionContext value={session}>
         {children}
