@@ -26,6 +26,10 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Create .env file
+        run: |
+          touch .env
+          echo "VITE_GRIDWORKS_API_BASE_URL=https://web-api2.electricity.works" >> .env        
       - run: npm ci
       - run: npm run build
       - name: SPA fallback for GitHub Pages
