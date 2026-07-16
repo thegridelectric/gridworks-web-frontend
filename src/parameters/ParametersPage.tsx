@@ -34,7 +34,7 @@ function useHtmlThemeMutationTick() {
 function ParametersCard({ installation }: { installation: InstallationSummary | undefined }) {
     const hasHouse = Boolean(installation);
     const [params, setParams] = useState<SpaceheatParameters>(() =>
-        installation ? heatingParamsFromHouse(installation.HeatingParameters) : { ...DEFAULT_HEATING_PARAMS },
+        installation ? heatingParamsFromHouse(installation.SpaceheatParameters) : { ...DEFAULT_HEATING_PARAMS },
     );
 
     const themeTick = useHtmlThemeMutationTick();
@@ -68,7 +68,7 @@ function ParametersCard({ installation }: { installation: InstallationSummary | 
         if (!installation) {
             return;
         }
-        setParams(heatingParamsFromHouse(installation.HeatingParameters));
+        setParams(heatingParamsFromHouse(installation.SpaceheatParameters));
     }
 
     if (!params) {

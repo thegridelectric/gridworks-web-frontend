@@ -23,7 +23,7 @@ export default function InformationPage() {
     return 'Unknown';
   }, [installation?.AlertStatus]);
   const hasSelectedHouse = selectedHouseDisplay.length > 0;
-  const hardwareValue = installation?.HardwareLayout?.trim() || 'None';
+  const hardwareValue = JSON.stringify(installation?.HardwareLayout) || 'None';
 
   const AddressRows = [
     ['Street', installation?.Address?.street],
@@ -38,17 +38,17 @@ export default function InformationPage() {
   ].filter(([, value]) => !!value);
 
   const primaryContactRows = [
-    ['First name', installation?.PrimaryContact?.firstName],
-    ['Last name', installation?.PrimaryContact?.lastName],
-    ['Email', installation?.PrimaryContact?.email],
-    ['Phone', installation?.PrimaryContact?.phone],
+    ['First name', installation?.PrimaryContact?.FirstName],
+    ['Last name', installation?.PrimaryContact?.LastName],
+    ['Email', installation?.PrimaryContact?.Email],
+    ['Phone', installation?.PrimaryContact?.Phone],
   ].filter(([, value]) => !!value);
 
   const secondaryContactRows = [
-    ['First name', installation?.SecondaryContact?.firstName],
-    ['Last name', installation?.SecondaryContact?.lastName],
-    ['Email', installation?.SecondaryContact?.email],
-    ['Phone', installation?.SecondaryContact?.phone],
+    ['First name', installation?.SecondaryContact?.FirstName],
+    ['Last name', installation?.SecondaryContact?.LastName],
+    ['Email', installation?.SecondaryContact?.Email],
+    ['Phone', installation?.SecondaryContact?.Phone],
   ].filter(([, value]) => !!value);
 
   function toggleSection(section: InfoSection) {

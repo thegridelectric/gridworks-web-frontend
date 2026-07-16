@@ -1,3 +1,7 @@
+import type { InstallationContact } from "./InstallationContact";
+import type { SpaceheatParameters } from './SpaceheatParameters'
+import type { HardwareLayout } from './HardwareLayout';
+
 export interface InstallationSummary {
     Role: string;
     GNodeAlias: string;
@@ -8,12 +12,12 @@ export interface InstallationSummary {
     LongestRunningZoneStartTime: string;
     SystemMode: string;
     MainAutoState: string;
-
-    // TODO implement on the server
+    SpaceheatParameters: SpaceheatParameters | undefined;
     PrimaryContact: InstallationContact | undefined;
     SecondaryContact: InstallationContact | undefined;
+    HardwareLayout: HardwareLayout | undefined;
+
+    // TODO implement on the server
     AlertStatus: string | undefined;
     AlertMessage: string | undefined;
-    HardwareLayout: string | undefined;
-    HeatingParameters: HeatingParameters | undefined;
 }

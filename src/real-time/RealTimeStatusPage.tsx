@@ -119,32 +119,6 @@ const LOG_RAW_DASHBOARD_WS_INBOUND = false;
 //
 // const DEFAULT_SNAPSHOT_INTERVAL_SEC = 2;
 
-/** True when `hardware_layout` has `"sieg": true` (JSON string or already-parsed object). */
-function hardwareLayoutHasSiegEnabled(hardwareLayout: unknown): boolean {
-    if (hardwareLayout == null) {
-        return false;
-    }
-    if (typeof hardwareLayout === 'object' && !Array.isArray(hardwareLayout)) {
-        return (hardwareLayout as Record<string, unknown>).sieg === true;
-    }
-    if (typeof hardwareLayout !== 'string') {
-        return false;
-    }
-    const trimmed = hardwareLayout.trim();
-    if (!trimmed) {
-        return false;
-    }
-    try {
-        const parsed: unknown = JSON.parse(trimmed);
-        if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
-            return (parsed as Record<string, unknown>).sieg === true;
-        }
-    } catch {
-        return false;
-    }
-    return false;
-}
-
 function RealTimeStatusConnection({
     currentInstallationId,
     houseAlias,
@@ -572,8 +546,7 @@ export default function RealTimeStatusPage() {
     const realTimeNotPermittedForAlias =
         showConnectedContent && !canConnectRealTimeData(session, installationGNode!);
 
-    // TODO fix this
-    const defaultSiegLoop = hardwareLayoutHasSiegEnabled(installation?.HardwareLayout);
+    const defaultSiegLoop = installation?.HardwareLayout?.sieg;
 
     if (!showConnectedContent) {
         return (
