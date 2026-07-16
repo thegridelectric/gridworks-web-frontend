@@ -6,8 +6,15 @@ export function getVisualizerApiBaseUrl(): string {
     return 'https://web-backend.electricity.works';
 }
 
-const DASHBOARD_WS_ORIGIN = 'wss://web-backend.electricity.works';
+export function getDashboardWebSocketBaseUrl(): string {
+    // if (import.meta.env.DEV) {
+    //     return 'http://localhost:5173';
+    // }
+    const fromEnv = import.meta.env.VITE_GRIDWORKS_WS_BASE_URL;
+    if (typeof fromEnv === 'string' && fromEnv.trim() !== '') {
+        return fromEnv.replace(/\/$/, '');
+    }
+    const pathBase = import.meta.env.BASE_URL.replace(/\/$/, '');
+    return `${window.location.origin}${pathBase}`;
 
-export function getDashboardWebSocketUrl(shortAlias: string): string {
-    return `${DASHBOARD_WS_ORIGIN}/realtime/${shortAlias}`;
 }

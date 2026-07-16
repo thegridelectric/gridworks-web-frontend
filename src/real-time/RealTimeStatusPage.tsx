@@ -9,7 +9,7 @@ import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
 import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
 import SessionContext, { canConnectRealTimeData, installationRoleForGNode } from "../_util/SessionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
-import { getDashboardWebSocketUrl } from "../_util/visualizerApi";
+import { getDashboardWebSocketBaseUrl } from "../_util/visualizerApi";
 import { controlFromSnapshot, type SnapshotPayload } from "./snapshotState";
 
 interface RelayInfo {
@@ -192,7 +192,8 @@ function RealTimeStatusConnection({
             return;
         }
 
-        const wsUrl = getDashboardWebSocketUrl(houseAlias);
+        const wsBaseUrl = getDashboardWebSocketBaseUrl();
+        const wsUrl = `${wsBaseUrl}/realtime/${houseAlias}`;
         const websocket = new WebSocket(wsUrl);
         wsRef.current = websocket;
 
