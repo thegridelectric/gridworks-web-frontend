@@ -37,9 +37,12 @@ export function getAuthToken(): string | null {
     return localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
-export function parseUsernameFromAuthToken(authToken: string): string {
+export function parseAuthToken(authToken: string) {
     const parsed = jwtDecode(authToken);
-    return parsed.sub!;
+    return { 
+        username: parsed.sub!,
+        isSystemAdmin: 'adm' in parsed ? Boolean(parsed.adm) : false
+    };
 }
 
 export function getRequiredAuthToken(): string {

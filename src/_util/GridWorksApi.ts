@@ -14,6 +14,7 @@ function gridWorksApiBaseUrl(): string {
 
 const api = axios.create({
   baseURL: gridWorksApiBaseUrl(),
+  timeout: 5000
 });
 
 export default api;

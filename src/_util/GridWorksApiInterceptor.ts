@@ -84,7 +84,7 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
                         }
                     }
                     catch (ex) {
-                        console.log(ex);
+                        console.error(ex);
                     }
                 }
                 // Reject the promise so the error propagates to the component's catch block

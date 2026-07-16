@@ -2,7 +2,7 @@ import { BarChart, List, Table, Settings, Sun, Clock, Info, Bell } from 'feather
 import { NavLink as ReactRouterNavLink } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 import { useContext } from 'react';
-import SessionContext, { canViewAdminPages, canViewRealTimePage, installationRoleForGNode } from '../_util/SessionContext';
+import SessionContext, { canViewRealTimePage, installationRoleForGNode } from '../_util/SessionContext';
 import { useRouteInfo } from '../_util/useRouteInfo';
 
 
@@ -31,7 +31,7 @@ export default function SidebarNav() {
         ? `${installationName.charAt(0).toUpperCase()}${installationName.slice(1)}`
         : null;
     const installationUrlSuffix = installationGNode ? `${installationGNode}/` : '';
-    const showAdminNav = canViewAdminPages(session);
+    const showAdminNav = session.isSystemAdmin;
     const showRealTimeNav = canViewRealTimePage(session);
 
     function onSidebarClick(event: React.MouseEvent<HTMLElement>) {

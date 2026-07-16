@@ -404,7 +404,7 @@ function HousesCardTable({
                                     {h.LongestRunningZoneName ?
                                         <span>
                                             {h.LongestRunningZoneName.replace('-heat-call', '')}
-                                            <br />(for {refreshTime.diff(DateTime.fromISO(h.LongestRunningZoneStartTime), 'hours').hours.toFixed(1)} hours)
+                                            <br />(for {refreshTime.diff(DateTime.fromISO(h.LongestRunningZoneStartTime), 'hours').hours.toFixed(2)} hours)
                                         </span> :
                                         <span>(none)</span>
                                     }

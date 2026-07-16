@@ -15,6 +15,7 @@ export function installationRoleForGNode(
 
 export interface Session {
     username: string;
+    isSystemAdmin: boolean;
     refreshTime: DateTime;
     installations: InstallationSummary[];
 }
@@ -38,10 +39,6 @@ export function canViewRealTimePage(session: Session | null): boolean {
 export function canConnectRealTimeData(session: Session | null, installationGNode: string) : boolean {
     const role = getRoleForInstallation(session, installationGNode);
     return !!role && ['owner', 'admin'].includes(role);
-}
-
-export function canViewAdminPages(session: Session | null): boolean {
-    return !!session && session.installations.some(ins => ins.Role === 'admin');
 }
 
 export function hasUnlimitedLookback(session: Session, installationGNodes: string[]) {
