@@ -62,8 +62,6 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
                         a.download = filename;
                         a.click();
                         URL.revokeObjectURL(url);
-
-                        return Promise.reject("downloaded");
                     }
                 }
                 return response;

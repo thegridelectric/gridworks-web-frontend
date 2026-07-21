@@ -92,7 +92,7 @@ export default function ChannelDataExportPage() {
 
     try {
       await GridWorksApi.get(
-        `/api/v2/installations/${installationGNode}/synced.readings.bundle`,
+        `/api/v2/installations/${installationGNode}/readings.download`,
         {
           timeout: 60000,
           params: {

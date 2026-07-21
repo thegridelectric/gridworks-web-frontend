@@ -55,7 +55,9 @@ export default function App({ children }: React.PropsWithChildren) {
                     // For all other errors we just 
                     console.warn('Fetching installation summaries failed');
                     console.error(ex);
-                    setSessionLoadError('message' in ex ? ex.message : 'Unknown error')
+                    if (!session) {
+                        setSessionLoadError('message' in ex ? ex.message : 'Unknown error')
+                    }
                 }
             }
         })();
