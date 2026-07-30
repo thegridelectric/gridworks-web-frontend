@@ -89,7 +89,7 @@ export default function VisualizerPage() {
                         start: startDate.toISO(),
                         end: endDate.toISO(),
                         channels: selectedChannels.join(','),
-                        time_step: 60,
+                        time_step: Math.ceil(endDate.diff(startDate).as('seconds') / 1000),
                     }
                 }
             );
