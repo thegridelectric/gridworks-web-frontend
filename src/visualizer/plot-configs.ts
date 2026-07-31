@@ -115,6 +115,34 @@ const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
     }],
 };
 
+const SECONDARY_PLOT_CONFIG: PlotConfig = {
+    title: 'Secondary loop',
+    yAxis1: {
+        titleText: 'Temperature [°F]',
+        dualOnlyRange: [30, 70],
+    },
+    yAxis2: {
+        titleText: 'Flow [GPM]',
+        dualOnlyRange: [0, 35],
+    },
+    traces: [{
+        dataSeriesName: 'secondary-lwt',
+        legendText: 'Secondary LWT',
+        color: '#d62728'
+    }, {
+        dataSeriesName: 'secondary-ewt',
+        legendText: 'Secondary EWT',
+        color: '#1f77b4'
+    }, {
+        dataSeriesName: 'secondary-flow',
+        legendText: 'Secondary pump flow',
+        color: 'purple',
+        opacity: 0.4,
+        yAxis2: true,
+        lineShape: 'hv',
+    }],
+};
+
 const DISTRIBUTION_PLOT_CONFIG: PlotConfig = {
     title: 'Distribution',
     yAxis1: {
@@ -444,6 +472,7 @@ const WEATHER_CONFIG: PlotConfig = {
 export const PLOT_CONFIGS = [
     HEAT_PUMP_PLOT_CONFIG,
     PRICING_CONFIG,
+    SECONDARY_PLOT_CONFIG,
     DISTRIBUTION_PLOT_CONFIG,
     HEATCALLS_CONFIG,
     ZONES_CONFIG,

@@ -24,6 +24,14 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
         ],
     },
     {
+        category: 'Secondary loop',
+        channels: [
+            { id: 'secondary-lwt', label: 'Secondary leaving water temperature' },
+            { id: 'secondary-ewt', label: 'Secondary entering water temperature' },
+            { id: 'secondary-flow', label: 'Secondary pump flow rate' },
+        ],
+    },
+    {
         category: 'Distribution',
         channels: [
             { id: 'dist-swt', label: 'Source water temperature' },
