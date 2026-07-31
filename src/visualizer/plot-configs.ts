@@ -225,6 +225,27 @@ const ZONES_CONFIG: PlotConfig = {
     }]
 };
 
+const FLOOR_CONFIG: PlotConfig = {
+    title: 'Floor temperatures',
+    legendOrientation: 'h',
+    yAxis1: {
+        titleText: 'Floor temperature [°F]',
+        range: {
+            minOffset: 30,
+            maxOffset: 20
+        }
+    },
+    traces: [{
+        dataSeriesName: /(?<zoneName>zone(?<zoneNumber>\d+)-[\w-]+?-floor-temp)/,
+        color: {
+            options: ZONE_COLORS,
+            index: '$zoneNumber'
+        },
+        lineShape: 'hv',
+        legendText: '$zoneName'
+    }]
+};
+
 const BUFFER_CONFIG: PlotConfig = {
     title: 'Buffer',
     legendOrientation: 'h',
@@ -460,6 +481,7 @@ export const PLOT_CONFIGS = [
     DISTRIBUTION_PLOT_CONFIG,
     HEATCALLS_CONFIG,
     ZONES_CONFIG,
+    FLOOR_CONFIG,
     BUFFER_CONFIG,
     STORAGE_CONFIG,
     TOP_STATE_CONFIG,
