@@ -24,6 +24,7 @@ const UNIT_CONVERSIONS: Record<string, ConverterFunction> = {
     'WaterTempFTimes1000': x => x * .001,
     'AirTempCTimes1000': x => C2F(x * .001),
     'AirTempFTimes1000': x => x * .001,
+    'CelsiusTimes100': x => C2F(x * .01),
     'PowerW': x => x * .001,
     'GpmTimes100': x => x * .01,
     'WattHours': x => x * .001,
@@ -35,6 +36,7 @@ const UNIT_HOVER_FORMATS: Record<string, string> = {
     'AirTempCTimes1000': '%{y:.1f}°F',
     'WaterTempFTimes1000': '%{y:.1f}°F',
     'AirTempFTimes1000': '%{y:.1f}°F',
+    'CelsiusTimes100': '%{y:.1f}°F',
     'PowerW': '%{y:.1f} kW',
     'GpmTimes100': '%{y:.1f} GPM',
     'WattHours': '%{y:.1f} kWh',
@@ -265,8 +267,7 @@ export default function DefaultVisualizerPlot(props: DefaultPlotParams) {
 
     const selectedChannels = props.selectedChannels.flatMap(c => c.split(',')).map(c => c.startsWith('^') && c.endsWith('$') ? new RegExp(c) : c);
 
-    const tracesWithData: TraceWithData[] = [
-        ...readingsBundleData.ChannelReadingsList
+    const readingsTracesWithData: TraceWithData[] = readingsBundleData.ChannelReadingsList
             .filter(cr => selectedChannels.some(sc => matchChannelName(cr.ChannelName, sc)))
             .map(cr => ({
                 seriesName: cr.ChannelName,
@@ -279,7 +280,25 @@ export default function DefaultVisualizerPlot(props: DefaultPlotParams) {
                     matchChannelName(cr.ChannelName, t.dataSeriesName)
                 ))
             }))
-            .filter(x => x.trace),
+            .filter(x => x.trace);
+
+    // Prefer zone *-temp over *-gw-temp when both exist for the same zone base name.
+    const zoneTempBases = new Set(
+        readingsTracesWithData
+            .map((t) => t.seriesName)
+            .filter((name) => name.endsWith('-temp') && !name.endsWith('-gw-temp'))
+            .map((name) => name.slice(0, -'-temp'.length)),
+    );
+    const dedupedReadingsTraces = readingsTracesWithData.filter((t) => {
+        if (!t.seriesName.endsWith('-gw-temp')) {
+            return true;
+        }
+        const base = t.seriesName.slice(0, -'-gw-temp'.length);
+        return !zoneTempBases.has(base);
+    });
+
+    const tracesWithData: TraceWithData[] = [
+        ...dedupedReadingsTraces,
         ...(plotConfig.traces || [])
             .filter(t => t.dataSource === 'states')
             .flatMap(t => {

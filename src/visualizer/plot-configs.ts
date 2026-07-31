@@ -206,7 +206,7 @@ const ZONES_CONFIG: PlotConfig = {
         }
     },
     traces: [{
-        dataSeriesName: /(?<zoneName>zone(?<zoneNumber>\d+)-[\w-]+(?<!gw))-temp$/,
+        dataSeriesName: /(?<zoneName>zone(?<zoneNumber>\d+)-[\w-]+?(?<!floor))(?:-gw)?-temp$/,
         color: {
             options: ZONE_COLORS,
             index: '$zoneNumber'
