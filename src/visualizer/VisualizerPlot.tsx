@@ -5,6 +5,7 @@ import { type PlotConfig } from "./plot-configs";
 import WeatherForecastPlot from './WeatherForecastPlot';
 import DefaultVisualizerPlot from './DefaultVisualizerPlot';
 import PriceForecastPlot from "./PriceForecastPlot";
+import HeatCallsPlot from "./HeatCallsPlot";
 import type { DateTime } from "luxon";
 
 interface VisualizerPlotProps {
@@ -44,6 +45,8 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
         return <WeatherForecastPlot {...subPlotProps} />
     } else if (props.plotConfig.plotType === 'PriceForecast') {
         return <PriceForecastPlot {...subPlotProps} />
+    } else if (props.plotConfig.plotType === 'HeatCalls') {
+        return <HeatCallsPlot {...subPlotProps} />
     } else {
         return <DefaultVisualizerPlot {...subPlotProps} />
     }

@@ -44,7 +44,7 @@ export interface PlotTraceConfig {
 
 export interface PlotConfig {
     title: string,
-    plotType?: 'Default' | 'PriceForecast' | 'WeatherForecast' | null,
+    plotType?: 'Default' | 'PriceForecast' | 'WeatherForecast' | 'HeatCalls' | null,
     legendOrientation?: 'h' | 'v' | undefined,   // Default is 'v'
     yAxis1?: PlotAxisConfig,
     yAxis2?: PlotAxisConfig | undefined,
@@ -184,25 +184,9 @@ const ZONE_COLORS = ['#d62728', '#1f77b4', '#ff7f0e', '#2ca02c'];
 
 const HEATCALLS_CONFIG: PlotConfig = {
     title: 'Heat calls',
+    plotType: 'HeatCalls',
     legendOrientation: 'h',
-    yAxis1: {
-        dtick: 1,
-        range: {
-            minOffset: 0.5,
-            maxOffset: 0.5,
-        }
-    },
-    traces: [{
-        dataSeriesName: /(?<zoneName>zone(?<zoneNumber>\d+)-[\w-]+)-heat-call$/,
-        color: {
-            options: ZONE_COLORS,
-            index: '$zoneNumber'
-        },
-        lineShape: 'hv',
-        legendText: '$zoneName',
-        stacked: true,
-    }]
-}
+};
 
 const ZONES_CONFIG: PlotConfig = {
     title: 'Zones',
