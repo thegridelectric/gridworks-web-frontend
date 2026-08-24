@@ -17,16 +17,16 @@ type RouteSection = (typeof ROUTE_SECTIONS)[number];
 
 function useMatchedSection(): RouteSection | undefined {
     const matches = [
-        useMatch('/installations/:homeId?/'),
-        useMatch('/real-time/:homeId?/'),
-        useMatch('/visualizer/:homeId?/'),
-        useMatch('/information/:homeId?/'),
-        useMatch('/data-export/:homeId?/'),
-        useMatch('/data-export-channel/:homeId?/'),
-        useMatch('/data-export-hourly/:homeId?/'),
-        useMatch('/morning-report/:homeId?/'),
-        useMatch('/parameters/:homeId?/'),
+        useMatch('/installations/:gNode?/'),
+        useMatch('/real-time/:gNode?/'),
+        useMatch('/visualizer/:gNode?/'),
+        useMatch('/information/:gNode?/'),
+        useMatch('/data-export/:gNode?/'),
+        useMatch('/data-export-channel/:gNode?/'),
+        useMatch('/data-export-hourly/:gNode?/'),
+        useMatch('/morning-report/:gNode?/'),
         useMatch('/alerts/'),
+        useMatch('/parameters/:gNode?/'),
     ];
 
     const index = matches.findIndex(Boolean);
@@ -35,11 +35,11 @@ function useMatchedSection(): RouteSection | undefined {
 
 export function useRouteInfo(): {
     pathRoot: RouteSection | undefined;
-    currentInstallationId: string | undefined;
+    installationGNode: string | undefined;
 } {
-    const { homeId } = useParams();
+    const { gNode } = useParams();
     return {
         pathRoot: useMatchedSection(),
-        currentInstallationId: homeId,
+        installationGNode: gNode,
     };
 }

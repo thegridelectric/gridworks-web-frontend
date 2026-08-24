@@ -3,29 +3,39 @@ import { DateTime } from 'luxon';
 import { RefreshCw } from 'feather-icons-react';
 
 import { getRequiredAuthToken } from '../auth/auth';
-import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
+import SessionContext from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import { NEW_YORK_TIME_ZONE } from '../_util/newYorkTime';
-import { fetchAlertsHistory, type AlertRow } from './fetchAlerts';
 
 import './AlertsPage.css';
+import type { InstallationSummary } from '../sema';
+import GridWorksApi from '../_util/GridWorksApi';
 
 const LOOKBACK_DAYS = 10;
-const EMPTY_INSTALLATIONS: BasicInstallationInfo[] = [];
+const EMPTY_INSTALLATIONS: InstallationSummary[] = [];
+
+export type AlertRow = {
+    time_sent: number;
+    alert_alias: string;
+    site_alias: string;
+    message: string;
+    state: string;
+};
+
 
 function selectedAliasList(
     selectedIds: ReadonlySet<string>,
-    installations: BasicInstallationInfo[],
+    installations: InstallationSummary[],
 ): string[] {
     if (selectedIds.size === 0) {
         return [];
     }
     const aliases: string[] = [];
     for (const inst of installations) {
-        if (!selectedIds.has(String(inst.id))) {
+        if (!selectedIds.has(String(inst.GNodeAlias))) {
             continue;
         }
-        const a = (inst.houseAlias || inst.displayName || '').trim();
+        const a = (inst.GNodeAlias || inst.DisplayName || '').trim();
         if (a) {
             aliases.push(a);
         }
@@ -64,13 +74,15 @@ export default function AlertsPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const end = Math.floor(Date.now() / 1000);
-            const start = end - LOOKBACK_DAYS * 24 * 60 * 60;
-            const data = await fetchAlertsHistory({
-                token,
-                startSeconds: start,
-                endSeconds: end,
+            const end = DateTime.utc().set({millisecond: 0});
+            const start = end.minus({days: LOOKBACK_DAYS});
+            const response = await GridWorksApi.get('/api/v2/installations/*/alerts', {
+                params: {
+                    start: start.toISO(),
+                    end: end.toISO()
+                }
             });
+            const data = response.data;
             console.log('[alerts-debug] AlertsPage loadAlerts received', {
                 count: data.length,
                 rows: data,
@@ -93,8 +105,6 @@ export default function AlertsPage() {
         () => selectedAliasList(selectedInstallationIds, installations),
         [selectedInstallationIds, installations],
     );
-
-    const selectedHouseDisplay = selectedAliases.join(', ');
 
     // Newest first, filtered to the selected houses (all houses when none selected).
     const rows = useMemo(() => {
@@ -148,20 +158,6 @@ export default function AlertsPage() {
                 </div>
             </div>
             <div className="p-4">
-                <div className="mb-4">
-                    <label className="form-label alerts-selected-house-label" htmlFor="alerts-selected-house">
-                        Selected House(s)
-                    </label>
-                    <input
-                        id="alerts-selected-house"
-                        type="text"
-                        className="form-control text-light border-secondary"
-                        readOnly
-                        placeholder="All houses in the table"
-                        value={selectedHouseDisplay}
-                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    />
-                </div>
 
                 {error && (
                     <div className="alert alert-danger mb-0" role="alert">
@@ -170,7 +166,7 @@ export default function AlertsPage() {
                 )}
 
                 {!error && !isLoading && rows.length === 0 && (
-                    <div className="text-muted">No alerts in the last {LOOKBACK_DAYS} days for the selected houses.</div>
+                    <div className="text-muted">No alerts in the last {LOOKBACK_DAYS} days.</div>
                 )}
 
                 {rows.length > 0 && (

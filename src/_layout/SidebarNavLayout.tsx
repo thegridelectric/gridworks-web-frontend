@@ -1,11 +1,7 @@
-import React from "react";
-import HousesTableCard from "../_shared/HousesTableCard";
-import { HouseTableSelectionProvider } from "../_util/HouseTableSelectionContext";
-import { HouseRealtimeDataProvider } from "../real-time/HouseRealtimeDataProvider";
 import Header from "./Header";
 import SidebarNav from "./SidebarNav";
 
-export default function SidebarNavLayout({ children }: React.PropsWithChildren) {
+export default function SidebarNavLayout({children}: React.PropsWithChildren) {
 
     return <>
         <Header />
@@ -13,14 +9,7 @@ export default function SidebarNavLayout({ children }: React.PropsWithChildren) 
             <div className="row">
                 <SidebarNav />
                 <div className="main-container col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                    <HouseRealtimeDataProvider>
-                        <HouseTableSelectionProvider>
-                            <main>
-                                <HousesTableCard />
-                                {children}
-                            </main>
-                        </HouseTableSelectionProvider>
-                    </HouseRealtimeDataProvider>
+                    {children}
                 </div>
             </div>
         </div>
