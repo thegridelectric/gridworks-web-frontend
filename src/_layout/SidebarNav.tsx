@@ -2,7 +2,8 @@ import { BarChart, List, Table, Settings, Sun, Clock, Info, Bell } from 'feather
 import { NavLink as ReactRouterNavLink } from 'react-router';
 import Nav from 'react-bootstrap/Nav';
 import { useContext } from 'react';
-import SessionContext, { canViewRealTimePage, installationRoleForGNode } from '../_util/SessionContext';
+import { hasAnyRealTimeEligibleRole, isAdminUser } from '../auth/auth';
+import SessionContext, { installationForRouteId } from '../_util/SessionContext';
 import { useRouteInfo } from '../_util/useRouteInfo';
 
 
@@ -19,20 +20,16 @@ import { useRouteInfo } from '../_util/useRouteInfo';
 // Logout
 
 export default function SidebarNav() {
+    const { currentInstallationId } = useRouteInfo();
 
-    const session = useContext(SessionContext);
-    if (!session) {
-        return null;
-    }
-
-    const { installationGNode } = useRouteInfo();
-    const installationName = installationRoleForGNode(session?.installations, installationGNode)?.DisplayName ?? null;
+    const sessionContext = useContext(SessionContext);
+    const installationName = installationForRouteId(sessionContext?.installations, currentInstallationId)?.displayName ?? null;
     const installationHeading = installationName
         ? `${installationName.charAt(0).toUpperCase()}${installationName.slice(1)}`
         : null;
-    const installationUrlSuffix = installationGNode ? `${installationGNode}/` : '';
-    const showAdminNav = session.isSystemAdmin;
-    const showRealTimeNav = canViewRealTimePage(session);
+    const installationUrlSuffix = currentInstallationId ? `${currentInstallationId}/` : '';
+    const isAdmin = isAdminUser();
+    const showRealTimeNav = hasAnyRealTimeEligibleRole();
 
     function onSidebarClick(event: React.MouseEvent<HTMLElement>) {
         if (!window.matchMedia('(max-width: 767.98px)').matches) {
@@ -61,12 +58,12 @@ export default function SidebarNav() {
                 <li className="nav-item">
                     <Nav.Link as={ReactRouterNavLink} to="/installations/"><List />Installations</Nav.Link>
                 </li>
-                {showAdminNav && (
+                {isAdmin && (
                     <li className="nav-item">
                         <Nav.Link as={ReactRouterNavLink} to="/morning-report/"><Sun />Morning Report</Nav.Link>
                     </li>
                 )}
-                {showAdminNav && (
+                {isAdmin && (
                     <li className="nav-item">
                         <Nav.Link as={ReactRouterNavLink} to="/alerts/"><Bell />Alerts</Nav.Link>
                     </li>
@@ -83,25 +80,43 @@ export default function SidebarNav() {
                 <li className="nav-item">
                     <Nav.Link as={ReactRouterNavLink} to={`/visualizer/${installationUrlSuffix}`}><BarChart />Visualizer</Nav.Link>
                 </li>
-                <li className="nav-item">
-                    <Nav.Link as={ReactRouterNavLink} to={`/data-export-channel/${installationUrlSuffix}`}><Table />Channel data export</Nav.Link>
-                </li>
-                {showAdminNav && (
+                {isAdmin && (
+                    <li className="nav-item">
+                        <Nav.Link as={ReactRouterNavLink} to={`/data-export-channel/${installationUrlSuffix}`}><Table />Channel data export</Nav.Link>
+                    </li>
+                )}
+                {isAdmin && (
                     <li className="nav-item">
                         <Nav.Link as={ReactRouterNavLink} to={`/data-export-hourly/${installationUrlSuffix}`}><Table />Hourly data export</Nav.Link>
                     </li>
                 )}
-                {showAdminNav && (
+                {isAdmin && (
                     <li className="nav-item">
                         <Nav.Link as={ReactRouterNavLink} to={`/information/${installationUrlSuffix}`}><Info />Information</Nav.Link>
                     </li>
                 )}
-                {showAdminNav && (
+                {isAdmin && (
                     <li className="nav-item">
                         <Nav.Link as={ReactRouterNavLink} to={`/parameters/${installationUrlSuffix}`}><Settings />Parameters</Nav.Link>
                     </li>
                 )}
+
+
+{/* 
+
+                {selectedInstallation ?
+                    <h6 className="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Saved reports</span>
+                        <a className="link-secondary" href="#" aria-label="Add a new report">
+                            <span data-feather="plus-circle"></span>
+                        </a>
+                    </h6> :
+                    <h6 className="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        Select an Installation...
+                    </h6>
+                } */}
             </ul>
+
         </div>
     </nav>
 }

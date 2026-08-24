@@ -1,23 +1,25 @@
 import { useContext, useState, type CSSProperties } from 'react';
 
-import SessionContext, { canViewDataFromDate } from '../_util/SessionContext';
+import { getRequiredAuthToken } from '../auth/auth';
+import SessionContext, { installationForRouteId } from '../_util/SessionContext';
 import {
   formatDate,
   formatTime,
   getDefaultDate,
   getNowInNewYork,
-  wallDateTimeToUtc,
+  isEndDateOldEnough,
+  wallDateTimeToUtcMs,
 } from '../_util/newYorkTime';
 import { useRouteInfo } from '../_util/useRouteInfo';
-import SingleInstallationPicker from '../_shared/SingleInstallationPicker';
+import InstallationPicker from '../_shared/InstallationPicker';
+import { requestChannelDataCsv } from './requestChannelDataCsv';
 import {
   ALL_CHANNEL_IDS,
-  ALL_CHANNELS_SORTED,
   CHANNEL_SECTIONS,
+  triggerBlobDownload,
 } from './dataExportShared';
 
 import './DataExportPage.css';
-import GridWorksApi from '../_util/GridWorksApi';
 
 const LABEL_MUTED: CSSProperties = {
   fontSize: '0.875rem',
@@ -26,7 +28,12 @@ const LABEL_MUTED: CSSProperties = {
 
 export default function ChannelDataExportPage() {
   const session = useContext(SessionContext);
-  const { installationGNode } = useRouteInfo();
+  const { currentInstallationId } = useRouteInfo();
+  const installation = installationForRouteId(session?.installations, currentInstallationId);
+
+  const token = getRequiredAuthToken();
+
+  const houseAliasForCsv = (installation?.houseAlias?.trim() || installation?.id || '').trim();
 
   const [channelStart, setChannelStart] = useState(() => getDefaultDate(true));
   const [channelEnd, setChannelEnd] = useState(() => getDefaultDate(false));
@@ -61,53 +68,49 @@ export default function ChannelDataExportPage() {
 
   async function onChannelCsv() {
     setError(null);
-    if (!installationGNode) {
+    if (!houseAliasForCsv) {
       setError('Select a house first.');
       return;
     }
-    
-    const selected = [...channelIds]
-      .flatMap(s => s.split(','))
-      .sort((a, b) => ALL_CHANNELS_SORTED.indexOf(a) - ALL_CHANNELS_SORTED.indexOf(b));
-
+    const selected = [...channelIds];
     if (selected.length === 0) {
       setError('Select at least one channel.');
       return;
     }
-
-    const startDate = wallDateTimeToUtc(channelStart);
-    const endDate = wallDateTimeToUtc(channelEnd);
-
-    if (startDate == null || endDate == null) {
-        return;
-    }
-
-    if (!canViewDataFromDate(session, [installationGNode], startDate)) {
-
-      setError('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
+    const startMs = wallDateTimeToUtcMs(channelStart);
+    const endMs = wallDateTimeToUtcMs(channelEnd);
+    if (!isEndDateOldEnough(endMs, 10, houseAliasForCsv)) {
+      setError('End time must be at least 10 days in the past for viewer access to this installation.');
       return;
     }
 
     setChannelBusy(true);
-
     try {
-      await GridWorksApi.get(
-        `/api/v2/installations/${installationGNode}/readings.download`,
-        {
-          timeout: 300000,
-          params: {
-            dl: true,
-            start: startDate.toISO(),
-            end: endDate.toISO(),
-            channels: selected.join(','),
-            time_step: timestep
-          },
-          responseType: 'blob'
+      let confirmWithUser = false;
+      for (;;) {
+        const result = await requestChannelDataCsv({
+          token,
+          houseAlias: houseAliasForCsv,
+          startMs,
+          endMs,
+          selectedChannels: selected,
+          timestep: timestep.trim() || '1',
+          confirmWithUser,
+        });
+        if (result.type === 'file') {
+          triggerBlobDownload(result.blob, result.filename);
+          return;
         }
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      setError(message);
+        if (result.type === 'confirm') {
+          if (window.confirm(result.message)) {
+            confirmWithUser = true;
+            continue;
+          }
+          return;
+        }
+        setError(result.message);
+        return;
+      }
     } finally {
       setChannelBusy(false);
     }
@@ -135,7 +138,7 @@ export default function ChannelDataExportPage() {
               Selected House
             </label>
             <div className="selected-house-picker">
-              <SingleInstallationPicker />
+              <InstallationPicker />
             </div>
           </div>
 
@@ -210,7 +213,7 @@ export default function ChannelDataExportPage() {
             <button
               type="button"
               className="btn btn-sm btn-outline-secondary"
-              disabled={channelBusy || !installationGNode}
+              disabled={channelBusy || !token || !houseAliasForCsv}
               style={{ opacity: channelBusy ? 0.5 : 1 }}
               onClick={onChannelCsv}
             >

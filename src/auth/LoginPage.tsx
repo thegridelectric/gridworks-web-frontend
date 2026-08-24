@@ -11,7 +11,7 @@ export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
-    async function onSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+    async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError(null);
         setSubmitting(true);

@@ -1,31 +1,31 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import './VisualizerPage.css';
-import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
-import SessionContext, { canViewDataFromDate } from "../_util/SessionContext";
+import { getRequiredAuthToken } from "../auth/auth";
+import InstallationPicker from "../_shared/InstallationPicker";
+import SessionContext, { installationForRouteId } from "../_util/SessionContext";
 import {
     formatDate,
     formatTime,
     getDefaultDate,
-    wallDateTimeToUtc,
+    isEndDateOldEnough,
+    wallDateTimeToUtcMs,
 } from "../_util/newYorkTime";
 import { getIsDarkMode } from "../_util/theme";
 import { useRouteInfo } from "../_util/useRouteInfo";
-import GridWorksApi from '../_util/GridWorksApi';
-import type { ReadingsBundleApiResponse } from "../sema";
+import { fetchVisualizerPlots } from "./fetchVisualizerPlots";
+import { downloadVisualizerFlo } from "./fetchVisualizerFlo";
+import VisualizerServerPlots from "./VisualizerServerPlots";
+import type { VisualizerPlotsApiResponse } from "./visualizerApiTypes";
 import { VisualizerOptionsPanel } from "./VisualizerControls";
 import { CLIENT_ONLY_VISUALIZER_CHANNEL_IDS } from "./visualizerChannels";
 import { useVisualizerControls } from "./useVisualizerControls";
 import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
-import { PLOT_CONFIGS } from "./plot-configs";
-import VisualizerPlot from "./VisualizerPlot";
-import type { VisualizerParams } from "./VisualizerParams";
 
 export default function VisualizerPage() {
 
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(getDefaultDate(false));
-    const [plottedParams, setPlottedParams] = useState<VisualizerParams | null>(null)
-    const [readingsBundleData, setReadingsBundleData] = useState<ReadingsBundleApiResponse | null>(null);
+    const [plotsPayload, setPlotsPayload] = useState<VisualizerPlotsApiResponse['plots'] | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFloLoading, setIsFloLoading] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
@@ -41,12 +41,12 @@ export default function VisualizerPage() {
         resetControls,
     } = useVisualizerControls();
 
-    const { installationGNode, pathRoot } = useRouteInfo();
+    const { currentInstallationId, pathRoot } = useRouteInfo();
     const session = useContext(SessionContext);
-    if (!session) {
-        return null;
-    }
 
+    const installation = installationForRouteId(session?.installations, currentInstallationId);
+    const houseAlias = (installation?.houseAlias?.trim() || installation?.id || '').trim();
+    const token = getRequiredAuthToken();
     const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);
 
     const visualizerCardRef = useRef<HTMLDivElement>(null);
@@ -54,19 +54,19 @@ export default function VisualizerPage() {
     async function runPlotQuery(startDt: Date, endDt: Date) {
         setPlotError(null);
 
-        if (!installationGNode) {
+        if (!currentInstallationId) {
             setPlotError('Select an installation first.');
             return;
         }
-
-        const startDate = wallDateTimeToUtc(startDt);
-        const endDate = wallDateTimeToUtc(endDt);
-
-        if (startDate == null || endDate == null) {
+        if (!houseAlias) {
+            setPlotError('Could not resolve a house alias for this installation.');
             return;
         }
 
-        if (!canViewDataFromDate(session, [installationGNode], endDate)) {
+        const startMs = wallDateTimeToUtcMs(startDt);
+        const endMs = wallDateTimeToUtcMs(endDt);
+
+        if (!isEndDateOldEnough(endMs, 10, houseAlias)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
@@ -79,26 +79,25 @@ export default function VisualizerPage() {
         }
 
         setIsLoading(true);
-        setPlotError(null);
-        setReadingsBundleData(null);
+        setPlotsPayload(null);
         try {
-            const apiResult = await GridWorksApi.get<ReadingsBundleApiResponse>(
-                `/api/v2/installations/${installationGNode}/synced.readings.bundle`,
-                {
-                    params: {
-                        start: startDate.toISO(),
-                        end: endDate.toISO(),
-                        channels: selectedChannels.join(','),
-                        time_step: Math.ceil(endDate.diff(startDate).as('seconds') / 1000),
-                    }
-                }
-            );
-            setPlottedParams({
-                startDate: startDate,
-                endDate: endDate,
-                installationGNode
-            })
-            setReadingsBundleData(apiResult.data);
+            const data = await fetchVisualizerPlots({
+                houseAlias,
+                startMs,
+                endMs,
+                selectedChannels,
+                darkmode: getIsDarkMode(),
+                token,
+            });
+
+            if (!data.success) {
+                throw new Error(data.message || 'Visualizer returned success: false');
+            }
+            if (!data.plots) {
+                throw new Error('Visualizer returned no plots object.');
+            }
+
+            setPlotsPayload(data.plots);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
@@ -121,7 +120,7 @@ export default function VisualizerPage() {
 
     function onClearClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         event.preventDefault();
-        setReadingsBundleData(null);
+        setPlotsPayload(null);
         setPlotError(null);
         resetControls();
         setStartDateTime(getDefaultDate(true));
@@ -169,29 +168,24 @@ export default function VisualizerPage() {
         event.preventDefault();
         setPlotError(null);
 
-        if (!installationGNode) {
+        if (!currentInstallationId) {
             setPlotError('Select an installation first.');
             return;
         }
+        if (!houseAlias) {
+            setPlotError('Could not resolve a house alias for this installation.');
+            return;
+        }
 
-        const endDate = wallDateTimeToUtc(endDateTime);
-        if (!canViewDataFromDate(session, [installationGNode], endDate)) {
+        const endMs = wallDateTimeToUtcMs(endDateTime);
+        if (!isEndDateOldEnough(endMs, 10, houseAlias)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
 
         setIsFloLoading(true);
         try {
-            await GridWorksApi.get(
-                `/api/v2/installations/${installationGNode}/flo.download`,
-                {
-                    timeout: 60000, // FLO can take quite a while to process
-                    responseType: 'blob',
-                    params: {
-                        time: endDate.toISO(),
-                    }
-                }
-            );
+            await downloadVisualizerFlo({ houseAlias, timeMs: endMs, token });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
@@ -226,9 +220,9 @@ export default function VisualizerPage() {
     });
 
     useEffect(() => {
-        setReadingsBundleData(null);
+        setPlotsPayload(null);
         setPlotError(null);
-    }, [installationGNode]);
+    }, [currentInstallationId, houseAlias]);
 
     return (
         <div ref={visualizerCardRef} className={`card visualizer-card${isFullscreen ? ' fullscreen' : ''}`}>
@@ -265,7 +259,7 @@ export default function VisualizerPage() {
                 <div className="mb-4">
                     <label className="form-label">Selected House</label>
                     <div className="selected-house-picker">
-                        <SingleInstallationPicker />
+                        <InstallationPicker />
                     </div>
                 </div>
 
@@ -331,22 +325,13 @@ export default function VisualizerPage() {
                 setIncludesChannel={setIncludesChannel}
             />
 
-            {readingsBundleData && plottedParams &&
+            {plotsPayload &&
                 <div className="plot-container border-top">
-                    <div className="visualizer-server-plots-root">
-
-                        {PLOT_CONFIGS.map((c, i) => (
-                            <VisualizerPlot key={i} 
-                                plotConfig={c} 
-                                installationGNode={plottedParams.installationGNode}
-                                startDate={plottedParams.startDate}
-                                endDate={plottedParams.endDate}
-                                selectedChannels={plotSelectedChannels} 
-                                readingsBundleData={readingsBundleData} 
-                                isDarkMode={getIsDarkMode()} 
-                                showPoints={showPoints} />
-                        ))}
-                    </div>
+                    <VisualizerServerPlots
+                        plots={plotsPayload}
+                        selectedChannels={plotSelectedChannels}
+                        darkmode={getIsDarkMode()}
+                    />
                 </div>
             }
 

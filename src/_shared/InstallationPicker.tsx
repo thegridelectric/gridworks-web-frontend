@@ -3,16 +3,16 @@ import { useNavigate } from "react-router";
 import SessionContext from "../_util/SessionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
 
-export default function SingleInstallationPicker() {
+export default function InstallationPicker() {
 
     const session = useContext(SessionContext);
     const navigate = useNavigate();
-    const { pathRoot, installationGNode } = useRouteInfo();
+    const { pathRoot, currentInstallationId } = useRouteInfo();
 
     const installationsSorted = useMemo(() => {
         const list = session?.installations ?? [];
         return [...list].sort((a, b) =>
-            a.DisplayName.localeCompare(b.DisplayName, undefined, { sensitivity: 'base' }),
+            a.displayName.localeCompare(b.displayName, undefined, { sensitivity: 'base' }),
         );
     }, [session?.installations]);
 
@@ -27,12 +27,12 @@ export default function SingleInstallationPicker() {
     }
 
 
-    return <select value={installationGNode || ''} className="form-select" style={{ maxWidth: '300px' }} onChange={onInstallationChanged}>
-        {!installationGNode &&
+    return <select value={currentInstallationId || ''} className="form-select" style={{ maxWidth: '300px' }} onChange={onInstallationChanged}>
+        {!currentInstallationId &&
             <option value=''>Select an installation</option>
         }
         {installationsSorted.map((i) => (
-            <option key={i.GNodeAlias} value={i.GNodeAlias}>{i.DisplayName}</option>
+            <option key={i.id} value={i.id}>{i.displayName}</option>
         ))}
     </select>
 

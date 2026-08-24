@@ -6,10 +6,11 @@ import RealTimeStatusTimestamp from "./RealTimeStatusTimestamp";
 import RealTimeStatusThermostatTable from "./RealTimeStatusThermostatTable";
 import { Spinner } from "react-bootstrap";
 import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
-import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
-import SessionContext, { canConnectRealTimeData, installationRoleForGNode } from "../_util/SessionContext";
+import InstallationPicker from "../_shared/InstallationPicker";
+import SessionContext, { installationForRouteId } from "../_util/SessionContext";
 import { useRouteInfo } from "../_util/useRouteInfo";
-import { getDashboardWebSocketBaseUrl } from "../_util/visualizerApi";
+import { getDashboardWebSocketUrl } from "../_util/visualizerApi";
+import { hasRealTimeAccessForInstallationAlias } from "../auth/auth";
 import { controlFromSnapshot, type SnapshotPayload } from "./snapshotState";
 
 interface RelayInfo {
@@ -119,6 +120,32 @@ const LOG_RAW_DASHBOARD_WS_INBOUND = false;
 //
 // const DEFAULT_SNAPSHOT_INTERVAL_SEC = 2;
 
+/** True when `hardware_layout` has `"sieg": true` (JSON string or already-parsed object). */
+function hardwareLayoutHasSiegEnabled(hardwareLayout: unknown): boolean {
+    if (hardwareLayout == null) {
+        return false;
+    }
+    if (typeof hardwareLayout === 'object' && !Array.isArray(hardwareLayout)) {
+        return (hardwareLayout as Record<string, unknown>).sieg === true;
+    }
+    if (typeof hardwareLayout !== 'string') {
+        return false;
+    }
+    const trimmed = hardwareLayout.trim();
+    if (!trimmed) {
+        return false;
+    }
+    try {
+        const parsed: unknown = JSON.parse(trimmed);
+        if (parsed !== null && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            return (parsed as Record<string, unknown>).sieg === true;
+        }
+    } catch {
+        return false;
+    }
+    return false;
+}
+
 function RealTimeStatusConnection({
     currentInstallationId,
     houseAlias,
@@ -166,8 +193,7 @@ function RealTimeStatusConnection({
             return;
         }
 
-        const wsBaseUrl = getDashboardWebSocketBaseUrl();
-        const wsUrl = `${wsBaseUrl}/realtime/${houseAlias}`;
+        const wsUrl = getDashboardWebSocketUrl(houseAlias);
         const websocket = new WebSocket(wsUrl);
         wsRef.current = websocket;
 
@@ -402,7 +428,7 @@ function RealTimeStatusConnection({
                 <div className="mb-4">
                     <label className="form-label">Selected House</label>
                     <div className="selected-house-picker">
-                        <SingleInstallationPicker />
+                        <InstallationPicker />
                     </div>
                 </div>
                 <RealTimeStatusHeader
@@ -532,21 +558,21 @@ function RealTimeStatusConnection({
 }
 
 export default function RealTimeStatusPage() {
-    const { installationGNode } = useRouteInfo();
+    const { currentInstallationId } = useRouteInfo();
     const session = useContext(SessionContext);
-    const installation = installationRoleForGNode(session?.installations, installationGNode);
-    const houseShortAlias = installation?.DisplayName || '';
-    const isSpruce = houseShortAlias.toLowerCase().includes('spruce');
+    const installation = installationForRouteId(session?.installations, currentInstallationId);
+    const houseAlias = (installation?.houseAlias?.trim() || '').trim();
+    const isSpruce = houseAlias.toLowerCase().includes('spruce');
 
     const installationUnknown =
-        !!installationGNode && !!session && !installation;
+        !!currentInstallationId && !!session && !installation;
     const houseAliasMissing =
-        !!installationGNode && !!installation && !houseShortAlias;
-    const showConnectedContent = Boolean(installationGNode && houseShortAlias);
+        !!currentInstallationId && !!installation && !houseAlias;
+    const showConnectedContent = Boolean(currentInstallationId && houseAlias);
     const realTimeNotPermittedForAlias =
-        showConnectedContent && !canConnectRealTimeData(session, installationGNode!);
+        showConnectedContent && !hasRealTimeAccessForInstallationAlias(houseAlias);
 
-    const defaultSiegLoop = installation?.HardwareLayout?.sieg;
+    const defaultSiegLoop = hardwareLayoutHasSiegEnabled(installation?.hardwareLayout);
 
     if (!showConnectedContent) {
         return (
@@ -581,7 +607,7 @@ export default function RealTimeStatusPage() {
                     <div className="mb-4">
                         <label className="form-label">Selected House</label>
                         <div className="selected-house-picker">
-                            <SingleInstallationPicker />
+                            <InstallationPicker />
                         </div>
                     </div>
                     {installationUnknown &&
@@ -628,7 +654,7 @@ export default function RealTimeStatusPage() {
                     <div className="mb-4">
                         <label className="form-label">Selected House</label>
                         <div className="selected-house-picker">
-                            <SingleInstallationPicker />
+                            <InstallationPicker />
                         </div>
                     </div>
                     <p className="text-danger mb-0">
@@ -641,8 +667,9 @@ export default function RealTimeStatusPage() {
 
     return (
         <RealTimeStatusConnection
-            currentInstallationId={installationGNode}
-            houseAlias={houseShortAlias}
+            key={`${currentInstallationId}:${houseAlias}`}
+            currentInstallationId={currentInstallationId}
+            houseAlias={houseAlias}
             isSpruce={isSpruce}
             defaultSiegLoop={defaultSiegLoop}
         />

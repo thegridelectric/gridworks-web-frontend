@@ -1,28 +1,32 @@
 import { useContext, useMemo, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 
-import SessionContext, { canViewDataFromDate, type Session } from '../_util/SessionContext';
+import { getRequiredAuthToken } from '../auth/auth';
+import SessionContext, { type BasicInstallationInfo } from '../_util/SessionContext';
 import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import {
     formatDate,
     formatTime,
     getDefaultDate,
     getNowInNewYork,
-    wallDateTimeToUtc,
+    isEndDateOldEnough,
+    wallDateTimeToUtcMs,
 } from '../_util/newYorkTime';
-import GridWorksApi from '../_util/GridWorksApi';
+import { getIsDarkMode } from '../_util/theme';
+import {
+    fetchMorningReportMessages,
+    type MorningReportMessagesPayload,
+} from './fetchMorningReportMessages';
 
 import './MorningReportPage.css';
-import { DateTime } from 'luxon';
-import MultiInstallationDisplay from '../_shared/MultiInstallationDisplay';
-import type { InstallationSummary } from '../sema';
 
 const MESSAGE_TYPES = [
     { value: 'gridworks.event.problem', label: 'gridworks.event.problem' },
     { value: 'glitch', label: 'glitch' },
 ] as const;
+const EMPTY_INSTALLATIONS: BasicInstallationInfo[] = [];
 
-function dataColumnKeys(data: MorningReportData): string[] {
+function dataColumnKeys(data: MorningReportMessagesPayload): string[] {
     return Object.keys(data).filter(
         (k) =>
             k !== 'Details' &&
@@ -35,17 +39,17 @@ function dataColumnKeys(data: MorningReportData): string[] {
 
 function aliasesForQuery(
     selectedIds: ReadonlySet<string>,
-    installations: InstallationSummary[],
+    installations: BasicInstallationInfo[],
 ): string {
     if (selectedIds.size === 0) {
         return '';
     }
     const aliases: string[] = [];
     for (const inst of installations) {
-        if (!selectedIds.has(String(inst.GNodeAlias))) {
+        if (!selectedIds.has(String(inst.id))) {
             continue;
         }
-        const a = (inst.GNodeAlias || inst.DisplayName || '').trim();
+        const a = (inst.houseAlias || inst.displayName || '').trim();
         if (a) {
             aliases.push(a);
         }
@@ -59,68 +63,59 @@ function aliasesForQuery(
     return aliases.join(',');
 }
 
-interface Glitch {
-    FromGNodeAlias: string;
-    Node: string;
-    Type: 'Critical' | 'Error' | 'Warning' | 'Info' | 'Debug' | 'Trace';
-    Summary: string;
-    Details: string;
-    CreatedMs: number;
-}
-
-interface GridworksEventProblem {
-    Src: string;
-    ProblemType: string;
-    Summary: string;
-    Details: string;
-    TimeCreatedMs: number
-    MessageId: string
-
-}
-
-interface MorningReportData {
-    Details: string[];
-    'Time created': string[];
-    'From node': string[];
-    'Log level': string[];
-    Summary: string[];
-    SummaryTable: Record<string, number>;
-};
-
-function formatMillisForTable(millis: number) {
-    return DateTime.fromMillis(millis).setZone('America/New_York').toLocaleString(DateTime.DATETIME_SHORT_WITH_SECONDS)
-}
-
-function tryFindDisplayName(session: Session, nodeName: string) {
-    return session.installations.find(r => nodeName.includes(r.GNodeAlias))?.DisplayName || nodeName;
+function selectedHouseFieldValue(
+    selectedIds: ReadonlySet<string>,
+    installations: BasicInstallationInfo[],
+): string {
+    if (selectedIds.size === 0) {
+        return '';
+    }
+    const aliases: string[] = [];
+    for (const inst of installations) {
+        if (!selectedIds.has(String(inst.id))) {
+            continue;
+        }
+        const a = (inst.houseAlias || inst.displayName || '').trim();
+        if (a) {
+            aliases.push(a);
+        }
+    }
+    return aliases.join(', ');
 }
 
 function MorningReportPageContent() {
     const session = useContext(SessionContext);
-    const { selectedInstallationIds, clearInstallationSelection } = useHouseTableSelection();
-
-    const installations = session?.installations ?? [];
-    const houseAliasParam = useMemo(
-        () => aliasesForQuery(selectedInstallationIds, installations),
-        [selectedInstallationIds, installations],
-    );
+    const { selectedInstallationIds } = useHouseTableSelection();
 
     const [startDateTime, setStartDateTime] = useState(() => getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(() => getDefaultDate(false));
     const [selectedTypes, setSelectedTypes] = useState<Set<string>>(
         () => new Set(MESSAGE_TYPES.map((m) => m.value)),
     );
-    const [tableData, setTableData] = useState<MorningReportData | null>(null);
+    const [tableData, setTableData] = useState<MorningReportMessagesPayload | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [detailRowIndex, setDetailRowIndex] = useState<number | null>(null);
+
+    const token = getRequiredAuthToken();
+    const installations = session?.installations ?? EMPTY_INSTALLATIONS;
+
+    const houseAliasParam = useMemo(
+        () => aliasesForQuery(selectedInstallationIds, installations),
+        [selectedInstallationIds, installations],
+    );
+
+    const selectedHouseDisplay = useMemo(
+        () => selectedHouseFieldValue(selectedInstallationIds, installations),
+        [selectedInstallationIds, installations],
+    );
 
     const aliasesForDateLookback = useMemo(() => {
         if (houseAliasParam.trim()) {
             return houseAliasParam.split(',').map((s) => s.trim()).filter((s) => s.length > 0);
         }
         return installations
-            .map((i) => (i.GNodeAlias || i.DisplayName || '').trim())
+            .map((i) => (i.houseAlias || i.displayName || '').trim())
             .filter((s) => s.length > 0);
     }, [houseAliasParam, installations]);
 
@@ -153,68 +148,23 @@ function MorningReportPageContent() {
             return;
         }
 
-        const startDate = wallDateTimeToUtc(startDateTime);
-        const endDate = wallDateTimeToUtc(endDateTime);
-
-        if (!canViewDataFromDate(session, aliasesForDateLookback, startDate)) {
-            setError('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
+        const startMs = wallDateTimeToUtcMs(startDateTime);
+        const endMs = wallDateTimeToUtcMs(endDateTime);
+        if (!isEndDateOldEnough(endMs, 10, aliasesForDateLookback)) {
+            setError('End time must be at least 10 days in the past when viewer access applies to any selected installation.');
             return;
         }
 
         setIsLoading(true);
         try {
-            const messagesResponse = await GridWorksApi.get<(Glitch | GridworksEventProblem)[]>(
-                `/api/v2/installations/${encodeURIComponent(houseAliasParam || '*')}/messages`, 
-                {
-                    params: {
-                        start: startDate.toISO(),
-                        end: endDate.toISO(),
-                        message_types: [...selectedTypes].join(','),
-                    }
-                }
-            );
-
-            const problems: GridworksEventProblem[] = messagesResponse.data.filter(
-                m => m['TypeName' as keyof typeof m] === 'gridworks.event.problem'
-            ).map(m => (m as GridworksEventProblem)!);
-            problems.sort((a, b) => a.ProblemType.localeCompare(b.ProblemType));
-
-            const data: MorningReportData = {
-                "From node": [],
-                "Log level": [],
-                "Time created": [],
-                Details: [],
-                Summary: [],
-                SummaryTable: {},
-            }
-            for (const p of problems) {
-                data['From node'].push(tryFindDisplayName(session!, p.Src));
-                data['Log level'].push(p.ProblemType.toLowerCase())
-                data['Time created'].push(formatMillisForTable(p.TimeCreatedMs))
-                data['Details'].push(p.Details)
-                data['Summary'].push(p.Summary);
-            }
-
-            const glitches: Glitch[] = messagesResponse.data.filter(
-                m => m['TypeName' as keyof typeof m] === 'glitch'
-            ).map(m => (m as Glitch)!);
-            glitches.sort((a, b) => a.Type.localeCompare(b.Type));
-            for (const g of glitches) {
-                data['From node'].push(tryFindDisplayName(session!, g.FromGNodeAlias))
-                data['Log level'].push(g.Type.toLowerCase())
-                data['Time created'].push(formatMillisForTable(g.CreatedMs))
-                data['Details'].push(g.Details)
-                data['Summary'].push(g.Summary);
-            }
-
-            const logLevels = ['critical', 'error', 'warning', 'info', 'debug', 'trace'];
-            data.SummaryTable = Object.assign({}, ...logLevels.map(level => ({[level]: data['Log level'].filter(x => x === level).length})));
-            for (const key in data.SummaryTable) {
-                if (!data.SummaryTable[key]) {
-                    delete data.SummaryTable[key];
-                }
-            }
-
+            const data = await fetchMorningReportMessages({
+                token,
+                houseAlias: houseAliasParam,
+                selectedMessageTypes: types,
+                startMs,
+                endMs,
+                darkmode: getIsDarkMode(),
+            });
             setTableData(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load messages.');
@@ -227,13 +177,12 @@ function MorningReportPageContent() {
         setTableData(null);
         setError(null);
         setDetailRowIndex(null);
-        clearInstallationSelection();
     }
 
     const columnKeys = tableData ? dataColumnKeys(tableData) : [];
     const firstColumn =
         tableData && columnKeys[0]
-            ? tableData[columnKeys[0] as keyof MorningReportData]
+            ? tableData[columnKeys[0] as keyof MorningReportMessagesPayload]
             : undefined;
     const rowCount = Array.isArray(firstColumn) ? firstColumn.length : 0;
 
@@ -268,7 +217,15 @@ function MorningReportPageContent() {
                             >
                                 Selected House(s)
                             </label>
-                            <MultiInstallationDisplay installations={installations} selectedInstallationIds={selectedInstallationIds} />
+                            <input
+                                id="morning-selected-house"
+                                type="text"
+                                className="form-control text-light border-secondary"
+                                readOnly
+                                placeholder="All houses in the table"
+                                value={selectedHouseDisplay}
+                                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                            />
                         </div>
 
                         <table className="table table-borderless mb-4 data-query-form">
@@ -362,7 +319,7 @@ function MorningReportPageContent() {
                             <button
                                 type="submit"
                                 className="btn btn-sm btn-outline-secondary"
-                                disabled={isLoading}
+                                disabled={isLoading || !token}
                             >
                                 Get messages
                             </button>
