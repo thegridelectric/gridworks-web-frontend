@@ -7,6 +7,8 @@ import DefaultVisualizerPlot from './DefaultVisualizerPlot';
 import PriceForecastPlot from "./PriceForecastPlot";
 import HeatCallsPlot from "./HeatCallsPlot";
 import type { DateTime } from "luxon";
+import SessionContext from "../_util/SessionContext";
+import { useContext } from "react";
 
 interface VisualizerPlotProps {
     plotConfig: PlotConfig;
@@ -28,6 +30,8 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
 
     // const { plotConfig, readingsBundleData, selectedChannels, priceData, showPoints, isDarkMode } = props;
 
+    const session = useContext(SessionContext);
+    
     const plotParams: Partial<PlotParams> = {
         config: { 
             ...defaultPlotConfig,
@@ -42,7 +46,12 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
     }
 
     if (props.plotConfig.plotType === 'WeatherForecast') {
-        return <WeatherForecastPlot {...subPlotProps} />
+        // Only admin users get the weather forecast plot
+        if (session?.isSystemAdmin) {
+            return <WeatherForecastPlot {...subPlotProps} />
+        } else {
+            return null;
+        }
     } else if (props.plotConfig.plotType === 'PriceForecast') {
         return <PriceForecastPlot {...subPlotProps} />
     } else if (props.plotConfig.plotType === 'HeatCalls') {

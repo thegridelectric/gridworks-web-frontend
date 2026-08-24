@@ -83,11 +83,9 @@ export default function SidebarNav() {
                 <li className="nav-item">
                     <Nav.Link as={ReactRouterNavLink} to={`/visualizer/${installationUrlSuffix}`}><BarChart />Visualizer</Nav.Link>
                 </li>
-                {showAdminNav && (
-                    <li className="nav-item">
-                        <Nav.Link as={ReactRouterNavLink} to={`/data-export-channel/${installationUrlSuffix}`}><Table />Channel data export</Nav.Link>
-                    </li>
-                )}
+                <li className="nav-item">
+                    <Nav.Link as={ReactRouterNavLink} to={`/data-export-channel/${installationUrlSuffix}`}><Table />Channel data export</Nav.Link>
+                </li>
                 {showAdminNav && (
                     <li className="nav-item">
                         <Nav.Link as={ReactRouterNavLink} to={`/data-export-hourly/${installationUrlSuffix}`}><Table />Hourly data export</Nav.Link>
