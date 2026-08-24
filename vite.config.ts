@@ -17,8 +17,13 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '^/api': 'http://localhost:8000/'
-    },
+      '^/api': 'http://localhost:8000/',
+      // '^/api': {
+      //   target: 'https://web-api2.electricity.works/',
+      //   changeOrigin: true,
+      //   secure: false,
+      // },
+    }
   }
 })
 

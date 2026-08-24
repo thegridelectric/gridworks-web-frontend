@@ -89,7 +89,8 @@ export default function App({ children }: React.PropsWithChildren) {
             const isAllowedPath =
                 location.pathname.startsWith('/installations/') ||
                 (location.pathname.startsWith('/real-time/') && canViewRealTimePage(session)) ||
-                location.pathname.startsWith('/visualizer/');
+                location.pathname.startsWith('/visualizer/') ||
+                location.pathname.startsWith('/data-export-channel/');
             if (!isAllowedPath) {
                 return <Navigate to="/installations/" replace />;
             }
