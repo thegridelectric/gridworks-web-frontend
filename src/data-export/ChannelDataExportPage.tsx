@@ -147,7 +147,7 @@ export default function ChannelDataExportPage() {
                   <input
                     type="date"
                     className="form-control text-light"
-                    value={formatDate(channelStart)}
+                    defaultValue={formatDate(channelStart)}
                     disabled={channelBusy}
                     onChange={(ev) => {
                       const d = new Date(channelStart);
@@ -161,7 +161,7 @@ export default function ChannelDataExportPage() {
                   <input
                     type="time"
                     className="form-control text-light"
-                    value={formatTime(channelStart)}
+                    defaultValue={formatTime(channelStart)}
                     disabled={channelBusy}
                     onChange={(ev) => {
                       const d = new Date(channelStart);
@@ -178,7 +178,7 @@ export default function ChannelDataExportPage() {
                   <input
                     type="date"
                     className="form-control text-light"
-                    value={formatDate(channelEnd)}
+                    defaultValue={formatDate(channelEnd)}
                     disabled={channelBusy}
                     onChange={(ev) => {
                       const d = new Date(channelEnd);
@@ -192,7 +192,7 @@ export default function ChannelDataExportPage() {
                   <input
                     type="time"
                     className="form-control text-light"
-                    value={formatTime(channelEnd)}
+                    defaultValue={formatTime(channelEnd)}
                     disabled={channelBusy}
                     onChange={(ev) => {
                       const d = new Date(channelEnd);

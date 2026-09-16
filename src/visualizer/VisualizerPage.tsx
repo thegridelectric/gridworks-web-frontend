@@ -277,7 +277,7 @@ export default function VisualizerPage() {
                                 <input
                                     type="date"
                                     className="form-control text-light"
-                                    value={formatDate(startDateTime)}
+                                    defaultValue={formatDate(startDateTime)}
                                     onChange={onStartDateChange}
                                 />
                             </td>
@@ -285,7 +285,7 @@ export default function VisualizerPage() {
                                 <input
                                     type="time"
                                     className="form-control text-light"
-                                    value={formatTime(startDateTime)}
+                                    defaultValue={formatTime(startDateTime)}
                                     onChange={onStartTimeChange}
                                 />
                             </td>
@@ -296,7 +296,7 @@ export default function VisualizerPage() {
                                 <input
                                     type="date"
                                     className="form-control text-light"
-                                    value={formatDate(endDateTime)}
+                                    defaultValue={formatDate(endDateTime)}
                                     onChange={onEndDateChange}
                                 />
                             </td>
@@ -304,7 +304,7 @@ export default function VisualizerPage() {
                                 <input
                                     type="time"
                                     className="form-control text-light"
-                                    value={formatTime(endDateTime)}
+                                    defaultValue={formatTime(endDateTime)}
                                     onChange={onEndTimeChange}
                                 />
                             </td>

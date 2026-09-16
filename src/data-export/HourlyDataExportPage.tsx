@@ -257,7 +257,7 @@ export default function HourlyDataExportPage() {
                   <input
                     type="date"
                     className="form-control text-light"
-                    value={formatDate(hourlyStart)}
+                    defaultValue={formatDate(hourlyStart)}
                     disabled={hourlyActionsBusy}
                     onChange={(ev) => {
                       const d = new Date(hourlyStart);
@@ -271,7 +271,7 @@ export default function HourlyDataExportPage() {
                   <input
                     type="time"
                     className="form-control text-light"
-                    value={formatTime(hourlyStart)}
+                    defaultValue={formatTime(hourlyStart)}
                     disabled={hourlyActionsBusy}
                     onChange={(ev) => {
                       const d = new Date(hourlyStart);
@@ -288,7 +288,7 @@ export default function HourlyDataExportPage() {
                   <input
                     type="date"
                     className="form-control text-light"
-                    value={formatDate(hourlyEnd)}
+                    defaultValue={formatDate(hourlyEnd)}
                     disabled={hourlyActionsBusy}
                     onChange={(ev) => {
                       const d = new Date(hourlyEnd);
@@ -302,7 +302,7 @@ export default function HourlyDataExportPage() {
                   <input
                     type="time"
                     className="form-control text-light"
-                    value={formatTime(hourlyEnd)}
+                    defaultValue={formatTime(hourlyEnd)}
                     disabled={hourlyActionsBusy}
                     onChange={(ev) => {
                       const d = new Date(hourlyEnd);

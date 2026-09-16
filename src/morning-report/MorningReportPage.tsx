@@ -279,7 +279,7 @@ function MorningReportPageContent() {
                                         <input
                                             type="date"
                                             className="form-control text-light"
-                                            value={formatDate(startDateTime)}
+                                            defaultValue={formatDate(startDateTime)}
                                             onChange={(ev) => {
                                                 const d = new Date(startDateTime);
                                                 const [y, m, day] = ev.target.value.split('-').map(Number);
@@ -292,7 +292,7 @@ function MorningReportPageContent() {
                                         <input
                                             type="time"
                                             className="form-control text-light"
-                                            value={formatTime(startDateTime)}
+                                            defaultValue={formatTime(startDateTime)}
                                             onChange={(ev) => {
                                                 const d = new Date(startDateTime);
                                                 const [hh, mm] = ev.target.value.split(':').map(Number);
@@ -308,7 +308,7 @@ function MorningReportPageContent() {
                                         <input
                                             type="date"
                                             className="form-control text-light"
-                                            value={formatDate(endDateTime)}
+                                            defaultValue={formatDate(endDateTime)}
                                             onChange={(ev) => {
                                                 const d = new Date(endDateTime);
                                                 const [y, m, day] = ev.target.value.split('-').map(Number);
@@ -321,7 +321,7 @@ function MorningReportPageContent() {
                                         <input
                                             type="time"
                                             className="form-control text-light"
-                                            value={formatTime(endDateTime)}
+                                            defaultValue={formatTime(endDateTime)}
                                             onChange={(ev) => {
                                                 const d = new Date(endDateTime);
                                                 const [hh, mm] = ev.target.value.split(':').map(Number);
