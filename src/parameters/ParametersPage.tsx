@@ -1,24 +1,23 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import Plot from 'react-plotly.js';
 
-import InstallationPicker from '../_shared/InstallationPicker';
+import SingleInstallationPicker from '../_shared/SingleInstallationPicker';
 import SessionContext, {
-    installationForRouteId,
-    type BasicInstallationInfo,
+    installationRoleForGNode,
 } from '../_util/SessionContext';
 import { getIsDarkMode } from '../_util/theme';
 import { useRouteInfo } from '../_util/useRouteInfo';
 import {
     applyCrossFieldConstraints,
     buildParametersFigures,
+    calcNoPowerRswt,
     clampParam,
-    heatingParamsFromHouse,
     PARAM_SPECS,
 } from './parametersModel';
-import type { HeatingParams } from './types';
-import { DEFAULT_HEATING_PARAMS } from './types';
+import { DEFAULT_HEATING_PARAMS, type HeatingParams } from './types';
 
 import './ParametersPage.css';
+import type { HouseSummary } from '../sema';
 
 function useHtmlThemeMutationTick() {
     const [tick, setTick] = useState(0);
@@ -31,11 +30,9 @@ function useHtmlThemeMutationTick() {
     return tick;
 }
 
-function ParametersCard({ installation }: { installation: BasicInstallationInfo | undefined }) {
+function ParametersCard({ installation }: { installation: HouseSummary | undefined }) {
     const hasHouse = Boolean(installation);
-    const [params, setParams] = useState<HeatingParams>(() =>
-        installation ? heatingParamsFromHouse(installation.houseParameters) : { ...DEFAULT_HEATING_PARAMS },
-    );
+    const [params, setParams] = useState<HeatingParams>(() => ({ ...DEFAULT_HEATING_PARAMS }));
 
     const themeTick = useHtmlThemeMutationTick();
     const isDark = useMemo(() => {
@@ -68,10 +65,14 @@ function ParametersCard({ installation }: { installation: BasicInstallationInfo 
         if (!installation) {
             return;
         }
-        setParams(heatingParamsFromHouse(installation.houseParameters));
+        setParams({ ...DEFAULT_HEATING_PARAMS });
     }
 
-    const noPowerRswt = -params.alpha / params.beta;
+    if (!params) {
+        return null;
+    }
+
+    const noPowerRswt = calcNoPowerRswt(params);
 
     return (
         <div className="card visualizer-card">
@@ -92,7 +93,7 @@ function ParametersCard({ installation }: { installation: BasicInstallationInfo 
                 <div className="mb-4">
                     <label className="form-label">Selected House</label>
                     <div className="selected-house-picker">
-                        <InstallationPicker />
+                        <SingleInstallationPicker />
                     </div>
                 </div>
 
@@ -167,9 +168,9 @@ function ParametersCard({ installation }: { installation: BasicInstallationInfo 
 }
 
 export default function ParametersPage() {
-    const { currentInstallationId } = useRouteInfo();
+    const { installationGNode } = useRouteInfo();
     const session = useContext(SessionContext);
-    const installation = installationForRouteId(session?.installations, currentInstallationId);
+    const installation = installationRoleForGNode(session?.installations, installationGNode);
 
-    return <ParametersCard key={installation?.id ?? '__none__'} installation={installation} />;
+    return <ParametersCard key={installation?.GNodeAlias ?? '__none__'} installation={installation} />;
 }

@@ -24,6 +24,14 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
         ],
     },
     {
+        category: 'Secondary loop',
+        channels: [
+            { id: 'secondary-lwt', label: 'Secondary leaving water temperature' },
+            { id: 'secondary-ewt', label: 'Secondary entering water temperature' },
+            { id: 'secondary-flow', label: 'Secondary pump flow rate' },
+        ],
+    },
+    {
         category: 'Distribution',
         channels: [
             { id: 'dist-swt', label: 'Source water temperature' },
@@ -35,14 +43,15 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
     {
         category: 'Zones',
         channels: [
-            { id: 'zone-heat-calls', label: 'Heat calls' },
+            { id: '^zone\\d+-.+-heat-call$,^zone\\d+-.+-whitewire-pwr$', label: 'Heat calls' },
+            { id: '^zone\\d+-.+-set$,^zone\\d+-.+-temp$', label: 'Zone temperatures' },
             { id: 'oat', label: 'Outside air temperature' },
         ],
     },
     {
         category: 'Buffer',
         channels: [
-            { id: 'buffer-depths', label: 'Buffer depths' },
+            { id: '^buffer-depth\\d$', label: 'Buffer depths' },
             { id: 'buffer-hot-pipe', label: 'Hot pipe' },
             { id: 'buffer-cold-pipe', label: 'Cold pipe' },
         ],
@@ -50,12 +59,12 @@ export const CHANNEL_OPTION_GROUPS: VisualizerChannelGroup[] = [
     {
         category: 'Storage',
         channels: [
-            { id: 'storage-depths', label: 'Storage depths' },
+            { id: '^tank\\d-depth\\d$', label: 'Storage depths' },
             { id: 'store-hot-pipe', label: 'Hot pipe' },
             { id: 'store-cold-pipe', label: 'Cold pipe' },
             { id: 'store-flow', label: 'Storage pump flow rate' },
             { id: 'store-pump-pwr', label: 'Storage pump power' },
-            { id: 'store-energy', label: 'Available and required energy' },
+            { id: 'usable-energy,required-energy', label: 'Available and required energy' },
         ],
     },
 ];
@@ -65,7 +74,7 @@ const NON_DEFAULT_CHANNELS = new Set([
     'buffer-cold-pipe',
     'store-hot-pipe',
     'store-cold-pipe',
-    'store-energy',
+    'usable-energy,required-energy',
     /** UI + plot shading only; never send as selected_channels to the plots API. */
     'hp-on-highlights',
 ]);

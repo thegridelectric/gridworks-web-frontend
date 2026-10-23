@@ -1,93 +1,54 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { getAuthToken, hasRealTimeAccessForInstallationAlias } from "../auth/auth";
-import SessionContext, { type BasicInstallationInfo } from "../_util/SessionContext";
+import SessionContext from "../_util/SessionContext";
 import { useHouseTableSelection } from "../_util/useHouseTableSelection";
 import { useRouteInfo } from "../_util/useRouteInfo";
-import { useHouseRealtimeData, type HouseRealtimeData } from "../real-time/HouseRealtimeDataProvider";
-import { isLastHeardFresh } from "../real-time/snapshotState";
-import RealTimeZoneWhitewirePlot from "../real-time/RealTimeZoneWhitewirePlot";
 
 import "../installations/InstallationsPage.css";
+import { DateTime } from "luxon";
+import type { HouseSummary } from "../sema";
 
-type SortColumn = "short_alias" | "address" | /* "commit" | */ "mode";
+type SortColumn = "short_alias" | /* "commit" | */ "status";
 type SortDirection = "asc" | "desc";
 
-function houseAliasForInstallation(h: BasicInstallationInfo): string {
-    return (h.houseAlias ?? h.displayName ?? "").trim();
-}
-
-function realtimeDataForAlias(
-    alias: string,
-    realtimeDataByAlias: Record<string, HouseRealtimeData>,
-): HouseRealtimeData {
-    return realtimeDataByAlias[alias] ?? {
-        control: null,
-        mode: null,
-        snapshotTimeUnixMs: null,
-        zoneWhitewireSeries: null,
-    };
-}
-
-function useNowMs(tickMs = 60_000): number {
-    const [nowMs, setNowMs] = useState(() => Date.now());
-    useEffect(() => {
-        const id = window.setInterval(() => setNowMs(Date.now()), tickMs);
-        return () => window.clearInterval(id);
-    }, [tickMs]);
-    return nowMs;
-}
-
-function formatHouseModeLabel(realtime: HouseRealtimeData | null): string {
-    if (!realtime || (realtime.control == null && realtime.mode == null)) {
+/** The house's operating status as one label: Standby, else the service
+ *  mode, then the scada's top state. */
+function formatHouseStatusLabel(installation: HouseSummary | null): string {
+    const status = installation?.OperatingStatus;
+    if (!status) {
         return "—";
     }
-    return `${realtime.control ?? "—"}, ${realtime.mode ?? "—"}`;
+    return `${status.Standby ? "Standby" : status.ServiceMode}, ${status.TopState}`;
 }
 
-function snapshotTimeUnixMsForHouse(
-    h: BasicInstallationInfo,
-    realtimeDataByAlias: Record<string, HouseRealtimeData>,
-): number | null {
-    const alias = houseAliasForInstallation(h);
-    if (!alias || !hasRealTimeAccessForInstallationAlias(alias)) {
-        return null;
-    }
-    return realtimeDataForAlias(alias, realtimeDataByAlias).snapshotTimeUnixMs;
+function isLatestSnapshotFresh(h: HouseSummary, refreshTime: DateTime): boolean {
+    return !!h.LatestSnapshotTime && DateTime.fromISO(h.LatestSnapshotTime) > refreshTime.minus({seconds: 60})
 }
 
 function aliasBadgeClassForHouse(
-    h: BasicInstallationInfo,
-    realtimeDataByAlias: Record<string, HouseRealtimeData>,
-    nowMs: number,
+    h: HouseSummary,
+    refreshTime: DateTime,
 ): string {
     // [alert-status-badge] from backoffice `alert_status`:
     // const alert = h.alertStatus;
     // return alert === "ok" ? "bg-success" : alert === "alert" ? "bg-danger" : "bg-secondary";
-    return isLastHeardFresh(snapshotTimeUnixMsForHouse(h, realtimeDataByAlias), nowMs)
+    return isLatestSnapshotFresh(h, refreshTime)
         ? "bg-success"
         : "bg-danger";
 }
 
 function compareInstallations(
-    a: BasicInstallationInfo,
-    b: BasicInstallationInfo,
+    a: HouseSummary,
+    b: HouseSummary,
     column: SortColumn,
     direction: SortDirection,
-    realtimeDataByAlias: Record<string, HouseRealtimeData>,
 ): number {
-    const cell = (h: BasicInstallationInfo) => {
+    const cell = (h: HouseSummary) => {
         if (column === "short_alias") {
-            return (h.displayName || "").trim();
+            return (h.DisplayName || "").trim();
         }
-        if (column === "address") {
-            return (h.locationLabel || "N/A").trim();
-        }
-        const alias = houseAliasForInstallation(h);
-        const hasAccess = Boolean(alias && hasRealTimeAccessForInstallationAlias(alias));
-        const realtime = hasAccess ? realtimeDataForAlias(alias, realtimeDataByAlias) : null;
-        if (column === "mode") {
-            return formatHouseModeLabel(realtime).trim();
+        if (column === "status") {
+            return formatHouseStatusLabel(h).trim();
         }
         // [commit-column] return (h.commit || "N/A").trim();
         return "";
@@ -108,13 +69,11 @@ function compareInstallations(
 }
 
 function useHousesTableState(
-    homes: BasicInstallationInfo[],
-    realtimeDataByAlias: Record<string, HouseRealtimeData>,
-    nowMs: number,
+    homes: HouseSummary[],
+    refreshTime: DateTime,
 ) {
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [aliasFilter, setAliasFilter] = useState("");
-    const [cityFilter, setCityFilter] = useState("");
     // [commit-column] const [commitFilter, setCommitFilter] = useState("");
     const [sortColumn, setSortColumn] = useState<SortColumn>("short_alias");
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -122,17 +81,24 @@ function useHousesTableState(
     const okCount = useMemo(
         () =>
             homes.filter((h) =>
-                isLastHeardFresh(snapshotTimeUnixMsForHouse(h, realtimeDataByAlias), nowMs),
+                isLatestSnapshotFresh(h, refreshTime),
             ).length,
-        [homes, realtimeDataByAlias, nowMs],
+        [homes, refreshTime],
     );
     const alertCount = useMemo(
         () =>
             homes.filter(
                 (h) =>
-                    !isLastHeardFresh(snapshotTimeUnixMsForHouse(h, realtimeDataByAlias), nowMs),
+                    !isLatestSnapshotFresh(h, refreshTime),
             ).length,
-        [homes, realtimeDataByAlias, nowMs],
+        [homes, refreshTime],
+// TODO fix this merge
+    //     () => homes.filter((h) => h.alertStatus?.status === "ok").length,
+    //     [homes],
+    // );
+    // const alertCount = useMemo(
+    //     () => homes.filter((h) => h.alertStatus?.status === "alert").length,
+    //     [homes],
     );
     // [alert-status-badge]
     // const okCount = useMemo(
@@ -146,30 +112,25 @@ function useHousesTableState(
 
     const filteredSorted = useMemo(() => {
         const af = aliasFilter.trim().toLowerCase();
-        const cf = cityFilter.trim().toLowerCase();
         // [commit-column] const cof = commitFilter.trim().toLowerCase();
         let list = homes.filter((h) => {
-            const alias = (h.displayName || "").toLowerCase();
-            const city = (h.locationLabel || "N/A").toLowerCase();
+            const alias = (h.DisplayName || "").toLowerCase();
             // [commit-column] const commit = (h.commit || "N/A").toLowerCase();
             return (
-                alias.startsWith(af) &&
-                city.startsWith(cf)
+                alias.startsWith(af)
                 // [commit-column] && commit.startsWith(cof)
             );
         });
         list = [...list].sort((a, b) =>
-            compareInstallations(a, b, sortColumn, sortDirection, realtimeDataByAlias),
+            compareInstallations(a, b, sortColumn, sortDirection),
         );
         return list;
     }, [
         homes,
         aliasFilter,
-        cityFilter,
         // commitFilter,
         sortColumn,
         sortDirection,
-        realtimeDataByAlias,
     ]);
 
     function onSortHeaderClick(column: SortColumn) {
@@ -183,7 +144,6 @@ function useHousesTableState(
 
     function clearFilters() {
         setAliasFilter("");
-        setCityFilter("");
         // [commit-column] setCommitFilter("");
     }
 
@@ -202,8 +162,6 @@ function useHousesTableState(
         setFiltersVisible,
         aliasFilter,
         setAliasFilter,
-        cityFilter,
-        setCityFilter,
         // [commit-column] commitFilter,
         // [commit-column] setCommitFilter,
         okCount,
@@ -255,19 +213,15 @@ function HousesCardHeader({
 function HousesCardFilters({
     filtersVisible,
     aliasFilter,
-    cityFilter,
     // [commit-column] commitFilter,
     setAliasFilter,
-    setCityFilter,
     // [commit-column] setCommitFilter,
     clearFilters,
 }: {
     filtersVisible: boolean;
     aliasFilter: string;
-    cityFilter: string;
     // [commit-column] commitFilter: string;
     setAliasFilter: (value: string) => void;
-    setCityFilter: (value: string) => void;
     // [commit-column] setCommitFilter: (value: string) => void;
     clearFilters: () => void;
 }) {
@@ -283,20 +237,6 @@ function HousesCardFilters({
                         placeholder="Alias"
                         value={aliasFilter}
                         onChange={(e) => setAliasFilter(e.target.value)}
-                        autoComplete="off"
-                    />
-                </div>
-            </div>
-            <div className="search-group city">
-                <div className="search-input-wrapper">
-                    <i className="bi bi-search search-icon" aria-hidden />
-                    <input
-                        type="text"
-                        className={`search-input${cityFilter.trim() ? " active" : ""}`}
-                        id="search-city"
-                        placeholder="Location"
-                        value={cityFilter}
-                        onChange={(e) => setCityFilter(e.target.value)}
                         autoComplete="off"
                     />
                 </div>
@@ -332,20 +272,18 @@ function HousesCardFilters({
 
 function HousesCardTable({
     homes,
-    realtimeDataByAlias,
-    nowMs,
+    refreshTime,
     sortClass,
     onSortHeaderClick,
     onRowActivate,
     rowSelectedClass,
     showNoSearchResults,
 }: {
-    homes: BasicInstallationInfo[];
-    realtimeDataByAlias: Record<string, HouseRealtimeData>;
-    nowMs: number;
+    homes: HouseSummary[];
+    refreshTime: DateTime;
     sortClass: (column: SortColumn) => string;
     onSortHeaderClick: (column: SortColumn) => void;
-    onRowActivate: (home: BasicInstallationInfo) => void;
+    onRowActivate: (home: HouseSummary) => void;
     rowSelectedClass: (id: string) => string;
     showNoSearchResults: boolean;
 }) {
@@ -362,14 +300,6 @@ function HousesCardTable({
                         >
                             Alias
                         </th>
-                        <th
-                            data-sort="address"
-                            className={sortClass("address")}
-                            scope="col"
-                            onClick={() => onSortHeaderClick("address")}
-                        >
-                            Location
-                        </th>
                         {/* [commit-column]
                         <th
                             data-sort="commit"
@@ -381,30 +311,31 @@ function HousesCardTable({
                         </th>
                         */}
                         <th
-                            data-sort="mode"
-                            className={sortClass("mode")}
+                            data-sort="status"
+                            className={sortClass("status")}
                             scope="col"
-                            onClick={() => onSortHeaderClick("mode")}
+                            onClick={() => onSortHeaderClick("status")}
                         >
-                            Mode
+                            Status
                         </th>
-                        <th scope="col">Last hour heat call</th>
+                        <th scope="col">Active heat call</th>
                     </tr>
                 </thead>
                 <tbody>
                     {homes.map((h) => {
-                        const badgeClass = aliasBadgeClassForHouse(h, realtimeDataByAlias, nowMs);
-                        const alias = houseAliasForInstallation(h);
-                        const hasRealtimeAccess =
-                            Boolean(alias && hasRealTimeAccessForInstallationAlias(alias));
-                        const realtime = hasRealtimeAccess
-                            ? realtimeDataForAlias(alias, realtimeDataByAlias)
-                            : null;
+                        const badgeClass = aliasBadgeClassForHouse(h, refreshTime);
+                        // const alert = h.alertStatus?.status;
+// TODO fix this merge
+                        // const badgeClass =
+                        //     alert === "ok"
+                        //         ? "bg-success"
+                        //         : alert === "alert"
+                        //           ? "bg-danger"
+                        //           : "bg-secondary";
                         return (
                             <tr
-                                key={h.id}
-                                className={`expandable-row ${rowSelectedClass(h.id)}`.trim()}
-                                data-home-id={h.id}
+                                key={h.GNodeAlias}
+                                className={`expandable-row ${rowSelectedClass(h.GNodeAlias)}`.trim()}
                                 tabIndex={0}
                                 onClick={() => onRowActivate(h)}
                                 onKeyDown={(e) => {
@@ -416,23 +347,23 @@ function HousesCardTable({
                             >
                                 <td>
                                     <span className={`badge ${badgeClass}`}>
-                                        {h.displayName}
+                                        {h.DisplayName ?? h.GNodeAlias}
                                     </span>
                                 </td>
-                                <td>{h.locationLabel || "N/A"}</td>
                                 {/* [commit-column]
                                 <td className="json-cell text-muted">
                                     {h.commit || "N/A"}
                                 </td>
                                 */}
-                                <td>{formatHouseModeLabel(realtime)}</td>
-                                <td className="houses-heat-call-cell">
-                                    {realtime?.zoneWhitewireSeries && (
-                                        <RealTimeZoneWhitewirePlot
-                                            series={realtime.zoneWhitewireSeries}
-                                            compact
-                                        />
-                                    )}
+                                <td>{formatHouseStatusLabel(h)}</td>
+                                <td>
+                                    {h.LongestRunningZoneName ?
+                                        <span>
+                                            {h.LongestRunningZoneName.replace('-heat-call', '')}
+                                            <br />(for {h.LongestRunningZoneStartTime ? refreshTime.diff(DateTime.fromISO(h.LongestRunningZoneStartTime), 'hours').hours.toFixed(2) : '?'} hours)
+                                        </span> :
+                                        <span>(none)</span>
+                                    }
                                 </td>
                             </tr>
                         );
@@ -453,27 +384,20 @@ function HousesCardTable({
 export default function HousesTableCard() {
     const session = useContext(SessionContext);
     const navigate = useNavigate();
-    const { pathRoot, currentInstallationId } = useRouteInfo();
+    const { pathRoot, installationGNode } = useRouteInfo();
     const { isSelectionMode, selectedInstallationIds, toggleInstallationSelection } =
         useHouseTableSelection();
 
-    const token = getAuthToken();
     const homes = useMemo(
-        () => session?.installations ?? [],
-        [session?.installations],
+        () => session!.installations,
+        [session!.installations],
     );
-    const hasTable = token && !session?.homesError && homes.length > 0;
-
-    const realtimeDataByAlias = useHouseRealtimeData();
-    const nowMs = useNowMs();
 
     const {
         filtersVisible,
         setFiltersVisible,
         aliasFilter,
         setAliasFilter,
-        cityFilter,
-        setCityFilter,
         // [commit-column] commitFilter,
         // [commit-column] setCommitFilter,
         okCount,
@@ -483,20 +407,20 @@ export default function HousesTableCard() {
         clearFilters,
         showNoSearchResults,
         sortClass,
-    } = useHousesTableState(homes, realtimeDataByAlias, nowMs);
+    } = useHousesTableState(homes, session!.refreshTime);
 
-    function selectHouse(h: BasicInstallationInfo) {
+    function selectHouse(h: HouseSummary) {
         const root = pathRoot ?? "installations";
         const targetRoot = root === "installations" ? "real-time" : root;
         navigate(
-            `/${targetRoot}/${h.id}/`,
+            `/${targetRoot}/${h.GNodeAlias}/`,
             root === "installations" ? undefined : { replace: true },
         );
     }
 
-    function onRowActivate(h: BasicInstallationInfo) {
+    function onRowActivate(h: HouseSummary) {
         if (isSelectionMode) {
-            toggleInstallationSelection(String(h.id));
+            toggleInstallationSelection(String(h.GNodeAlias));
             return;
         }
         selectHouse(h);
@@ -506,21 +430,14 @@ export default function HousesTableCard() {
         if (isSelectionMode) {
             return selectedInstallationIds.has(String(id)) ? "expanded" : "";
         }
-        return String(id).trim() === String(currentInstallationId ?? "").trim()
+        return String(id).trim() === String(installationGNode ?? "").trim()
             ? "expanded"
             : "";
     }
 
     return (
         <div className="houses-table-at-top mb-4">
-            {session?.homesError && (
-                <div className="alert alert-warning mb-3" role="alert">
-                    Could not load homes from the visualizer API:{" "}
-                    {session.homesError}
-                </div>
-            )}
-
-            {token && !session?.homesError && homes.length === 0 && (
+            {homes.length === 0 && (
                 <div className="card houses-card mb-0">
                     <div className="empty-state">
                         <h3>No homes found</h3>
@@ -529,7 +446,7 @@ export default function HousesTableCard() {
                 </div>
             )}
 
-            {hasTable && (
+            {homes.length > 0 && (
                 <div className="card houses-card mb-0">
                     <HousesCardHeader
                         filtersVisible={filtersVisible}
@@ -541,16 +458,13 @@ export default function HousesTableCard() {
                     <HousesCardFilters
                         filtersVisible={filtersVisible}
                         aliasFilter={aliasFilter}
-                        cityFilter={cityFilter}
                         setAliasFilter={setAliasFilter}
-                        setCityFilter={setCityFilter}
                         clearFilters={clearFilters}
                     />
 
                     <HousesCardTable
                         homes={filteredSorted}
-                        realtimeDataByAlias={realtimeDataByAlias}
-                        nowMs={nowMs}
+                        refreshTime={session!.refreshTime}
                         sortClass={sortClass}
                         onSortHeaderClick={onSortHeaderClick}
                         onRowActivate={onRowActivate}

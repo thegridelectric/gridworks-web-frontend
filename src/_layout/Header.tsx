@@ -29,7 +29,7 @@ export default function Header() {
                 {sessionContext &&
                     <>
                         <span className="header-username d-none d-md-inline">
-                            {sessionContext.userName}
+                            {sessionContext.username}
                         </span>
                         <button type="button" className="nav-link btn btn-link p-0 border-0" aria-label="Sign out" onClick={onSignOut}>
                             <LogOut />

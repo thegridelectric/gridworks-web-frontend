@@ -1,3 +1,50 @@
+const ZONE_HEAT_CALLS = "^zone(\\d+)-.*-(set|state|temp)$";
+const ZONE_WHITE_WIRES = "^zone(\\d+)-.*-whitewire-pwr$";
+const BUFFER_DEPTHS_RAW = "^buffer-depth(\\d+)-(device|micro-v)$";
+const BUFFER_DEPTHS = "^buffer-depth(\\d+)$";
+const STORAGE_DEPTHS_RAW = "^tank(\\d+)-depth(\\d+)-(device|micro-v)$";
+const STORAGE_DEPTHS = "^tank(\\d+)-depth(\\d+)$";
+const RELAYS = "^.+-relay(\\d+)$";
+
+export const ALL_CHANNELS_SORTED = [
+  "primary-flow",
+  "hp-lwt",
+  "hp-ewt",
+  "dist-flow",
+  "dist-swt",
+  "dist-rwt",
+  RELAYS,
+  "dist-010v",
+  "primary-010v",
+  "store-010v",
+  "sieg-flow",
+  "sieg-flow-hz",
+  "store-flow",
+  "store-flow-hz",
+  "dist-flow2",
+  "dist-flow2-hz",
+  "hp-odu-pwr",
+  "hp-idu-pwr",
+  "dist-pump-pwr",
+  "primary-pump-pwr",
+  "store-pump-pwr",
+  "oil-boiler-pwr",
+  ZONE_WHITE_WIRES,
+  ZONE_HEAT_CALLS,
+  "store-hot-pipe",
+  "store-cold-pipe",
+  "buffer-hot-pipe",
+  "buffer-cold-pipe",
+  "sieg-cold",
+  "buffer-well",
+  BUFFER_DEPTHS_RAW,
+  STORAGE_DEPTHS_RAW,
+  "usable-energy",
+  "required-energy",
+  BUFFER_DEPTHS,
+  STORAGE_DEPTHS,  
+];
+
 export const CHANNEL_SECTIONS: { title: string; items: { id: string; label: string }[] }[] = [
   {
     title: 'Heat pump',
@@ -24,14 +71,14 @@ export const CHANNEL_SECTIONS: { title: string; items: { id: string; label: stri
   {
     title: 'Zones',
     items: [
-      { id: 'zone-heat-calls', label: 'Heat calls' },
-      { id: 'white-wires', label: 'White wire power' },
+      { id: ZONE_HEAT_CALLS, label: 'Heat calls' },
+      { id: ZONE_WHITE_WIRES, label: 'White wire power' },
     ],
   },
   {
     title: 'Buffer',
     items: [
-      { id: 'buffer-depths', label: 'Buffer depths' },
+      { id: `${BUFFER_DEPTHS_RAW},${BUFFER_DEPTHS}`, label: 'Buffer depths' },
       { id: 'buffer-hot-pipe', label: 'Buffer hot pipe' },
       { id: 'buffer-cold-pipe', label: 'Buffer cold pipe' },
     ],
@@ -39,7 +86,7 @@ export const CHANNEL_SECTIONS: { title: string; items: { id: string; label: stri
   {
     title: 'Storage',
     items: [
-      { id: 'storage-depths', label: 'Storage depths' },
+      { id: `${STORAGE_DEPTHS_RAW},${STORAGE_DEPTHS}`, label: 'Storage depths' },
       { id: 'store-hot-pipe', label: 'Storage hot pipe' },
       { id: 'store-cold-pipe', label: 'Storage cold pipe' },
       { id: 'store-flow', label: 'Storage pump flow rate' },
@@ -52,7 +99,7 @@ export const CHANNEL_SECTIONS: { title: string; items: { id: string; label: stri
     items: [
       { id: 'oil-boiler-pwr', label: 'Oil boiler power' },
       { id: 'oat', label: 'Outside air temperature' },
-      { id: 'relays', label: 'Relays' },
+      { id: RELAYS, label: 'Relays' },
       { id: 'all-data', label: 'All other channels' },
     ],
   },

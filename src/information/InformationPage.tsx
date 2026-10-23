@@ -1,55 +1,64 @@
-import { useContext, useMemo, useState } from 'react';
+import { useContext, useState } from 'react';
+import { DateTime } from 'luxon';
 
-import InstallationPicker from '../_shared/InstallationPicker';
-import SessionContext, { installationForRouteId } from '../_util/SessionContext';
+import SingleInstallationPicker from '../_shared/SingleInstallationPicker';
+import SessionContext, { installationRoleForGNode } from '../_util/SessionContext';
 import { useRouteInfo } from '../_util/useRouteInfo';
+import { layoutHasSiegLoop } from '../sema/siegLoop';
 
 import './InformationPage.css';
 
 type InfoSection = 'address' | 'contact' | 'status' | 'hardware';
 
+/** Address and Contact live in the private customer store, which the
+ *  dashboard does not read yet; operators use its CLI. */
+const NOT_SHOWN = 'Not shown here';
+
+function formatTime(iso: string | null | undefined): string | undefined {
+  if (!iso) {
+    return undefined;
+  }
+  return DateTime.fromISO(iso).toLocal().toFormat('yyyy-LL-dd HH:mm:ss ZZZZ');
+}
+
 export default function InformationPage() {
   const session = useContext(SessionContext);
-  const { currentInstallationId } = useRouteInfo();
-  const installation = installationForRouteId(session?.installations, currentInstallationId);
+  const { installationGNode } = useRouteInfo();
+  const installation = installationRoleForGNode(session?.installations, installationGNode);
 
   const [activeSection, setActiveSection] = useState<InfoSection | null>(null);
 
-  const selectedHouseDisplay = (installation?.houseAlias || installation?.displayName || '').trim();
-  const statusValue = useMemo(() => {
-    const s = installation?.alertStatus;
-    if (s === 'ok') return 'OK';
-    if (s === 'alert') return 'Alert';
-    return 'Unknown';
-  }, [installation?.alertStatus]);
+  const selectedHouseDisplay = (installation?.GNodeAlias || installation?.DisplayName || '').trim();
   const hasSelectedHouse = selectedHouseDisplay.length > 0;
-  const hardwareValue = installation?.hardwareLayout?.trim() || 'None';
+  const layout = installation?.Layout ?? null;
+  const status = installation?.OperatingStatus ?? null;
 
-  const addressRows = [
-    ['Street', installation?.address?.street],
-    ['City', installation?.address?.city],
-    ['State', installation?.address?.state],
-    ['ZIP', installation?.address?.zip],
-    ['Country', installation?.address?.country],
-    ['Coordinates',
-      installation?.address?.latitude != null && installation?.address?.longitude != null
-        ? `${installation.address.latitude}, ${installation.address.longitude}`
-        : undefined],
-  ].filter(([, value]) => !!value);
+  const statusRows: [string, string | undefined][] = [
+    ['Standby', status ? (status.Standby ? `yes (${status.StandbyPosture})` : 'no') : undefined],
+    ['Service mode', status?.ServiceMode],
+    ['Top state', status?.TopState],
+    ['Status as of', status ? formatTime(DateTime.fromMillis(status.CreatedMs).toISO()) : undefined],
+    ['Latest snapshot', formatTime(installation?.LatestSnapshotTime)],
+    ['Longest running zone', installation?.LongestRunningZoneName ?? undefined],
+    ['Calling since', formatTime(installation?.LongestRunningZoneStartTime)],
+  ];
+  const statusRowsShown = statusRows.filter(([, value]) => !!value);
 
-  const primaryContactRows = [
-    ['First name', installation?.primaryContact?.firstName],
-    ['Last name', installation?.primaryContact?.lastName],
-    ['Email', installation?.primaryContact?.email],
-    ['Phone', installation?.primaryContact?.phone],
-  ].filter(([, value]) => !!value);
-
-  const secondaryContactRows = [
-    ['First name', installation?.secondaryContact?.firstName],
-    ['Last name', installation?.secondaryContact?.lastName],
-    ['Email', installation?.secondaryContact?.email],
-    ['Phone', installation?.secondaryContact?.phone],
-  ].filter(([, value]) => !!value);
+  const hardwareRows: [string, string | undefined][] = layout
+    ? [
+        ['Layout', `${layout.TypeName} ${layout.Version}`],
+        ['Hardware layout', layout.HardwareLayoutTypeName],
+        ['Strategy', layout.Strategy],
+        ['Seasonal storage mode', layout.SeasonalStorageMode],
+        ['Store tanks', layout.TotalStoreTanks === undefined ? undefined : String(layout.TotalStoreTanks)],
+        ['Zones', layout.ZoneList.join(', ')],
+        ['Critical zones', layout.CriticalZoneList.join(', ') || undefined],
+        ['Sieg loop', layoutHasSiegLoop(layout) ? 'yes' : 'no'],
+        ['Data channels', String(layout.DataChannels.length)],
+        ['Sent by', layout.FromGNodeAlias],
+      ]
+    : [];
+  const hardwareRowsShown = hardwareRows.filter(([, value]) => !!value);
 
   function toggleSection(section: InfoSection) {
     setActiveSection((prev) => (prev === section ? null : section));
@@ -60,6 +69,21 @@ export default function InformationPage() {
   }
 
   const hasVisibleSections = activeSection !== null;
+
+  function detailTable(rows: [string, string | undefined][]) {
+    return (
+      <table className="detail-table">
+        <tbody>
+          {rows.map(([label, value]) => (
+            <tr key={label}>
+              <th>{label}</th>
+              <td>{value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
 
   return (
     <div className="card visualizer-card mb-4">
@@ -76,7 +100,7 @@ export default function InformationPage() {
         <div className="mb-4">
           <label className="form-label">Selected House</label>
           <div className="selected-house-picker">
-            <InstallationPicker />
+            <SingleInstallationPicker />
           </div>
         </div>
 
@@ -98,91 +122,26 @@ export default function InformationPage() {
         <div className="details-grid info-details-grid" style={{ display: hasVisibleSections ? 'grid' : 'none' }}>
           <div className="detail-item" style={{ display: activeSection === 'address' ? 'block' : 'none' }}>
             <div className="detail-label">Address</div>
-            <div className="detail-value">
-              {hasSelectedHouse && addressRows.length > 0 ? (
-                <table className="detail-table">
-                  <tbody>
-                    {addressRows.map(([label, value]) => (
-                      <tr key={label}>
-                        <th>{label}</th>
-                        <td>{value}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : 'None'}
-            </div>
+            <div className="detail-value">{hasSelectedHouse ? NOT_SHOWN : 'None'}</div>
           </div>
 
           <div className="detail-item" style={{ display: activeSection === 'contact' ? 'block' : 'none' }}>
             <div className="detail-label">Contact</div>
-            <div className="detail-value">
-              {!hasSelectedHouse || (primaryContactRows.length === 0 && secondaryContactRows.length === 0) ? (
-                'None'
-              ) : (
-                <>
-                  {primaryContactRows.length > 0 && (
-                    <div className="contact-section">
-                      <div className="detail-label">Primary Contact</div>
-                      <table className="detail-table">
-                        <tbody>
-                          {primaryContactRows.map(([label, value]) => (
-                            <tr key={`primary-${label}`}>
-                              <th>{label}</th>
-                              <td>{value}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                  {secondaryContactRows.length > 0 && (
-                    <div className="contact-section">
-                      <div className="detail-label detail-label-secondary-contact">Secondary Contact</div>
-                      <table className="detail-table">
-                        <tbody>
-                          {secondaryContactRows.map(([label, value]) => (
-                            <tr key={`secondary-${label}`}>
-                              <th>{label}</th>
-                              <td>{value}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+            <div className="detail-value">{hasSelectedHouse ? NOT_SHOWN : 'None'}</div>
           </div>
 
           <div className="detail-item" style={{ display: activeSection === 'status' ? 'block' : 'none' }}>
             <div className="detail-label">Status</div>
             <div className="detail-value">
-              {hasSelectedHouse && installation?.alertStatus ? (
-                <>
-                  <span
-                    className={`badge ${installation.alertStatus === 'ok' ? 'bg-success' : installation.alertStatus === 'alert' ? 'bg-danger' : 'bg-secondary'}`}
-                  >
-                    {statusValue.toLowerCase()}
-                    {installation.alertMessage && installation.alertStatus !== 'alert' ? (
-                      <>
-                        <br />
-                        <small>{installation.alertMessage}</small>
-                      </>
-                    ) : null}
-                  </span>
-                  {installation.alertMessage ? (
-                    <div className="mt-2 info-alert-message">Alert: {installation.alertMessage}</div>
-                  ) : null}
-                </>
-              ) : 'None'}
+              {hasSelectedHouse && statusRowsShown.length > 0 ? detailTable(statusRowsShown) : 'None'}
             </div>
           </div>
 
           <div className="detail-item" style={{ display: activeSection === 'hardware' ? 'block' : 'none' }}>
             <div className="detail-label">Hardware</div>
-            <div className="detail-value">{hasSelectedHouse ? hardwareValue : 'None'}</div>
+            <div className="detail-value">
+              {hasSelectedHouse && hardwareRowsShown.length > 0 ? detailTable(hardwareRowsShown) : 'None'}
+            </div>
           </div>
         </div>
       </div>

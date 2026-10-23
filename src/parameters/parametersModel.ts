@@ -1,7 +1,6 @@
 import type { Data, Layout } from 'plotly.js';
 
-import type { HeatingParams, HouseParameters } from './types';
-import { DEFAULT_HEATING_PARAMS } from './types';
+import type { HeatingParams } from './types';
 
 export const PARAM_SPECS: {
     key: keyof HeatingParams;
@@ -13,9 +12,9 @@ export const PARAM_SPECS: {
     { key: 'alpha', label: 'ALPHA', min: 0, max: 20, step: 0.1 },
     { key: 'beta', label: 'BETA', min: -1, max: 0, step: 0.01 },
     { key: 'gamma', label: 'GAMMA', min: 0, max: 0.015, step: 0.0001 },
-    { key: 'intermediate_power', label: 'INTERMEDIATE_POWER', min: 0, max: 20, step: 0.1 },
+    { key: 'intermediate_power_kw', label: 'INTERMEDIATE_POWER', min: 0, max: 20, step: 0.1 },
     { key: 'intermediate_rswt', label: 'INTERMEDIATE_RSWT', min: 90, max: 250, step: 1 },
-    { key: 'dd_power', label: 'DD_POWER', min: 0, max: 20, step: 0.1 },
+    { key: 'dd_power_kw', label: 'DD_POWER', min: 0, max: 20, step: 0.1 },
     { key: 'dd_rswt', label: 'DD_RSWT', min: 90, max: 250, step: 1 },
     { key: 'dd_delta_t', label: 'DD_DELTA_T', min: 0, max: 50, step: 0.1 },
 ];
@@ -25,32 +24,13 @@ const specByKey = Object.fromEntries(PARAM_SPECS.map((s) => [s.key, s])) as Reco
     (typeof PARAM_SPECS)[number]
 >;
 
+export function calcNoPowerRswt(params: HeatingParams): number {
+     return (params.alpha && params.beta) ? -params.alpha / params.beta : 0;
+}
+
 export function clampParam(key: keyof HeatingParams, value: number): number {
     const { min, max } = specByKey[key];
     return Math.max(min, Math.min(max, value));
-}
-
-export function heatingParamsFromHouse(hp?: HouseParameters | null): HeatingParams {
-    const d = { ...DEFAULT_HEATING_PARAMS };
-    if (!hp) {
-        return d;
-    }
-    const power =
-        hp.dd_power_kw !== undefined
-            ? hp.dd_power_kw
-            : hp.alpha !== undefined
-              ? hp.alpha
-              : d.alpha;
-    return {
-        alpha: power,
-        beta: hp.beta ?? d.beta,
-        gamma: hp.gamma ?? d.gamma,
-        intermediate_power: hp.intermediate_power_kw ?? d.intermediate_power,
-        intermediate_rswt: hp.intermediate_rswt ?? d.intermediate_rswt,
-        dd_power: power,
-        dd_rswt: hp.dd_rswt ?? d.dd_rswt,
-        dd_delta_t: hp.dd_delta_t ?? d.dd_delta_t,
-    };
 }
 
 export interface FullHeatingParams extends HeatingParams {
@@ -58,7 +38,7 @@ export interface FullHeatingParams extends HeatingParams {
 }
 
 export function toFullParams(p: HeatingParams): FullHeatingParams {
-    const no_power_rswt = -p.alpha / p.beta;
+    const no_power_rswt = calcNoPowerRswt(p);
     return { ...p, no_power_rswt };
 }
 
@@ -66,8 +46,8 @@ function calculateCoefficients(params: FullHeatingParams) {
     const x0 = params.no_power_rswt;
     const xi = params.intermediate_rswt;
     const xd = params.dd_rswt;
-    const yi = params.intermediate_power;
-    const yd = params.dd_power;
+    const yi = params.intermediate_power_kw;
+    const yd = params.dd_power_kw;
 
     const c =
         ((xi * xd) / (xi - xd)) *
@@ -98,7 +78,7 @@ function requiredSWT(hp: number, coeffs: { a: number; b: number; c: number }): n
 }
 
 export function validateAlphaDdPower(p: HeatingParams): void {
-    if (Math.abs(p.alpha - p.dd_power) > 0.001) {
+    if (Math.abs(p.alpha - p.dd_power_kw) > 0.001) {
         throw new Error('ALPHA and DD_POWER must be equal');
     }
 }
@@ -110,20 +90,20 @@ export function applyCrossFieldConstraints(
 ): HeatingParams {
     let next: HeatingParams = { ...prev, [key]: value };
 
-    if (key === 'intermediate_power' && next.intermediate_power > next.dd_power) {
-        next = { ...next, intermediate_power: next.dd_power };
+    if (key === 'intermediate_power_kw' && next.intermediate_power_kw > next.dd_power_kw) {
+        next = { ...next, intermediate_power_kw: next.dd_power_kw };
     } else if (key === 'intermediate_rswt' && next.intermediate_rswt > next.dd_rswt) {
         next = { ...next, intermediate_rswt: next.dd_rswt };
-    } else if (key === 'dd_power' && next.intermediate_power > next.dd_power) {
-        next = { ...next, intermediate_power: next.dd_power };
+    } else if (key === 'dd_power_kw' && next.intermediate_power_kw > next.dd_power_kw) {
+        next = { ...next, intermediate_power_kw: next.dd_power_kw };
     } else if (key === 'dd_rswt' && next.intermediate_rswt > next.dd_rswt) {
         next = { ...next, intermediate_rswt: next.dd_rswt };
     }
 
     if (key === 'alpha') {
-        next = { ...next, dd_power: next.alpha };
-    } else if (key === 'dd_power') {
-        next = { ...next, alpha: next.dd_power };
+        next = { ...next, dd_power_kw: next.alpha };
+    } else if (key === 'dd_power_kw') {
+        next = { ...next, alpha: next.dd_power_kw };
     }
 
     return next;
@@ -265,7 +245,7 @@ export function buildParametersFigures(
 
     const swtValues: number[] = [];
     const deltaTValues: number[] = [];
-    const ddPow = params.dd_power;
+    const ddPow = params.dd_power_kw;
     for (let swt = 90; swt <= 190; swt += 1) {
         swtValues.push(swt);
         const deliveredPower = deliveredHeatingPower(swt, coeffs);
