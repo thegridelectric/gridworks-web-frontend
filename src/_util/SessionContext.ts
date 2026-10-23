@@ -1,11 +1,11 @@
 import { DateTime } from 'luxon';
 import { createContext } from 'react';
-import type { InstallationSummary } from '../sema';
+import type { HouseSummary } from '../sema';
 
 export function installationRoleForGNode(
-    installationRoles: InstallationSummary[] | undefined,
+    installationRoles: HouseSummary[] | undefined,
     gNode: string | undefined,
-): InstallationSummary | undefined {
+): HouseSummary | undefined {
     if (!installationRoles?.length || gNode == null || gNode === '') {
         return undefined;
     }
@@ -17,7 +17,7 @@ export interface Session {
     username: string;
     isSystemAdmin: boolean;
     refreshTime: DateTime;
-    installations: InstallationSummary[];
+    installations: HouseSummary[];
 }
 
 
@@ -33,16 +33,16 @@ export function getRoleForInstallation(session: Session | null, installationGNod
 }
 
 export function canViewRealTimePage(session: Session | null): boolean {
-    return !!session && session.installations.some(ins => ['owner', 'admin'].includes(ins.Role));
+    return !!session && session.installations.some(ins => ['Owner', 'Admin'].includes(ins.Role));
 }
 
 export function canConnectRealTimeData(session: Session | null, installationGNode: string) : boolean {
     const role = getRoleForInstallation(session, installationGNode);
-    return !!role && ['owner', 'admin'].includes(role);
+    return !!role && ['Owner', 'Admin'].includes(role);
 }
 
 export function hasUnlimitedLookback(session: Session, installationGNodes: string[]) {
-    return !!session && installationGNodes.some(n => ['owner', 'admin'].includes(getRoleForInstallation(session, n) || 'missing'));
+    return !!session && installationGNodes.some(n => ['Owner', 'Admin'].includes(getRoleForInstallation(session, n) || 'missing'));
 }
 
 /** Only admins and owners can view data newer than 10 days. */
@@ -51,7 +51,7 @@ export function canViewDataFromDate(session: Session | null, installationGNodes:
         return false;
     }
 
-    if (installationGNodes.every(n => ['owner', 'admin'].includes(session.installations.find(ins => ins.GNodeAlias == n)?.Role || 'missing'))) {
+    if (installationGNodes.every(n => ['Owner', 'Admin'].includes(session.installations.find(ins => ins.GNodeAlias == n)?.Role || 'missing'))) {
         return true;
     }
 

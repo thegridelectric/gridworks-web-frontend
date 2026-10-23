@@ -1,10 +1,9 @@
 import type { Data, Layout } from 'plotly.js';
 
-import { DEFAULT_HEATING_PARAMS } from './types';
-import type { SpaceheatParameters } from '../sema';
+import type { HeatingParams } from './types';
 
 export const PARAM_SPECS: {
-    key: keyof SpaceheatParameters;
+    key: keyof HeatingParams;
     label: string;
     min: number;
     max: number;
@@ -21,47 +20,24 @@ export const PARAM_SPECS: {
 ];
 
 const specByKey = Object.fromEntries(PARAM_SPECS.map((s) => [s.key, s])) as Record<
-    keyof SpaceheatParameters,
+    keyof HeatingParams,
     (typeof PARAM_SPECS)[number]
 >;
 
-export function calcNoPowerRswt(params: SpaceheatParameters): number {
+export function calcNoPowerRswt(params: HeatingParams): number {
      return (params.alpha && params.beta) ? -params.alpha / params.beta : 0;
 }
 
-export function clampParam(key: keyof SpaceheatParameters, value: number): number {
+export function clampParam(key: keyof HeatingParams, value: number): number {
     const { min, max } = specByKey[key];
     return Math.max(min, Math.min(max, value));
 }
 
-export function heatingParamsFromHouse(hp?: SpaceheatParameters | null): SpaceheatParameters {
-    const d = { ...DEFAULT_HEATING_PARAMS };
-    if (!hp) {
-        return d;
-    }
-    const power =
-        hp.dd_power_kw !== undefined
-            ? hp.dd_power_kw
-            : hp.alpha !== undefined
-              ? hp.alpha
-              : d.alpha;
-    return {
-        alpha: power,
-        beta: hp.beta ?? d.beta,
-        gamma: hp.gamma ?? d.gamma,
-        intermediate_power_kw: hp.intermediate_power_kw ?? d.intermediate_power_kw,
-        intermediate_rswt: hp.intermediate_rswt ?? d.intermediate_rswt,
-        dd_power_kw: power,
-        dd_rswt: hp.dd_rswt ?? d.dd_rswt,
-        dd_delta_t: hp.dd_delta_t ?? d.dd_delta_t,
-    };
-}
-
-export interface FullHeatingParams extends SpaceheatParameters {
+export interface FullHeatingParams extends HeatingParams {
     no_power_rswt: number;
 }
 
-export function toFullParams(p: SpaceheatParameters): FullHeatingParams {
+export function toFullParams(p: HeatingParams): FullHeatingParams {
     const no_power_rswt = calcNoPowerRswt(p);
     return { ...p, no_power_rswt };
 }
@@ -82,7 +58,7 @@ function calculateCoefficients(params: FullHeatingParams) {
     return { a, b, c };
 }
 
-function requiredHeatingPower(oat: number, ws: number, params: SpaceheatParameters) {
+function requiredHeatingPower(oat: number, ws: number, params: HeatingParams) {
     const r = params.alpha + params.beta * oat + params.gamma * ws * (65 - oat);
     return r > 0 ? r : 0;
 }
@@ -101,18 +77,18 @@ function requiredSWT(hp: number, coeffs: { a: number; b: number; c: number }): n
     return (-coeffs.b + Math.sqrt(discriminant)) / (2 * coeffs.a);
 }
 
-export function validateAlphaDdPower(p: SpaceheatParameters): void {
+export function validateAlphaDdPower(p: HeatingParams): void {
     if (Math.abs(p.alpha - p.dd_power_kw) > 0.001) {
         throw new Error('ALPHA and DD_POWER must be equal');
     }
 }
 
 export function applyCrossFieldConstraints(
-    prev: SpaceheatParameters,
-    key: keyof SpaceheatParameters,
+    prev: HeatingParams,
+    key: keyof HeatingParams,
     value: number,
-): SpaceheatParameters {
-    let next: SpaceheatParameters = { ...prev, [key]: value };
+): HeatingParams {
+    let next: HeatingParams = { ...prev, [key]: value };
 
     if (key === 'intermediate_power_kw' && next.intermediate_power_kw > next.dd_power_kw) {
         next = { ...next, intermediate_power_kw: next.dd_power_kw };
@@ -134,7 +110,7 @@ export function applyCrossFieldConstraints(
 }
 
 export function buildParametersFigures(
-    params: SpaceheatParameters,
+    params: HeatingParams,
     isDarkMode: boolean,
 ): { plot1: { data: Data[]; layout: Partial<Layout> }; plot2: { data: Data[]; layout: Partial<Layout> } } {
     const full = toFullParams(params);

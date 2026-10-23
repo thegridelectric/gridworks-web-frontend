@@ -12,7 +12,7 @@ export default function SingleInstallationPicker() {
     const installationsSorted = useMemo(() => {
         const list = session?.installations ?? [];
         return [...list].sort((a, b) =>
-            a.DisplayName.localeCompare(b.DisplayName, undefined, { sensitivity: 'base' }),
+            (a.DisplayName ?? a.GNodeAlias).localeCompare(b.DisplayName ?? b.GNodeAlias, undefined, { sensitivity: 'base' }),
         );
     }, [session?.installations]);
 
@@ -32,7 +32,7 @@ export default function SingleInstallationPicker() {
             <option value=''>Select an installation</option>
         }
         {installationsSorted.map((i) => (
-            <option key={i.GNodeAlias} value={i.GNodeAlias}>{i.DisplayName}</option>
+            <option key={i.GNodeAlias} value={i.GNodeAlias}>{i.DisplayName ?? i.GNodeAlias}</option>
         ))}
     </select>
 
