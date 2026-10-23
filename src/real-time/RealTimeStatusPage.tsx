@@ -8,6 +8,7 @@ import { Spinner } from "react-bootstrap";
 import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
 import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
 import SessionContext, { canConnectRealTimeData, installationRoleForGNode } from "../_util/SessionContext";
+import { layoutHasSiegLoop } from '../sema/siegLoop';
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketBaseUrl } from "../_util/visualizerApi";
 import { controlFromSnapshot, type SnapshotPayload } from "./snapshotState";
@@ -152,7 +153,7 @@ function RealTimeStatusConnection({
     // [auto-snapshot]
     // const [snapshotIntervalSec, setSnapshotIntervalSec] = useState<number | ''>(DEFAULT_SNAPSHOT_INTERVAL_SEC);
     // const [autoSnapshotEnabled, setAutoSnapshotEnabled] = useState(false);
-    /** Sieg loop is driven only by `hardware_layout` (no UI toggle). */
+    /** Sieg loop is driven only by the layout (no UI toggle). */
     const siegLoopEnabled = defaultSiegLoop;
 
     /** Kept (although currently only written) so the [auto-snapshot] code can be restored. */
@@ -535,7 +536,9 @@ export default function RealTimeStatusPage() {
     const { installationGNode } = useRouteInfo();
     const session = useContext(SessionContext);
     const installation = installationRoleForGNode(session?.installations, installationGNode);
-    const houseShortAlias = installation?.DisplayName || '';
+    // The gateway keys a house by the last segment of its alias (`beech` for
+    // `hw1.isone.me.versant.keene.beech`); the display name is the registry's.
+    const houseShortAlias = installation?.GNodeAlias.split('.').pop() || '';
     const isSpruce = houseShortAlias.toLowerCase().includes('spruce');
 
     const installationUnknown =
@@ -546,7 +549,7 @@ export default function RealTimeStatusPage() {
     const realTimeNotPermittedForAlias =
         showConnectedContent && !canConnectRealTimeData(session, installationGNode!);
 
-    const defaultSiegLoop = installation?.HardwareLayout?.sieg;
+    const defaultSiegLoop = layoutHasSiegLoop(installation?.Layout);
 
     if (!showConnectedContent) {
         return (

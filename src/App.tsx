@@ -6,7 +6,7 @@ import HeaderLayout from "./_layout/HeaderLayout";
 import { getAuthToken, parseAuthToken } from "./auth/auth";
 import { useEffect, useState } from "react";
 import GridWorksApi from './_util/GridWorksApi';
-import type { InstallationSummary } from "./sema";
+import type { HouseSummary } from "./sema";
 import { useTimer } from "./_util/useTimer";
 import { usePageVisibility } from "./_util/usePageVisibility";
 
@@ -42,7 +42,7 @@ export default function App({ children }: React.PropsWithChildren) {
         (async function() {
             if (authToken && (isVisible || !isSessionLoaded)) {
                 try {
-                    const installationSummariesResponse = await GridWorksApi.get<InstallationSummary[]>('/api/v2/installations/*/summaries');
+                    const installationSummariesResponse = await GridWorksApi.get<HouseSummary[]>('/api/v2/installations/*/summaries');
                     const authTokenData = parseAuthToken(authToken!);
                     setSession({ 
                         ...authTokenData,

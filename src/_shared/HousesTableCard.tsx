@@ -6,24 +6,27 @@ import { useRouteInfo } from "../_util/useRouteInfo";
 
 import "../installations/InstallationsPage.css";
 import { DateTime } from "luxon";
-import type { InstallationSummary } from "../sema";
+import type { HouseSummary } from "../sema";
 
-type SortColumn = "short_alias" | "address" | /* "commit" | */ "mode";
+type SortColumn = "short_alias" | /* "commit" | */ "status";
 type SortDirection = "asc" | "desc";
 
-function formatHouseModeLabel(installation: InstallationSummary | null): string {
-    if (!installation || (installation.SystemMode == null && installation.MainAutoState == null)) {
+/** The house's operating status as one label: Standby, else the service
+ *  mode, then the scada's top state. */
+function formatHouseStatusLabel(installation: HouseSummary | null): string {
+    const status = installation?.OperatingStatus;
+    if (!status) {
         return "—";
     }
-    return `${installation.SystemMode ?? "—"}, ${installation.MainAutoState ?? "—"}`;
+    return `${status.Standby ? "Standby" : status.ServiceMode}, ${status.TopState}`;
 }
 
-function isLatestSnapshotFresh(h: InstallationSummary, refreshTime: DateTime): boolean {
-    return DateTime.fromISO(h.LatestSnapshotTime) > refreshTime.minus({seconds: 60})
+function isLatestSnapshotFresh(h: HouseSummary, refreshTime: DateTime): boolean {
+    return !!h.LatestSnapshotTime && DateTime.fromISO(h.LatestSnapshotTime) > refreshTime.minus({seconds: 60})
 }
 
 function aliasBadgeClassForHouse(
-    h: InstallationSummary,
+    h: HouseSummary,
     refreshTime: DateTime,
 ): string {
     // [alert-status-badge] from backoffice `alert_status`:
@@ -34,27 +37,18 @@ function aliasBadgeClassForHouse(
         : "bg-danger";
 }
 
-function getLocationLabel(h: InstallationSummary): string {
-    return h.Address && h.Address.city && h.Address.state ? 
-        `${h.Address.city}, ${h.Address.state}` : 
-        "N/A";
-}
-
 function compareInstallations(
-    a: InstallationSummary,
-    b: InstallationSummary,
+    a: HouseSummary,
+    b: HouseSummary,
     column: SortColumn,
     direction: SortDirection,
 ): number {
-    const cell = (h: InstallationSummary) => {
+    const cell = (h: HouseSummary) => {
         if (column === "short_alias") {
             return (h.DisplayName || "").trim();
         }
-        if (column === "address") {
-            return (getLocationLabel(h)).trim();
-        }
-        if (column === "mode") {
-            return formatHouseModeLabel(h).trim();
+        if (column === "status") {
+            return formatHouseStatusLabel(h).trim();
         }
         // [commit-column] return (h.commit || "N/A").trim();
         return "";
@@ -75,12 +69,11 @@ function compareInstallations(
 }
 
 function useHousesTableState(
-    homes: InstallationSummary[],
+    homes: HouseSummary[],
     refreshTime: DateTime,
 ) {
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [aliasFilter, setAliasFilter] = useState("");
-    const [cityFilter, setCityFilter] = useState("");
     // [commit-column] const [commitFilter, setCommitFilter] = useState("");
     const [sortColumn, setSortColumn] = useState<SortColumn>("short_alias");
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -119,18 +112,12 @@ function useHousesTableState(
 
     const filteredSorted = useMemo(() => {
         const af = aliasFilter.trim().toLowerCase();
-        const cf = cityFilter.trim().toLowerCase();
         // [commit-column] const cof = commitFilter.trim().toLowerCase();
         let list = homes.filter((h) => {
             const alias = (h.DisplayName || "").toLowerCase();
-            const city = (getLocationLabel(h) || "N/A").toLowerCase();
             // [commit-column] const commit = (h.commit || "N/A").toLowerCase();
-// TODO fix this merge
-            // const city = (getLocationLabel(h) || "N/A").toLowerCase();
-            // const commit = (h.commit || "N/A").toLowerCase();
             return (
-                alias.startsWith(af) &&
-                city.startsWith(cf)
+                alias.startsWith(af)
                 // [commit-column] && commit.startsWith(cof)
             );
         });
@@ -141,7 +128,6 @@ function useHousesTableState(
     }, [
         homes,
         aliasFilter,
-        cityFilter,
         // commitFilter,
         sortColumn,
         sortDirection,
@@ -158,7 +144,6 @@ function useHousesTableState(
 
     function clearFilters() {
         setAliasFilter("");
-        setCityFilter("");
         // [commit-column] setCommitFilter("");
     }
 
@@ -177,8 +162,6 @@ function useHousesTableState(
         setFiltersVisible,
         aliasFilter,
         setAliasFilter,
-        cityFilter,
-        setCityFilter,
         // [commit-column] commitFilter,
         // [commit-column] setCommitFilter,
         okCount,
@@ -230,19 +213,15 @@ function HousesCardHeader({
 function HousesCardFilters({
     filtersVisible,
     aliasFilter,
-    cityFilter,
     // [commit-column] commitFilter,
     setAliasFilter,
-    setCityFilter,
     // [commit-column] setCommitFilter,
     clearFilters,
 }: {
     filtersVisible: boolean;
     aliasFilter: string;
-    cityFilter: string;
     // [commit-column] commitFilter: string;
     setAliasFilter: (value: string) => void;
-    setCityFilter: (value: string) => void;
     // [commit-column] setCommitFilter: (value: string) => void;
     clearFilters: () => void;
 }) {
@@ -258,20 +237,6 @@ function HousesCardFilters({
                         placeholder="Alias"
                         value={aliasFilter}
                         onChange={(e) => setAliasFilter(e.target.value)}
-                        autoComplete="off"
-                    />
-                </div>
-            </div>
-            <div className="search-group city">
-                <div className="search-input-wrapper">
-                    <i className="bi bi-search search-icon" aria-hidden />
-                    <input
-                        type="text"
-                        className={`search-input${cityFilter.trim() ? " active" : ""}`}
-                        id="search-city"
-                        placeholder="Location"
-                        value={cityFilter}
-                        onChange={(e) => setCityFilter(e.target.value)}
                         autoComplete="off"
                     />
                 </div>
@@ -314,11 +279,11 @@ function HousesCardTable({
     rowSelectedClass,
     showNoSearchResults,
 }: {
-    homes: InstallationSummary[];
+    homes: HouseSummary[];
     refreshTime: DateTime;
     sortClass: (column: SortColumn) => string;
     onSortHeaderClick: (column: SortColumn) => void;
-    onRowActivate: (home: InstallationSummary) => void;
+    onRowActivate: (home: HouseSummary) => void;
     rowSelectedClass: (id: string) => string;
     showNoSearchResults: boolean;
 }) {
@@ -335,14 +300,6 @@ function HousesCardTable({
                         >
                             Alias
                         </th>
-                        <th
-                            data-sort="address"
-                            className={sortClass("address")}
-                            scope="col"
-                            onClick={() => onSortHeaderClick("address")}
-                        >
-                            Location
-                        </th>
                         {/* [commit-column]
                         <th
                             data-sort="commit"
@@ -354,12 +311,12 @@ function HousesCardTable({
                         </th>
                         */}
                         <th
-                            data-sort="mode"
-                            className={sortClass("mode")}
+                            data-sort="status"
+                            className={sortClass("status")}
                             scope="col"
-                            onClick={() => onSortHeaderClick("mode")}
+                            onClick={() => onSortHeaderClick("status")}
                         >
-                            Mode
+                            Status
                         </th>
                         <th scope="col">Active heat call</th>
                     </tr>
@@ -390,21 +347,20 @@ function HousesCardTable({
                             >
                                 <td>
                                     <span className={`badge ${badgeClass}`}>
-                                        {h.DisplayName}
+                                        {h.DisplayName ?? h.GNodeAlias}
                                     </span>
                                 </td>
-                                <td>{getLocationLabel(h) || "N/A"}</td>
                                 {/* [commit-column]
                                 <td className="json-cell text-muted">
                                     {h.commit || "N/A"}
                                 </td>
                                 */}
-                                <td>{formatHouseModeLabel(h)}</td>
+                                <td>{formatHouseStatusLabel(h)}</td>
                                 <td>
                                     {h.LongestRunningZoneName ?
                                         <span>
                                             {h.LongestRunningZoneName.replace('-heat-call', '')}
-                                            <br />(for {refreshTime.diff(DateTime.fromISO(h.LongestRunningZoneStartTime), 'hours').hours.toFixed(2)} hours)
+                                            <br />(for {h.LongestRunningZoneStartTime ? refreshTime.diff(DateTime.fromISO(h.LongestRunningZoneStartTime), 'hours').hours.toFixed(2) : '?'} hours)
                                         </span> :
                                         <span>(none)</span>
                                     }
@@ -442,8 +398,6 @@ export default function HousesTableCard() {
         setFiltersVisible,
         aliasFilter,
         setAliasFilter,
-        cityFilter,
-        setCityFilter,
         // [commit-column] commitFilter,
         // [commit-column] setCommitFilter,
         okCount,
@@ -455,7 +409,7 @@ export default function HousesTableCard() {
         sortClass,
     } = useHousesTableState(homes, session!.refreshTime);
 
-    function selectHouse(h: InstallationSummary) {
+    function selectHouse(h: HouseSummary) {
         const root = pathRoot ?? "installations";
         const targetRoot = root === "installations" ? "real-time" : root;
         navigate(
@@ -464,7 +418,7 @@ export default function HousesTableCard() {
         );
     }
 
-    function onRowActivate(h: InstallationSummary) {
+    function onRowActivate(h: HouseSummary) {
         if (isSelectionMode) {
             toggleInstallationSelection(String(h.GNodeAlias));
             return;
@@ -504,9 +458,7 @@ export default function HousesTableCard() {
                     <HousesCardFilters
                         filtersVisible={filtersVisible}
                         aliasFilter={aliasFilter}
-                        cityFilter={cityFilter}
                         setAliasFilter={setAliasFilter}
-                        setCityFilter={setCityFilter}
                         clearFilters={clearFilters}
                     />
 

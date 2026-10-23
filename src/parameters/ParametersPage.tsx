@@ -12,13 +12,12 @@ import {
     buildParametersFigures,
     calcNoPowerRswt,
     clampParam,
-    heatingParamsFromHouse,
     PARAM_SPECS,
 } from './parametersModel';
-import { DEFAULT_HEATING_PARAMS } from './types';
+import { DEFAULT_HEATING_PARAMS, type HeatingParams } from './types';
 
 import './ParametersPage.css';
-import type { InstallationSummary, SpaceheatParameters } from '../sema';
+import type { HouseSummary } from '../sema';
 
 function useHtmlThemeMutationTick() {
     const [tick, setTick] = useState(0);
@@ -31,11 +30,9 @@ function useHtmlThemeMutationTick() {
     return tick;
 }
 
-function ParametersCard({ installation }: { installation: InstallationSummary | undefined }) {
+function ParametersCard({ installation }: { installation: HouseSummary | undefined }) {
     const hasHouse = Boolean(installation);
-    const [params, setParams] = useState<SpaceheatParameters>(() =>
-        installation ? heatingParamsFromHouse(installation.SpaceheatParameters) : { ...DEFAULT_HEATING_PARAMS },
-    );
+    const [params, setParams] = useState<HeatingParams>(() => ({ ...DEFAULT_HEATING_PARAMS }));
 
     const themeTick = useHtmlThemeMutationTick();
     const isDark = useMemo(() => {
@@ -55,7 +52,7 @@ function ParametersCard({ installation }: { installation: InstallationSummary | 
         }
     }, [params, isDark]);
 
-    function onParamChange(key: keyof SpaceheatParameters, raw: string) {
+    function onParamChange(key: keyof HeatingParams, raw: string) {
         const num = parseFloat(raw);
         if (Number.isNaN(num)) {
             return;
@@ -68,7 +65,7 @@ function ParametersCard({ installation }: { installation: InstallationSummary | 
         if (!installation) {
             return;
         }
-        setParams(heatingParamsFromHouse(installation.SpaceheatParameters));
+        setParams({ ...DEFAULT_HEATING_PARAMS });
     }
 
     if (!params) {

@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import type { InstallationSummary } from "../sema";
+import type { HouseSummary } from "../sema";
 
 export default function MultiInstallationDisplay({ installations, selectedInstallationIds }: { 
-    installations: InstallationSummary[],
+    installations: HouseSummary[],
     selectedInstallationIds: ReadonlySet<string> 
 }) {
 
@@ -13,7 +13,7 @@ export default function MultiInstallationDisplay({ installations, selectedInstal
 
     function selectedHouseFieldValue(
         selectedIds: ReadonlySet<string>,
-        installations: InstallationSummary[],
+        installations: HouseSummary[],
     ): string {
         if (selectedIds.size === 0) {
             return '';
