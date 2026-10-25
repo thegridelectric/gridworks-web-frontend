@@ -1,6 +1,6 @@
 import Plot from 'react-plotly.js';
 import type { PlotData, Shape } from 'plotly.js';
-import type { ChannelReading } from '../sema';
+import type { ChannelReadingsListItem } from '../sema';
 import { formatIsoTimeForDisplay, getDefaultPlotLayout, getThemeColor } from './plot-configs';
 import type { DefaultPlotParams } from './DefaultVisualizerPlot';
 import { PlotlyWrapper } from './PlotlyWrapper';
@@ -158,7 +158,7 @@ function buildZoneHighlightTraces(
     return traces;
 }
 
-function parseHeatCallChannel(channel: ChannelReading): ZoneHeatChannel | null {
+function parseHeatCallChannel(channel: ChannelReadingsListItem): ZoneHeatChannel | null {
     const match = channel.ChannelName.match(HEAT_CALL_CHANNEL_PATTERN);
     if (!match) {
         return null;
@@ -171,7 +171,7 @@ function parseHeatCallChannel(channel: ChannelReading): ZoneHeatChannel | null {
     };
 }
 
-function parseWhitewireChannel(channel: ChannelReading): ZoneHeatChannel | null {
+function parseWhitewireChannel(channel: ChannelReadingsListItem): ZoneHeatChannel | null {
     const match = channel.ChannelName.match(WHITEWIRE_CHANNEL_PATTERN);
     if (!match) {
         return null;
@@ -184,7 +184,7 @@ function parseWhitewireChannel(channel: ChannelReading): ZoneHeatChannel | null 
     };
 }
 
-function buildZoneHeatChannels(channelReadings: ChannelReading[]): ZoneHeatChannel[] {
+function buildZoneHeatChannels(channelReadings: ChannelReadingsListItem[]): ZoneHeatChannel[] {
     const zonesByNumber = new Map<number, { heatCall?: ZoneHeatChannel; whitewire?: ZoneHeatChannel }>();
 
     for (const channel of channelReadings) {
