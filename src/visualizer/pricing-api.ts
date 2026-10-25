@@ -1,52 +1,48 @@
+import { isAxiosError } from "axios";
 import type { DateTime } from "luxon";
+import GridWorksApi from "../_util/GridWorksApi";
+import type { StopgapPriceForecast } from "../sema";
 
-export type PriceForecastApiReponse = {
+/** The price panel's series: the word's two price lists plus Total, a
+ *  display sum of the two computed here (no word states a total price). */
+export type PriceSeries = {
     HourStartS: number[],
     LmpList: number[],
     DistList: number[],
-    // Not in the API; we populate this ourselves.
     TotalList: number[],
 };
 
-export const PriceForecastApiResponseSeriesNames: [keyof PriceForecastApiReponse, keyof PriceForecastApiReponse, keyof PriceForecastApiReponse] = [
+export const PriceSeriesNames: [keyof PriceSeries, keyof PriceSeries, keyof PriceSeries] = [
     'LmpList',
     'TotalList',
     'DistList',
 ]
 
-
+/** The hours of the backend's latest forecast that fall inside the window.
+ *  The forecast covers the next 48 hours from the request, so a window in
+ *  the past gets empty lists. */
 export async function fetchPriceForecast(params: {
-    installationGNode: string;
     startDate: DateTime;
     endDate: DateTime;
-}): Promise<PriceForecastApiReponse> {
-
-
-    // TODO pull the region from the houseGNode
+}): Promise<PriceSeries> {
+    let forecast: StopgapPriceForecast;
     try {
-        const res = await fetch(`https://price-service.electricity.works/get_prices_visualizer/hw1-isone-me-versant-keene-ps/gw0-price-forecast`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                "start_unix_s": params.startDate.toSeconds(),
-                "end_unix_s": params.endDate.toSeconds() + 48*3600,
-                "timezone_str": "America/New_York"
-            })
-        });
-        if (!res.ok) {
-            throw new Error(`Pricing request failed: ${res.status}`);
-        }
-
-        const data = await res.json() as PriceForecastApiReponse;
-        // Insert our own calculation for Total price
-        data.TotalList = data.LmpList.map((v, i) => v + (data.DistList[i] || 0));
-
-        return data;
-    } catch (error: any) {
-        const errMsg = error.message || `Unknown error type ${typeof error}`
+        const res = await GridWorksApi.get<StopgapPriceForecast>('/api/v2/price-forecast/latest');
+        forecast = res.data;
+    } catch (error: unknown) {
+        const detail = isAxiosError(error) ? error.response?.data?.detail : undefined;
+        const errMsg = detail || (error instanceof Error ? error.message : `Unknown error type ${typeof error}`);
         throw new Error(`Pricing request failed: ${errMsg}`);
     }
-
+    const startS = params.startDate.toSeconds();
+    const endS = params.endDate.toSeconds();
+    const series: PriceSeries = { HourStartS: [], LmpList: [], DistList: [], TotalList: [] };
+    forecast.HourStartS.forEach((hourStartS, i) => {
+        if (hourStartS < startS || hourStartS > endS) return;
+        series.HourStartS.push(hourStartS);
+        series.LmpList.push(forecast.LmpList[i]);
+        series.DistList.push(forecast.DistList[i]);
+        series.TotalList.push(forecast.LmpList[i] + forecast.DistList[i]);
+    });
+    return series;
 }
