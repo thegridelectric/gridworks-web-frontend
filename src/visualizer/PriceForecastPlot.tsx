@@ -1,5 +1,5 @@
 import Plot, { type PlotParams } from "react-plotly.js";
-import { fetchPriceForecast, PriceForecastApiResponseSeriesNames, type PriceForecastApiReponse } from "./pricing-api";
+import { fetchPriceForecast, PriceSeriesNames, type PriceSeries } from "./pricing-api";
 import React, { useEffect, useState } from "react";
 import { formatForDisplay, formatHourStartSForDisplay, type PlotConfig } from "./plot-configs";
 import { PlotlyWrapper } from "./PlotlyWrapper";
@@ -18,8 +18,8 @@ export interface PriceForecastPlotParams {
 
 export default function PriceForecastPlot(props: PriceForecastPlotParams) {
 
-    const { startDate, endDate, installationGNode } = props
-    const [priceData, setPriceData] = useState<PriceForecastApiReponse | null>(null);
+    const { startDate, endDate } = props
+    const [priceData, setPriceData] = useState<PriceSeries | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
 
@@ -29,12 +29,7 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
             setPlotError(null);
             setPriceData(null);
             try {
-                const apiResult = await fetchPriceForecast({
-                    installationGNode,
-                    startDate,
-                    endDate
-                });
-                setPriceData(apiResult as PriceForecastApiReponse);
+                setPriceData(await fetchPriceForecast({ startDate, endDate }));
             } catch (error) {
                 const message = error instanceof Error ? error.message : 'Unknown error';
                 setPlotError(message);
@@ -44,12 +39,14 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
         }
         fetchDataAsync();
         
-    }, [installationGNode, startDate, endDate])
+    }, [startDate, endDate])
 
     let content: React.ReactNode;
-    if (priceData) {
+    if (priceData && priceData.HourStartS.length === 0) {
+        content = <div className="alert alert-secondary mt-3 mb-0" role="status">No price forecast for this window; the forecast covers the next 48 hours.</div>
+    } else if (priceData) {
         const pricesTimes = priceData.HourStartS.map(formatHourStartSForDisplay);
-        const tracesWithData = PriceForecastApiResponseSeriesNames
+        const tracesWithData = PriceSeriesNames
             .map(seriesName => ({
                 seriesName,
                 unit: 'DollarsPerMWh',

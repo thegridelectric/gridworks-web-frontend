@@ -4,3 +4,4 @@ export * from './SyncedReadingsBundle';
 export * from './HouseOperatingStatus';
 export * from './HouseSummary';
 export * from './LayoutLite';
+export * from './StopgapPriceForecast';
