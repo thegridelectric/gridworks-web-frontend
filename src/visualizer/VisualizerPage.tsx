@@ -11,7 +11,7 @@ import {
 import { getIsDarkMode } from "../_util/theme";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import GridWorksApi from '../_util/GridWorksApi';
-import type { ReadingsBundleApiResponse } from "../sema";
+import type { SyncedReadingsBundle } from "../sema";
 import { VisualizerOptionsPanel } from "./VisualizerControls";
 import { CLIENT_ONLY_VISUALIZER_CHANNEL_IDS } from "./visualizerChannels";
 import { useVisualizerControls } from "./useVisualizerControls";
@@ -25,7 +25,7 @@ export default function VisualizerPage() {
     const [startDateTime, setStartDateTime] = useState(getDefaultDate(true));
     const [endDateTime, setEndDateTime] = useState(getDefaultDate(false));
     const [plottedParams, setPlottedParams] = useState<VisualizerParams | null>(null)
-    const [readingsBundleData, setReadingsBundleData] = useState<ReadingsBundleApiResponse | null>(null);
+    const [readingsBundleData, setReadingsBundleData] = useState<SyncedReadingsBundle | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFloLoading, setIsFloLoading] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
@@ -82,7 +82,7 @@ export default function VisualizerPage() {
         setPlotError(null);
         setReadingsBundleData(null);
         try {
-            const apiResult = await GridWorksApi.get<ReadingsBundleApiResponse>(
+            const apiResult = await GridWorksApi.get<SyncedReadingsBundle>(
                 `/api/v2/installations/${installationGNode}/synced.readings.bundle`,
                 {
                     params: {
