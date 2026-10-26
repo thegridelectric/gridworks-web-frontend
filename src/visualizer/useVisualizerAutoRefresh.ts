@@ -6,15 +6,15 @@ export function useVisualizerAutoRefresh(params: {
     autoRefresh: boolean;
     isBusy: boolean;
     pathRoot: string | undefined;
-    onTick: (start: Date, end: Date) => void;
-    setDateWindow: (start: Date, end: Date) => void;
+    onTick: (end: Date) => void;
+    setEndDateTime: (end: Date) => void;
 }) {
-    const { autoRefresh, isBusy, pathRoot, onTick, setDateWindow } = params;
+    const { autoRefresh, isBusy, pathRoot, onTick, setEndDateTime } = params;
     const isPageFocusedRef = useRef(true);
     const autoRefreshRef = useRef(autoRefresh);
     const blockRefreshRef = useRef(isBusy);
     const onTickRef = useRef(onTick);
-    const setDateWindowRef = useRef(setDateWindow);
+    const setEndDateTimeRef = useRef(setEndDateTime);
 
     useEffect(() => {
         autoRefreshRef.current = autoRefresh;
@@ -26,7 +26,7 @@ export function useVisualizerAutoRefresh(params: {
 
     useEffect(() => {
         onTickRef.current = onTick;
-        setDateWindowRef.current = setDateWindow;
+        setEndDateTimeRef.current = setEndDateTime;
     });
 
     useEffect(() => {
@@ -58,16 +58,15 @@ export function useVisualizerAutoRefresh(params: {
             if (blockRefreshRef.current) {
                 return;
             }
-            const start = getDefaultDate(true);
             const end = getDefaultDate(false);
-            setDateWindowRef.current(start, end);
-            onTickRef.current(start, end);
+            setEndDateTimeRef.current(end);
+            onTickRef.current(end);
         };
 
         const startAutoRefresh = () => {
             clearTimers();
             timeoutId = setTimeout(maybeAutoRefreshTick, 500);
-            intervalId = setInterval(maybeAutoRefreshTick, 60000);
+            intervalId = setInterval(maybeAutoRefreshTick, 30000);
         };
 
         const checkPageFocus = () => {

@@ -76,6 +76,16 @@ export default function VisualizerPage() {
         writeDateWindowToInputs(start, end);
     }
 
+    function setEndDateWindow(end: Date) {
+        setEndDateTime(end);
+        if (endDateInputRef.current) {
+            endDateInputRef.current.value = formatDate(end);
+        }
+        if (endTimeInputRef.current) {
+            endTimeInputRef.current.value = formatTime(end);
+        }
+    }
+
     async function runPlotQuery(startDt: Date, endDt: Date) {
         setPlotError(null);
 
@@ -239,9 +249,9 @@ export default function VisualizerPage() {
         autoRefresh,
         isBusy: isLoading || isFloLoading,
         pathRoot,
-        setDateWindow,
-        onTick: (start, end) => {
-            void runPlotQuery(start, end);
+        setEndDateTime: setEndDateWindow,
+        onTick: (end) => {
+            void runPlotQuery(startDateTime, end);
         },
     });
 
