@@ -6,6 +6,8 @@ interface RealTimeStatusSystemDiagramPipesProps {
     currentState: string | null,
     hasDistFlow: boolean,
     hasPrimFlow: boolean,
+    hasSecondaryFlow: boolean,
+    storeCharge: boolean,
     hasHpPower: boolean,
     hasStoreFlow: boolean,
     isSpruce: boolean,
@@ -63,6 +65,8 @@ export default function RealTimeStatusSystemDiagramPipes({
     currentState,
     hasDistFlow,
     hasPrimFlow,
+    hasSecondaryFlow,
+    storeCharge,
     hasHpPower,
     hasStoreFlow,
     isSpruce,
@@ -77,6 +81,11 @@ export default function RealTimeStatusSystemDiagramPipes({
     /** Left end of HP-buffer header rows (default 140); moves with shifted heat pump. Right end stays at 860. */
     const hpHeaderLeft = 140 + siegHpShiftX;
     const hpBufferFullSpanWidth = 720 - siegHpShiftX;
+    const hpBufferHeaderRight = hpHeaderLeft + hpBufferFullSpanWidth;
+    const spruceHexWidth = 120 / 3;
+    const spruceHexLeft = (170 + siegHpShiftX) + 38 + 10;
+    const hpBufferHpLegWidth = isSpruce ? spruceHexLeft - hpHeaderLeft : hpBufferFullSpanWidth;
+    const hpBufferBufferLegX = isSpruce ? spruceHexLeft + spruceHexWidth : hpHeaderLeft;
     /** Short HP-side header spans that connect the top/bottom header rows to the Sieg vertical pipe. */
     const siegLoopPipeX = hpHeaderLeft + 22;
     const siegLoopConnectorWidth = siegLoopPipeX + 15 - hpHeaderLeft;
@@ -98,6 +107,9 @@ export default function RealTimeStatusSystemDiagramPipes({
     const storeReturnPipeConnectionX = storeReturnPipeX;
     const tank3HpHorizontalPipeWidth = storeReturnPipeX + 15 - hpHeaderLeft;
     const tank3BufferHorizontalPipeWidth = 860 - storeReturnPipeX;
+    const secondaryHeaderToStorageTopWidth = tank1PipeX + 15 - hpBufferBufferLegX;
+    const secondaryHeaderToStorageBottomWidth = storeReturnPipeX + 15 - hpBufferBufferLegX;
+    const secondaryHeaderToBufferWidth = hpBufferHeaderRight - hpBufferBufferLegX;
 
     // House pipes use unshifted "base" coordinates inside a translated group so they always move with the house.
     const houseLayoutBaseLeft = isSpruce ? 480 : 660;
@@ -132,6 +144,8 @@ export default function RealTimeStatusSystemDiagramPipes({
             isSpruce,
             hasDistFlow,
             hasPrimFlow,
+            hasSecondaryFlow,
+            storeCharge,
             hasHpPower,
             hasStoreFlow,
             animateSpruceFloorLoop,
@@ -140,9 +154,19 @@ export default function RealTimeStatusSystemDiagramPipes({
         }),
     };
 
+    const hpBufferPipeNames = isSpruce
+        ? [
+            'dashboard-hp-spruce-primary-top-pipe',
+            'dashboard-hp-spruce-secondary-to-storage-top-pipe',
+            'dashboard-hp-spruce-secondary-to-buffer-top-pipe',
+            'dashboard-hp-spruce-primary-bottom-pipe',
+            'dashboard-hp-spruce-secondary-to-storage-bottom-pipe',
+            'dashboard-hp-spruce-secondary-to-buffer-bottom-pipe',
+        ]
+        : ['dashboard-hp-buffer-top-pipe', 'dashboard-hp-buffer-bottom-pipe'];
+
     const allPipeNames = [
-        'dashboard-hp-buffer-top-pipe',
-        'dashboard-hp-buffer-bottom-pipe',
+        ...hpBufferPipeNames,
         'dashboard-sieg-loop-top-connector-pipe',
         'dashboard-sieg-loop-bottom-connector-pipe',
         'dashboard-tank1-hp-vertical-pipe-discharge',
@@ -171,16 +195,39 @@ export default function RealTimeStatusSystemDiagramPipes({
     };
 
     const nonHousePipeElements: Record<string, ReactElement> = {
-        'dashboard-hp-buffer-top-pipe': hidePipeForHeaderRowDebug('dashboard-hp-buffer-top-pipe') ? (
-            <g data-debug-omit="dashboard-hp-buffer-top-pipe" />
-        ) : (
-            <rect x={hpHeaderLeft} y="75" width={hpBufferFullSpanWidth} height="15" fill={pipeColors['dashboard-hp-buffer-top-pipe']} />
-        ),
-        'dashboard-hp-buffer-bottom-pipe': hidePipeForHeaderRowDebug('dashboard-hp-buffer-bottom-pipe') ? (
-            <g data-debug-omit="dashboard-hp-buffer-bottom-pipe" />
-        ) : (
-            <rect x={hpHeaderLeft} y="215" width={hpBufferFullSpanWidth} height="15" fill={pipeColors['dashboard-hp-buffer-bottom-pipe']} />
-        ),
+        ...(isSpruce
+            ? {
+                'dashboard-hp-spruce-primary-top-pipe': (
+                    <rect x={hpHeaderLeft} y="75" width={hpBufferHpLegWidth} height="15" fill={pipeColors['dashboard-hp-spruce-primary-top-pipe']} />
+                ),
+                'dashboard-hp-spruce-secondary-to-storage-top-pipe': (
+                    <rect x={hpBufferBufferLegX} y="75" width={storeCharge ? secondaryHeaderToStorageTopWidth : 0} height="15" fill={pipeColors['dashboard-hp-spruce-secondary-to-storage-top-pipe']} />
+                ),
+                'dashboard-hp-spruce-secondary-to-buffer-top-pipe': (
+                    <rect x={hpBufferBufferLegX} y="75" width={storeCharge ? 0 : secondaryHeaderToBufferWidth} height="15" fill={pipeColors['dashboard-hp-spruce-secondary-to-buffer-top-pipe']} />
+                ),
+                'dashboard-hp-spruce-primary-bottom-pipe': (
+                    <rect x={hpHeaderLeft} y="215" width={hpBufferHpLegWidth} height="15" fill={pipeColors['dashboard-hp-spruce-primary-bottom-pipe']} />
+                ),
+                'dashboard-hp-spruce-secondary-to-storage-bottom-pipe': (
+                    <rect x={hpBufferBufferLegX} y="215" width={storeCharge ? secondaryHeaderToStorageBottomWidth : 0} height="15" fill={pipeColors['dashboard-hp-spruce-secondary-to-storage-bottom-pipe']} />
+                ),
+                'dashboard-hp-spruce-secondary-to-buffer-bottom-pipe': (
+                    <rect x={hpBufferBufferLegX} y="215" width={storeCharge ? 0 : secondaryHeaderToBufferWidth} height="15" fill={pipeColors['dashboard-hp-spruce-secondary-to-buffer-bottom-pipe']} />
+                ),
+            }
+            : {
+                'dashboard-hp-buffer-top-pipe': hidePipeForHeaderRowDebug('dashboard-hp-buffer-top-pipe') ? (
+                    <g data-debug-omit="dashboard-hp-buffer-top-pipe" />
+                ) : (
+                    <rect x={hpHeaderLeft} y="75" width={hpBufferFullSpanWidth} height="15" fill={pipeColors['dashboard-hp-buffer-top-pipe']} />
+                ),
+                'dashboard-hp-buffer-bottom-pipe': hidePipeForHeaderRowDebug('dashboard-hp-buffer-bottom-pipe') ? (
+                    <g data-debug-omit="dashboard-hp-buffer-bottom-pipe" />
+                ) : (
+                    <rect x={hpHeaderLeft} y="215" width={hpBufferFullSpanWidth} height="15" fill={pipeColors['dashboard-hp-buffer-bottom-pipe']} />
+                ),
+            }),
         'dashboard-sieg-loop-top-connector-pipe': <rect x={hpHeaderLeft} y="75" width={siegLoopConnectorWidth} height="15" fill={pipeColors['dashboard-sieg-loop-top-connector-pipe']} />,
         'dashboard-sieg-loop-bottom-connector-pipe': <rect x={hpHeaderLeft} y="215" width={siegLoopConnectorWidth} height="15" fill={pipeColors['dashboard-sieg-loop-bottom-connector-pipe']} />,
         'dashboard-tank1-hp-horizontal-pipe-charge': hidePipeForHeaderRowDebug('dashboard-tank1-hp-horizontal-pipe-charge') ? (
@@ -235,8 +282,7 @@ export default function RealTimeStatusSystemDiagramPipes({
     };
 
     const nonHousePipeOrder = [
-        'dashboard-hp-buffer-top-pipe',
-        'dashboard-hp-buffer-bottom-pipe',
+        ...hpBufferPipeNames,
         'dashboard-sieg-loop-top-connector-pipe',
         'dashboard-sieg-loop-bottom-connector-pipe',
         'dashboard-tank1-hp-horizontal-pipe-charge',

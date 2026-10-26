@@ -492,6 +492,13 @@ function RealTimeStatusConnection({
                                             <td>{((latestReadings['primary-flow'] ?? 0) / 100).toFixed(1)}</td>
                                             <td>{Math.max(0, (latestReadings['primary-pump-pwr'] ?? 0)).toFixed(1)}</td>
                                         </tr>
+                                        {isSpruce &&
+                                            <tr>
+                                                <td>Secondary</td>
+                                                <td>{((latestReadings['secondary-flow'] ?? 0) / 100).toFixed(1)}</td>
+                                                <td>{Math.max(0, (latestReadings['secondary-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                            </tr>
+                                        }
                                         <tr>
                                             <td>Distribution</td>
                                             <td>{((latestReadings['dist-flow'] ?? 0) / 100).toFixed(1)}</td>

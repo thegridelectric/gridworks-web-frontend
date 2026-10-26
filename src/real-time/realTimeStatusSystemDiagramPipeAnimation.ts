@@ -15,6 +15,8 @@
 export interface DiagramPipeAnimationInput {
     currentState: string | null;
     hasPrimFlow: boolean;
+    hasSecondaryFlow?: boolean;
+    storeCharge?: boolean;
     hasDistFlow: boolean;
     hasStoreFlow: boolean;
     hasSiegFlow: boolean;
@@ -32,6 +34,22 @@ const DOWN = 'url(#dashboardDownFlowPattern)';
 export const PIPES_HEAT_PUMP_BUFFER = {
     'dashboard-hp-buffer-top-pipe': RIGHT,
     'dashboard-hp-buffer-bottom-pipe': LEFT,
+} as const;
+const PIPES_HEAT_PUMP_SPRUCE_PRIMARY = {
+    'dashboard-hp-spruce-primary-top-pipe': RIGHT,
+    'dashboard-hp-spruce-primary-bottom-pipe': LEFT,
+} as const;
+const PIPES_SPRUCE_SECONDARY_TO_STORAGE = {
+    'dashboard-hp-spruce-secondary-to-storage-top-pipe': RIGHT,
+    'dashboard-tank1-hp-vertical-pipe-charge': DOWN,
+    'dashboard-tank1-connection-pipe-charge': LEFT,
+    'dashboard-tank3-connection-pipe-charge': LEFT,
+    'dashboard-tank3-hp-vertical-pipe-charge': UP,
+    'dashboard-hp-spruce-secondary-to-storage-bottom-pipe': LEFT,
+} as const;
+const PIPES_SPRUCE_SECONDARY_TO_BUFFER = {
+    'dashboard-hp-spruce-secondary-to-buffer-top-pipe': RIGHT,
+    'dashboard-hp-spruce-secondary-to-buffer-bottom-pipe': LEFT,
 } as const;
 export const PIPES_CHARGE = {
     'dashboard-tank1-hp-horizontal-pipe-charge': RIGHT,
@@ -72,6 +90,9 @@ export const PIPES_SIEG_LOOP = {
 
 const PIPE_SEGMENT_DEFAULT_DIRECTION_BY_ID = {
     ...PIPES_HEAT_PUMP_BUFFER,
+    ...PIPES_HEAT_PUMP_SPRUCE_PRIMARY,
+    ...PIPES_SPRUCE_SECONDARY_TO_STORAGE,
+    ...PIPES_SPRUCE_SECONDARY_TO_BUFFER,
     ...PIPES_CHARGE,
     ...PIPES_DISCHARGE,
     ...PIPES_DIST_VERTICAL,
@@ -93,6 +114,8 @@ export function resolveActivePipeFills(input: DiagramPipeAnimationInput): Partia
     const {
         currentState,
         hasPrimFlow,
+        hasSecondaryFlow = false,
+        storeCharge = false,
         hasDistFlow,
         hasSiegFlow,
         isSpruce,
@@ -136,13 +159,34 @@ export function resolveActivePipeFills(input: DiagramPipeAnimationInput): Partia
         });
     }
 
-    if (systemState === 'HpOnStoreOff') {
+    if (isSpruce && hasPrimFlow) {
+        Object.entries(PIPES_HEAT_PUMP_SPRUCE_PRIMARY).forEach(([pipeId, direction]) => {
+            activePipeColors[pipeId as PipeSegmentId] = direction;
+        });
+    }
+
+    if (!isSpruce && systemState === 'HpOnStoreOff') {
         Object.entries(PIPES_HEAT_PUMP_BUFFER).forEach(([pipeId, direction]) => {
             activePipeColors[pipeId as PipeSegmentId] = direction;
         });
     }
 
-    if (systemState === 'HpOnStoreCharge' || systemState === 'HpOffStoreCharge') {
+    if (isSpruce && hasSecondaryFlow) {
+        if (storeCharge) {
+            Object.entries(PIPES_SPRUCE_SECONDARY_TO_STORAGE).forEach(([pipeId, direction]) => {
+                activePipeColors[pipeId as PipeSegmentId] = direction;
+            });
+            if (hasDistFlow) {
+                Object.entries(PIPES_DIST_FROM_BUFFER).forEach(([pipeId, direction]) => {
+                    activePipeColors[pipeId as PipeSegmentId] = direction;
+                });
+            }
+        } else {
+            Object.entries(PIPES_SPRUCE_SECONDARY_TO_BUFFER).forEach(([pipeId, direction]) => {
+                activePipeColors[pipeId as PipeSegmentId] = direction;
+            });
+        }
+    } else if (systemState === 'HpOnStoreCharge' || systemState === 'HpOffStoreCharge') {
         Object.entries(PIPES_CHARGE).forEach(([pipeId, direction]) => {
             activePipeColors[pipeId as PipeSegmentId] = direction;
         });
@@ -154,7 +198,7 @@ export function resolveActivePipeFills(input: DiagramPipeAnimationInput): Partia
     }
 
     if (systemState === 'HpOffStoreOff') {
-        if (hasPrimFlow) {
+        if (!isSpruce && hasPrimFlow) {
             Object.entries(PIPES_HEAT_PUMP_BUFFER).forEach(([pipeId, direction]) => {
                 activePipeColors[pipeId as PipeSegmentId] = direction;
             });

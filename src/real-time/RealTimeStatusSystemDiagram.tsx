@@ -62,13 +62,15 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
         })
         : [];
 
-    const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow } = getCurrentState(relays, readings, siegLoop);
+    const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow, storeCharge } = getCurrentState(relays, readings, siegLoop);
     const animateSpruceFloorLoop = isSpruce ? shouldAnimateSpruceFloorLoop(readings) : false;
     const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
 
     /** Same threshold idea as `dist-flow` in `getCurrentState` (raw reading > 0). */
     const hasSiegFlow =
         siegLoop && (readings['sieg-flow'] ?? 0) > 0.5;
+    const hasSecondaryFlow =
+        isSpruce && (readings['secondary-flow'] ?? 0) > 0;
 
     const activeComponentFills = resolveActiveComponentFills({
         currentState,
@@ -295,6 +297,8 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                     currentState,
                     hasDistFlow,
                     hasPrimFlow,
+                    hasSecondaryFlow,
+                    storeCharge,
                     hasHpPower,
                     hasStoreFlow,
                     isSpruce,
@@ -657,6 +661,7 @@ function getCurrentState(
     const relay9 = relays['relay9'];
 
     let currentState = null;
+    let storeCharge = false;
 
     if (relay5 && relay6 && relay3 && relay9) {
         const relay3State = relay3.state;
@@ -667,7 +672,6 @@ function getCurrentState(
             hpOn = true;
         }
 
-        let storeCharge = false;
         let storeDischarge = false;
         if (relay3State === 'energized' && hasPrimFlow) {
             storeCharge = true;
@@ -692,7 +696,7 @@ function getCurrentState(
         }
     }
 
-    return { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow };
+    return { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow, storeCharge };
 }
 
 function shouldAnimateSpruceFloorLoop(readings: Record<string, number>): boolean {
