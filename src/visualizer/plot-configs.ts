@@ -56,7 +56,12 @@ const HEAT_PUMP_PLOT_CONFIG: PlotConfig = {
     title: 'Heat pump',
     yAxis1: {
         titleText: 'Temperature [°F]',
-        dualOnlyRange: [0, 260],
+        dualOnlyRange: {
+            minOffset: 20,
+            maxOffset: 20,
+            absoluteMin: 0,
+            absoluteMax: 260,
+        },
     },
     yAxis2: {
         titleText: 'Power [kW] or Flow [GPM]',
@@ -119,7 +124,12 @@ const SECONDARY_PLOT_CONFIG: PlotConfig = {
     title: 'Secondary loop',
     yAxis1: {
         titleText: 'Temperature [°F]',
-        dualOnlyRange: [0, 260],
+        dualOnlyRange: {
+            minOffset: 20,
+            maxOffset: 20,
+            absoluteMin: 0,
+            absoluteMax: 260,
+        },
     },
     yAxis2: {
         titleText: 'Flow [GPM]',
