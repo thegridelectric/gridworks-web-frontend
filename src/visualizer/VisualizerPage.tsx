@@ -48,6 +48,21 @@ export default function VisualizerPage() {
     const endTimeInputRef = useRef<HTMLInputElement>(null);
     const { installationGNode, pathRoot } = useRouteInfo();
     const session = useContext(SessionContext);
+    useVisualizerAutoRefresh({
+        autoRefresh,
+        isBusy: isLoading || isFloLoading,
+        pathRoot,
+        setEndDateTime: setEndDateWindow,
+        onTick: (end) => {
+            void runPlotQuery(startDateTime, end);
+        },
+    });
+
+    useEffect(() => {
+        setReadingsBundleData(null);
+        setPlotError(null);
+    }, [installationGNode]);
+
     if (!session) {
         return null;
     }
@@ -243,21 +258,6 @@ export default function VisualizerPage() {
             return next;
         });
     }
-
-    useVisualizerAutoRefresh({
-        autoRefresh,
-        isBusy: isLoading || isFloLoading,
-        pathRoot,
-        setEndDateTime: setEndDateWindow,
-        onTick: (end) => {
-            void runPlotQuery(startDateTime, end);
-        },
-    });
-
-    useEffect(() => {
-        setReadingsBundleData(null);
-        setPlotError(null);
-    }, [installationGNode]);
 
     return (
         <div ref={visualizerCardRef} className={`card visualizer-card${isFullscreen ? ' fullscreen' : ''}`}>
