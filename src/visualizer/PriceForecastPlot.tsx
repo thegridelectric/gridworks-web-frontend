@@ -62,7 +62,8 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
             showPoints: props.showPoints,
             isDarkMode: props.isDarkMode,
             formattedStartDate: formatForDisplay(startDate),
-            formattedEndDate: formatForDisplay(endDate)
+            // The x axis reaches 48 hours past the window, where the forecast hours are.
+            formattedEndDate: formatForDisplay(endDate.plus({ hours: 48 }))
         });
         content = <Plot data={plotlyData} layout={plotlyLayout} {...props.plotParams} />
 
