@@ -1,5 +1,6 @@
 import RealTimeStatusSystemDiagramPipes from "./RealTimeStatusSystemDiagramPipes";
 import { resolveActiveComponentFills, resolveActiveComponentFlags } from "./realTimeStatusSystemDiagramPipeAnimation";
+import { hasPrimaryLoopFlow } from "../sema/siegLoop";
 
 interface RelayStatus {
     state: string,
@@ -61,7 +62,7 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
         })
         : [];
 
-    const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow } = getCurrentState(relays, readings);
+    const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow } = getCurrentState(relays, readings, siegLoop);
     const animateSpruceFloorLoop = isSpruce ? shouldAnimateSpruceFloorLoop(readings) : false;
     const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
 
@@ -624,13 +625,16 @@ function tempValueToFahrenheit(channelName: string, rawValue: number | null | un
     return ((tempC * 9 / 5) + 32);
 }
 
-function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<string, number>) {
+function getCurrentState(
+    relays: Record<string, RelayStatus>,
+    readings: Record<string, number>,
+    siegLoop: boolean,
+) {
 
     const distFlowReading = readings['dist-flow'];
     const hasDistFlow = !!(distFlowReading && distFlowReading > 0);
 
-    const primFlowReading = readings['primary-flow'];
-    const hasPrimFlow = !!(primFlowReading && primFlowReading > 0);
+    const hasPrimFlow = hasPrimaryLoopFlow(readings, siegLoop);
 
     const storeFlowReading = readings['store-flow'];
     const hasStoreFlow = !!(storeFlowReading && storeFlowReading > 0);

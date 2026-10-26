@@ -10,6 +10,7 @@
 /**
  * Primitive inputs for pipe fill logic. Buffer↔dist and storage-discharge pipe layouts use the same
  * booleans as `getCurrentState` / `RealTimeStatusSystemDiagram` (see `resolveActivePipeFills` body).
+ * `hasPrimFlow` uses `sieg-send` when the layout has a Sieg loop, else `primary-flow`.
  */
 export interface DiagramPipeAnimationInput {
     currentState: string | null;
