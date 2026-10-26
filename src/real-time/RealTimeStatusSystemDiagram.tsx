@@ -645,14 +645,8 @@ function getCurrentState(
 
     const hpIduReading = readings['hp-idu-pwr'];
     const hpOduReading = readings['hp-odu-pwr'];
-    const hasHpPowerReading = hpIduReading && hpOduReading;
-    let hasHpPower = false;
-    if (hasHpPowerReading) {
-        const totalHpKw = hpIduReading / 1000 + hpOduReading / 1000;
-        if (totalHpKw > 0.5) {
-            hasHpPower = true;
-        }
-    }
+    const totalHpKw = (hpIduReading ?? 0) / 1000 + (hpOduReading ?? 0) / 1000;
+    const hasHpPower = totalHpKw > 0.5;
 
     // Check relay states to determine system state
     const relay5 = relays['relay5'];
