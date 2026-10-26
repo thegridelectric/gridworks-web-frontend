@@ -95,10 +95,11 @@ export default function RealTimeStatusThermostatTable({ thermostatNames, reading
         .map((match) => match[1])
         .filter((name, index, arr) => arr.indexOf(name) === index);
 
-    const resolvedThermostatNames =
+    const resolvedThermostatNames = (
         thermostatNames && thermostatNames.length > 0
             ? thermostatNames
-            : derivedThermostatNames;
+            : derivedThermostatNames
+    ).filter((name) => !name.endsWith('-gw'));
 
     let zoneElements : ReactNode;
     if (!resolvedThermostatNames.length) {
