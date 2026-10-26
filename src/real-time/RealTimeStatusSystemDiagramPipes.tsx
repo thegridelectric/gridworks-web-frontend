@@ -319,7 +319,7 @@ export default function RealTimeStatusSystemDiagramPipes({
 
     for (const name of nonHousePipeOrder) {
         if (!activePipeColors[name]) {
-            elementsInOrder.push(nonHousePipeElements[name]);
+            elementsInOrder.push(cloneElement(nonHousePipeElements[name], { key: name }));
         }
     }
     elementsInOrder.push(
@@ -340,7 +340,7 @@ export default function RealTimeStatusSystemDiagramPipes({
                 )
             )
         ) {
-            elementsInOrder.push(nonHousePipeElements[name]);
+            elementsInOrder.push(cloneElement(nonHousePipeElements[name], { key: name }));
         }
     }
     elementsInOrder.push(
@@ -353,14 +353,14 @@ export default function RealTimeStatusSystemDiagramPipes({
     if (deferHpBufferOverlay) {
         for (const name of HP_BUFFER_OVERLAY_PIPES) {
             if (activePipeColors[name]) {
-                elementsInOrder.push(nonHousePipeElements[name]);
+                elementsInOrder.push(cloneElement(nonHousePipeElements[name], { key: `${name}-overlay` }));
             }
         }
     }
     if (deferStorageBufferHorizontalOverlay) {
         for (const name of STORAGE_BUFFER_HORIZONTAL_OVERLAY_PIPES) {
             if (activePipeColors[name]) {
-                elementsInOrder.push(nonHousePipeElements[name]);
+                elementsInOrder.push(cloneElement(nonHousePipeElements[name], { key: `${name}-overlay` }));
             }
         }
     }
