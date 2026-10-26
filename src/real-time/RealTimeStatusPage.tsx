@@ -149,6 +149,7 @@ function RealTimeStatusConnection({
     const [latestReadings, setLatestReadings] = useState<Record<string, number> | null>(null);
     const [control, setControl] = useState<string | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [hasStatusForSelection, setHasStatusForSelection] = useState(false);
     const [err, setErr] = useState<string | null>(null);
     // [auto-snapshot]
     // const [snapshotIntervalSec, setSnapshotIntervalSec] = useState<number | ''>(DEFAULT_SNAPSHOT_INTERVAL_SEC);
@@ -169,6 +170,7 @@ function RealTimeStatusConnection({
 
         const wsBaseUrl = getDashboardWebSocketBaseUrl();
         const wsUrl = `${wsBaseUrl}/realtime/${houseAlias}`;
+        setHasStatusForSelection(false);
         const websocket = new WebSocket(wsUrl);
         wsRef.current = websocket;
 
@@ -206,6 +208,7 @@ function RealTimeStatusConnection({
             if (data.type === 'status') {
                 const s = data as DashboardStatusMessage;
                 setTargetGNode(s.target_gnode || '');
+                setHasStatusForSelection(true);
                 if (s.thermostat_names) {
                     setThermostatNames(s.thermostat_names);
                 }
@@ -409,6 +412,7 @@ function RealTimeStatusConnection({
                 <RealTimeStatusHeader
                     err={err}
                     isConnected={isConnected}
+                    isConnecting={!isConnected || !hasStatusForSelection}
                     targetGNode={targetGNode}
                     control={control}
                 />

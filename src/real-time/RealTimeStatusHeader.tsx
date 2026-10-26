@@ -1,6 +1,7 @@
 interface RealTimeStatusHeaderProps {
     err: string | null,
     isConnected: boolean,
+    isConnecting: boolean,
     targetGNode: string | null,
     control?: string | null,
 }
@@ -8,6 +9,7 @@ interface RealTimeStatusHeaderProps {
 export default function RealTimeStatusHeader({
     err,
     isConnected,
+    isConnecting,
     targetGNode,
     control,
 }: RealTimeStatusHeaderProps) {
@@ -16,6 +18,9 @@ export default function RealTimeStatusHeader({
     if (err) {
         statusLeft = 'Error, connection failed';
         statusRight = '-';
+    } else if (isConnecting) {
+        statusLeft = <b>Connecting...</b>;
+        statusRight = <span style={{ color: 'var(--text-muted)', fontSize: '1em' }}>Connecting...</span>;
     } else if (isConnected) {
         if (targetGNode) {
             const gnodeParts = targetGNode.split('.');
@@ -35,9 +40,9 @@ export default function RealTimeStatusHeader({
     return <div id="dashboard-status">
         <div id="dashboard-status-left">
             {statusLeft}
-            {control &&
+            {!err &&
                 <div id="dashboard-control" className="text-muted" style={{ fontSize: '0.9em', marginTop: '0.25rem' }}>
-                    Control: <b>{control}</b>
+                    Control: <b>{isConnecting ? 'Connecting...' : (control?.trim() || '—')}</b>
                 </div>
             }
         </div>
