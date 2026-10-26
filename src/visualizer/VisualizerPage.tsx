@@ -41,6 +41,11 @@ export default function VisualizerPage() {
         resetControls,
     } = useVisualizerControls();
 
+    const visualizerCardRef = useRef<HTMLDivElement>(null);
+    const startDateInputRef = useRef<HTMLInputElement>(null);
+    const startTimeInputRef = useRef<HTMLInputElement>(null);
+    const endDateInputRef = useRef<HTMLInputElement>(null);
+    const endTimeInputRef = useRef<HTMLInputElement>(null);
     const { installationGNode, pathRoot } = useRouteInfo();
     const session = useContext(SessionContext);
     if (!session) {
@@ -48,12 +53,6 @@ export default function VisualizerPage() {
     }
 
     const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);
-
-    const visualizerCardRef = useRef<HTMLDivElement>(null);
-    const startDateInputRef = useRef<HTMLInputElement>(null);
-    const startTimeInputRef = useRef<HTMLInputElement>(null);
-    const endDateInputRef = useRef<HTMLInputElement>(null);
-    const endTimeInputRef = useRef<HTMLInputElement>(null);
 
     function writeDateWindowToInputs(start: Date, end: Date) {
         if (startDateInputRef.current) {
