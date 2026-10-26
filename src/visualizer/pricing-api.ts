@@ -18,9 +18,10 @@ export const PriceSeriesNames: [keyof PriceSeries, keyof PriceSeries, keyof Pric
     'DistList',
 ]
 
-/** The hours of the backend's latest forecast that fall inside the window.
- *  The forecast covers the next 48 hours from the request, so a window in
- *  the past gets empty lists. */
+/** The hours of the backend's latest forecast from the window start to 48
+ *  hours past its end, so the forecast ahead draws beside a window that
+ *  ends at now. The forecast covers the next 48 hours from the request, so
+ *  a window well in the past gets empty lists. */
 export async function fetchPriceForecast(params: {
     startDate: DateTime;
     endDate: DateTime;
@@ -35,7 +36,7 @@ export async function fetchPriceForecast(params: {
         throw new Error(`Pricing request failed: ${errMsg}`);
     }
     const startS = params.startDate.toSeconds();
-    const endS = params.endDate.toSeconds();
+    const endS = params.endDate.toSeconds() + 48 * 3600;
     const series: PriceSeries = { HourStartS: [], LmpList: [], DistList: [], TotalList: [] };
     forecast.HourStartS.forEach((hourStartS, i) => {
         if (hourStartS < startS || hourStartS > endS) return;
