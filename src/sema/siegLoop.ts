@@ -10,6 +10,9 @@ export function layoutHasSiegLoop(layout: LayoutLite | null | undefined): boolea
 }
 
 export function hasPrimaryLoopFlow(readings: Record<string, number>, siegLoop: boolean): boolean {
-    const reading = siegLoop ? readings[SIEG_SEND_CHANNEL] : readings[PRIMARY_FLOW_CHANNEL];
+    if (siegLoop) {
+        return (readings[SIEG_SEND_CHANNEL] ?? 0) / 100 >= 0.5;
+    }
+    const reading = readings[PRIMARY_FLOW_CHANNEL];
     return !!(reading && reading > 0);
 }

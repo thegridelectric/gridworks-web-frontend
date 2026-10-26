@@ -66,7 +66,6 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
     const animateSpruceFloorLoop = isSpruce ? shouldAnimateSpruceFloorLoop(readings) : false;
     const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
 
-    /** Same threshold idea as `dist-flow` in `getCurrentState` (raw reading > 0). */
     const hasSiegFlow =
         siegLoop && (readings['sieg-flow'] ?? 0) > 0.5;
     const hasSecondaryFlow =
