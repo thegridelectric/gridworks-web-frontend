@@ -6,13 +6,15 @@ export function useVisualizerAutoRefresh(params: {
     autoRefresh: boolean;
     isBusy: boolean;
     pathRoot: string | undefined;
-    onTick: (start: Date, end: Date) => void;
-    setDateWindow: (start: Date, end: Date) => void;
+    onTick: (end: Date) => void;
+    setEndDateTime: (end: Date) => void;
 }) {
-    const { autoRefresh, isBusy, pathRoot, onTick, setDateWindow } = params;
+    const { autoRefresh, isBusy, pathRoot, onTick, setEndDateTime } = params;
     const isPageFocusedRef = useRef(true);
     const autoRefreshRef = useRef(autoRefresh);
     const blockRefreshRef = useRef(isBusy);
+    const onTickRef = useRef(onTick);
+    const setEndDateTimeRef = useRef(setEndDateTime);
 
     useEffect(() => {
         autoRefreshRef.current = autoRefresh;
@@ -21,6 +23,11 @@ export function useVisualizerAutoRefresh(params: {
     useEffect(() => {
         blockRefreshRef.current = isBusy;
     }, [isBusy]);
+
+    useEffect(() => {
+        onTickRef.current = onTick;
+        setEndDateTimeRef.current = setEndDateTime;
+    });
 
     useEffect(() => {
         if (!autoRefresh || pathRoot !== 'visualizer') {
@@ -51,16 +58,15 @@ export function useVisualizerAutoRefresh(params: {
             if (blockRefreshRef.current) {
                 return;
             }
-            const start = getDefaultDate(true);
             const end = getDefaultDate(false);
-            setDateWindow(start, end);
-            onTick(start, end);
+            setEndDateTimeRef.current(end);
+            onTickRef.current(end);
         };
 
         const startAutoRefresh = () => {
             clearTimers();
             timeoutId = setTimeout(maybeAutoRefreshTick, 500);
-            intervalId = setInterval(maybeAutoRefreshTick, 60000);
+            intervalId = setInterval(maybeAutoRefreshTick, 30000);
         };
 
         const checkPageFocus = () => {
@@ -101,5 +107,5 @@ export function useVisualizerAutoRefresh(params: {
             document.removeEventListener('visibilitychange', onVisibilityChange);
             clearTimers();
         };
-    }, [autoRefresh, pathRoot, onTick, setDateWindow]);
+    }, [autoRefresh, pathRoot]);
 }

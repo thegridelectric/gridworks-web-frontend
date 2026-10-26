@@ -119,7 +119,7 @@ const SECONDARY_PLOT_CONFIG: PlotConfig = {
     title: 'Secondary loop',
     yAxis1: {
         titleText: 'Temperature [°F]',
-        dualOnlyRange: [30, 70],
+        dualOnlyRange: [0, 260],
     },
     yAxis2: {
         titleText: 'Flow [GPM]',

@@ -43,7 +43,7 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
 
     let content: React.ReactNode;
     if (priceData && priceData.HourStartS.length === 0) {
-        content = <div className="alert alert-secondary mt-3 mb-0" role="status">No price forecast near this window; the forecast covers the next 48 hours.</div>
+        content = <div className="alert alert-secondary mt-3 mb-0" role="status">No price forecast near this window</div>
     } else if (priceData) {
         const pricesTimes = priceData.HourStartS.map(formatHourStartSForDisplay);
         const tracesWithData = PriceSeriesNames

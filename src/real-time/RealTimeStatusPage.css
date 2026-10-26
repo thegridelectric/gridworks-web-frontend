@@ -23,9 +23,11 @@
 #dashboard-status-left {
     font-size: 1em;
     color: var(--text-color);
+    min-height: 3.25em;
 }
 #dashboard-status-right {
     font-size: 0.9em;
+    min-height: 1.35em;
 }
 #dashboard-system-diagram {
     display: block;

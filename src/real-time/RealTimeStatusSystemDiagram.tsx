@@ -1,5 +1,6 @@
 import RealTimeStatusSystemDiagramPipes from "./RealTimeStatusSystemDiagramPipes";
 import { resolveActiveComponentFills, resolveActiveComponentFlags } from "./realTimeStatusSystemDiagramPipeAnimation";
+import { hasPrimaryLoopFlow } from "../sema/siegLoop";
 
 interface RelayStatus {
     state: string,
@@ -61,13 +62,14 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
         })
         : [];
 
-    const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow } = getCurrentState(relays, readings);
+    const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow, storeCharge } = getCurrentState(relays, readings, siegLoop);
     const animateSpruceFloorLoop = isSpruce ? shouldAnimateSpruceFloorLoop(readings) : false;
     const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
 
-    /** Same threshold idea as `dist-flow` in `getCurrentState` (raw reading > 0). */
     const hasSiegFlow =
         siegLoop && (readings['sieg-flow'] ?? 0) > 0.5;
+    const hasSecondaryFlow =
+        isSpruce && (readings['secondary-flow'] ?? 0) > 0;
 
     const activeComponentFills = resolveActiveComponentFills({
         currentState,
@@ -294,6 +296,8 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
                     currentState,
                     hasDistFlow,
                     hasPrimFlow,
+                    hasSecondaryFlow,
+                    storeCharge,
                     hasHpPower,
                     hasStoreFlow,
                     isSpruce,
@@ -624,27 +628,24 @@ function tempValueToFahrenheit(channelName: string, rawValue: number | null | un
     return ((tempC * 9 / 5) + 32);
 }
 
-function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<string, number>) {
+function getCurrentState(
+    relays: Record<string, RelayStatus>,
+    readings: Record<string, number>,
+    siegLoop: boolean,
+) {
 
     const distFlowReading = readings['dist-flow'];
     const hasDistFlow = !!(distFlowReading && distFlowReading > 0);
 
-    const primFlowReading = readings['primary-flow'];
-    const hasPrimFlow = !!(primFlowReading && primFlowReading > 0);
+    const hasPrimFlow = hasPrimaryLoopFlow(readings, siegLoop);
 
     const storeFlowReading = readings['store-flow'];
     const hasStoreFlow = !!(storeFlowReading && storeFlowReading > 0);
 
     const hpIduReading = readings['hp-idu-pwr'];
     const hpOduReading = readings['hp-odu-pwr'];
-    const hasHpPowerReading = hpIduReading && hpOduReading;
-    let hasHpPower = false;
-    if (hasHpPowerReading) {
-        const totalHpKw = hpIduReading / 1000 + hpOduReading / 1000;
-        if (totalHpKw > 0.5) {
-            hasHpPower = true;
-        }
-    }
+    const totalHpKw = (hpIduReading ?? 0) / 1000 + (hpOduReading ?? 0) / 1000;
+    const hasHpPower = totalHpKw > 0.5;
 
     // Check relay states to determine system state
     const relay5 = relays['relay5'];
@@ -653,6 +654,7 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
     const relay9 = relays['relay9'];
 
     let currentState = null;
+    let storeCharge = false;
 
     if (relay5 && relay6 && relay3 && relay9) {
         const relay3State = relay3.state;
@@ -663,7 +665,6 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
             hpOn = true;
         }
 
-        let storeCharge = false;
         let storeDischarge = false;
         if (relay3State === 'energized' && hasPrimFlow) {
             storeCharge = true;
@@ -688,7 +689,7 @@ function getCurrentState(relays: Record<string, RelayStatus>, readings: Record<s
         }
     }
 
-    return { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow };
+    return { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow, storeCharge };
 }
 
 function shouldAnimateSpruceFloorLoop(readings: Record<string, number>): boolean {

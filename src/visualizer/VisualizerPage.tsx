@@ -41,6 +41,11 @@ export default function VisualizerPage() {
         resetControls,
     } = useVisualizerControls();
 
+    const visualizerCardRef = useRef<HTMLDivElement>(null);
+    const startDateInputRef = useRef<HTMLInputElement>(null);
+    const startTimeInputRef = useRef<HTMLInputElement>(null);
+    const endDateInputRef = useRef<HTMLInputElement>(null);
+    const endTimeInputRef = useRef<HTMLInputElement>(null);
     const { installationGNode, pathRoot } = useRouteInfo();
     const session = useContext(SessionContext);
     if (!session) {
@@ -49,7 +54,36 @@ export default function VisualizerPage() {
 
     const plotSelectedChannels = [...channels].sort().concat(showPoints ? ['show-points'] : []);
 
-    const visualizerCardRef = useRef<HTMLDivElement>(null);
+    function writeDateWindowToInputs(start: Date, end: Date) {
+        if (startDateInputRef.current) {
+            startDateInputRef.current.value = formatDate(start);
+        }
+        if (startTimeInputRef.current) {
+            startTimeInputRef.current.value = formatTime(start);
+        }
+        if (endDateInputRef.current) {
+            endDateInputRef.current.value = formatDate(end);
+        }
+        if (endTimeInputRef.current) {
+            endTimeInputRef.current.value = formatTime(end);
+        }
+    }
+
+    function setDateWindow(start: Date, end: Date) {
+        setStartDateTime(start);
+        setEndDateTime(end);
+        writeDateWindowToInputs(start, end);
+    }
+
+    function setEndDateWindow(end: Date) {
+        setEndDateTime(end);
+        if (endDateInputRef.current) {
+            endDateInputRef.current.value = formatDate(end);
+        }
+        if (endTimeInputRef.current) {
+            endTimeInputRef.current.value = formatTime(end);
+        }
+    }
 
     async function runPlotQuery(startDt: Date, endDt: Date) {
         setPlotError(null);
@@ -114,8 +148,7 @@ export default function VisualizerPage() {
         }
         const start = getDefaultDate(true);
         const end = getDefaultDate(false);
-        setStartDateTime(start);
-        setEndDateTime(end);
+        setDateWindow(start, end);
         await runPlotQuery(start, end);
     }
 
@@ -124,8 +157,7 @@ export default function VisualizerPage() {
         setReadingsBundleData(null);
         setPlotError(null);
         resetControls();
-        setStartDateTime(getDefaultDate(true));
-        setEndDateTime(getDefaultDate(false));
+        setDateWindow(getDefaultDate(true), getDefaultDate(false));
     }
 
     function onStartDateChange(evt: React.ChangeEvent<HTMLInputElement>) {
@@ -216,12 +248,9 @@ export default function VisualizerPage() {
         autoRefresh,
         isBusy: isLoading || isFloLoading,
         pathRoot,
-        setDateWindow: (start, end) => {
-            setStartDateTime(start);
-            setEndDateTime(end);
-        },
-        onTick: (start, end) => {
-            void runPlotQuery(start, end);
+        setEndDateTime: setEndDateWindow,
+        onTick: (end) => {
+            void runPlotQuery(startDateTime, end);
         },
     });
 
@@ -275,6 +304,7 @@ export default function VisualizerPage() {
                             <td>Start</td>
                             <td>
                                 <input
+                                    ref={startDateInputRef}
                                     type="date"
                                     className="form-control text-light"
                                     defaultValue={formatDate(startDateTime)}
@@ -283,6 +313,7 @@ export default function VisualizerPage() {
                             </td>
                             <td>
                                 <input
+                                    ref={startTimeInputRef}
                                     type="time"
                                     className="form-control text-light"
                                     defaultValue={formatTime(startDateTime)}
@@ -294,6 +325,7 @@ export default function VisualizerPage() {
                             <td>End</td>
                             <td>
                                 <input
+                                    ref={endDateInputRef}
                                     type="date"
                                     className="form-control text-light"
                                     defaultValue={formatDate(endDateTime)}
@@ -302,6 +334,7 @@ export default function VisualizerPage() {
                             </td>
                             <td>
                                 <input
+                                    ref={endTimeInputRef}
                                     type="time"
                                     className="form-control text-light"
                                     defaultValue={formatTime(endDateTime)}

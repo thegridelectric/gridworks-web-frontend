@@ -80,10 +80,26 @@ export default function GridWorksApiInterceptor({ children }: React.PropsWithChi
                         if (jsonError && jsonError.detail && jsonError.detail[0] && jsonError.detail[0].msg) {
                             return Promise.reject(new Error(jsonError.detail[0].msg));
                         }
+                        if (typeof jsonError?.detail === 'string') {
+                            return Promise.reject(new Error(jsonError.detail));
+                        }
                     }
                     catch (ex) {
                         console.error(ex);
                     }
+                }
+                const responseData = error.response?.data;
+                if (responseData && typeof responseData === 'object' && 'detail' in responseData) {
+                    const detail = (responseData as { detail: unknown }).detail;
+                    if (typeof detail === 'string') {
+                        return Promise.reject(new Error(detail));
+                    }
+                }
+                if (error.message === 'Network Error') {
+                    const fallback = error.response
+                        ? `Request failed (${error.response.status})`
+                        : 'An error occurred';
+                    return Promise.reject(new Error(fallback));
                 }
                 // Reject the promise so the error propagates to the component's catch block
                 return Promise.reject(error);
