@@ -13,6 +13,8 @@ export function useVisualizerAutoRefresh(params: {
     const isPageFocusedRef = useRef(true);
     const autoRefreshRef = useRef(autoRefresh);
     const blockRefreshRef = useRef(isBusy);
+    const onTickRef = useRef(onTick);
+    const setDateWindowRef = useRef(setDateWindow);
 
     useEffect(() => {
         autoRefreshRef.current = autoRefresh;
@@ -21,6 +23,11 @@ export function useVisualizerAutoRefresh(params: {
     useEffect(() => {
         blockRefreshRef.current = isBusy;
     }, [isBusy]);
+
+    useEffect(() => {
+        onTickRef.current = onTick;
+        setDateWindowRef.current = setDateWindow;
+    });
 
     useEffect(() => {
         if (!autoRefresh || pathRoot !== 'visualizer') {
@@ -53,8 +60,8 @@ export function useVisualizerAutoRefresh(params: {
             }
             const start = getDefaultDate(true);
             const end = getDefaultDate(false);
-            setDateWindow(start, end);
-            onTick(start, end);
+            setDateWindowRef.current(start, end);
+            onTickRef.current(start, end);
         };
 
         const startAutoRefresh = () => {
@@ -101,5 +108,5 @@ export function useVisualizerAutoRefresh(params: {
             document.removeEventListener('visibilitychange', onVisibilityChange);
             clearTimers();
         };
-    }, [autoRefresh, pathRoot, onTick, setDateWindow]);
+    }, [autoRefresh, pathRoot]);
 }
