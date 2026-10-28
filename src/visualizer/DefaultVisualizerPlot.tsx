@@ -1,5 +1,6 @@
 import type { PlotParams } from "react-plotly.js";
 import type { SyncedReadingsBundle } from "../sema";
+import { getHoverTemplate, getValueConverter } from "../sema/units";
 import { formatForDisplay, formatIsoTimeForDisplay, getDefaultPlotLayout, getThemeColor, type PlotAxisConfig, type PlotConfig, type PlotTraceConfig } from "./plot-configs";
 import type { Datum, PlotData, Shape } from "plotly.js";
 import { DateTime } from "luxon";
@@ -15,52 +16,6 @@ export interface DefaultPlotParams {
     isDarkMode: boolean;
 }
 
-
-type ConverterFunction = (x: number) => number;
-const C2F: ConverterFunction = c => 9 * c / 5 + 32;
-const UNIT_CONVERSIONS: Record<string, ConverterFunction> = {
-    'FahrenheitX100': x => x * 0.01,
-    'WaterTempCTimes1000': x => C2F(x * .001),
-    'WaterTempFTimes1000': x => x * .001,
-    'AirTempCTimes1000': x => C2F(x * .001),
-    'AirTempFTimes1000': x => x * .001,
-    'CelsiusTimes100': x => C2F(x * .01),
-    'PowerW': x => x * .001,
-    'GpmTimes100': x => x * .01,
-    'WattHours': x => x * .001,
-}
-
-const UNIT_HOVER_FORMATS: Record<string, string> = {
-    'FahrenheitX100': '%{y:.1f}°F',
-    'WaterTempCTimes1000': '%{y:.1f}°F',
-    'AirTempCTimes1000': '%{y:.1f}°F',
-    'WaterTempFTimes1000': '%{y:.1f}°F',
-    'AirTempFTimes1000': '%{y:.1f}°F',
-    'CelsiusTimes100': '%{y:.1f}°F',
-    'PowerW': '%{y:.1f} kW',
-    'GpmTimes100': '%{y:.1f} GPM',
-    'WattHours': '%{y:.1f} kWh',
-}
-
-function getValueConverter(unit: string, scale: number): ConverterFunction {
-    let defaultConvert: ConverterFunction = x => x;
-    if (unit in UNIT_CONVERSIONS) {
-        defaultConvert = UNIT_CONVERSIONS[unit];
-    }
-
-    return x => typeof x === 'number' ? defaultConvert(x) * scale : x;
-}
-
-function getHoverTemplate(unit: string, scale?: number | null) {
-    let yFormat = '%{y}'
-    if (unit in UNIT_HOVER_FORMATS) {
-        yFormat = UNIT_HOVER_FORMATS[unit];
-    }
-    if (scale) {
-        yFormat += `/${scale}`;
-    }
-    return `%{x|%H:%M:%S} | ${yFormat}<extra></extra>`
-}
 
 function calculateMinMaxAxisRange(data: Partial<PlotData>[], axisName: string, minOffset: number | undefined, maxOffset: number | undefined): number[] {
     const values: number[] = data

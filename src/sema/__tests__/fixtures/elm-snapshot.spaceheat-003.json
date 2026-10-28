@@ -1,0 +1,942 @@
+{
+ "TypeName": "snapshot.spaceheat",
+ "Version": "003",
+ "FromGNodeAlias": "hw1.isone.me.versant.keene.elm.scada",
+ "FromGNodeInstanceId": "5896d71d-3f6d-40c4-849a-127e7ffd2912",
+ "SnapshotTimeUnixMs": 1793209800042,
+ "LatestReadingList": [
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "hp-odu-pwr",
+   "Value": 4560,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "oil-boiler-pwr",
+   "Value": 2,
+   "ScadaReadTimeUnixMs": 1793209796738
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "dist-pump-pwr",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "secondary-pump-pwr",
+   "Value": 13,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "store-pump-pwr",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone1-living-kitchen-whitewire-pwr",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone2-bedrooms-whitewire-pwr",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone3-garage-whitewire-pwr",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone4-master-bedrm-whitewire-pwr",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone1-living-kitchen-temp",
+   "Value": 1778,
+   "ScadaReadTimeUnixMs": 1793209672967
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone1-living-kitchen-set",
+   "Value": 1667,
+   "ScadaReadTimeUnixMs": 1793209672967
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone2-bedrooms-temp",
+   "Value": 1778,
+   "ScadaReadTimeUnixMs": 1793209673286
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone2-bedrooms-set",
+   "Value": 1778,
+   "ScadaReadTimeUnixMs": 1793209673286
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone3-garage-temp",
+   "Value": 1111,
+   "ScadaReadTimeUnixMs": 1793209673275
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone3-garage-set",
+   "Value": 444,
+   "ScadaReadTimeUnixMs": 1793209673275
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone4-master-bedrm-temp",
+   "Value": 1833,
+   "ScadaReadTimeUnixMs": 1793209673236
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone4-master-bedrm-set",
+   "Value": 1667,
+   "ScadaReadTimeUnixMs": 1793209673236
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "vdc-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798087
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tstat-common-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798080
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "charge-discharge-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798094
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "hp-failsafe-relay",
+   "Value": 1,
+   "ScadaReadTimeUnixMs": 1793209798097
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "hp-scada-ops-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798090
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "aquastat-ctrl-relay",
+   "Value": 1,
+   "ScadaReadTimeUnixMs": 1793209798099
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "store-pump-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798088
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "secondary-pump-relay",
+   "Value": 1,
+   "ScadaReadTimeUnixMs": 1793209798082
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "secondary-pump-hack-relay",
+   "Value": 1,
+   "ScadaReadTimeUnixMs": 1793209798093
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone1-living-kitchen-failsafe-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798085
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone1-living-kitchen-ops-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798083
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone2-bedrooms-failsafe-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798096
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone2-bedrooms-ops-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798092
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone3-garage-failsafe-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798089
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone3-garage-ops-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798100
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone4-master-bedrm-failsafe-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798098
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone4-master-bedrm-ops-relay",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209798084
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-depth1-device",
+   "Value": 3510,
+   "ScadaReadTimeUnixMs": 1793209795455
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-depth2-device",
+   "Value": 3901,
+   "ScadaReadTimeUnixMs": 1793209795455
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-depth3-device",
+   "Value": 2985,
+   "ScadaReadTimeUnixMs": 1793209797534
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-depth1-micro-v",
+   "Value": 1759900,
+   "ScadaReadTimeUnixMs": 1793209795455
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-depth2-micro-v",
+   "Value": 1626593,
+   "ScadaReadTimeUnixMs": 1793209795455
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-depth3-micro-v",
+   "Value": 1941503,
+   "ScadaReadTimeUnixMs": 1793209797534
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank1-depth1-device",
+   "Value": 4015,
+   "ScadaReadTimeUnixMs": 1793209796054
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank1-depth2-device",
+   "Value": 4015,
+   "ScadaReadTimeUnixMs": 1793209796054
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank1-depth3-device",
+   "Value": 3729,
+   "ScadaReadTimeUnixMs": 1793209796054
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank1-depth1-micro-v",
+   "Value": 1588516,
+   "ScadaReadTimeUnixMs": 1793209796054
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank1-depth2-micro-v",
+   "Value": 1588384,
+   "ScadaReadTimeUnixMs": 1793209796054
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank1-depth3-micro-v",
+   "Value": 1684837,
+   "ScadaReadTimeUnixMs": 1793209796054
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank2-depth1-device",
+   "Value": 3792,
+   "ScadaReadTimeUnixMs": 1793209795780
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank2-depth2-device",
+   "Value": 3790,
+   "ScadaReadTimeUnixMs": 1793209795780
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank2-depth3-device",
+   "Value": 3459,
+   "ScadaReadTimeUnixMs": 1793209795780
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank2-depth1-micro-v",
+   "Value": 1663340,
+   "ScadaReadTimeUnixMs": 1793209795780
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank2-depth2-micro-v",
+   "Value": 1664289,
+   "ScadaReadTimeUnixMs": 1793209795780
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank2-depth3-micro-v",
+   "Value": 1777437,
+   "ScadaReadTimeUnixMs": 1793209795780
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank3-depth1-device",
+   "Value": 3513,
+   "ScadaReadTimeUnixMs": 1793209795356
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank3-depth2-device",
+   "Value": 3508,
+   "ScadaReadTimeUnixMs": 1793209795356
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank3-depth3-device",
+   "Value": 3283,
+   "ScadaReadTimeUnixMs": 1793209795356
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank3-depth1-micro-v",
+   "Value": 1758828,
+   "ScadaReadTimeUnixMs": 1793209795356
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank3-depth2-micro-v",
+   "Value": 1760676,
+   "ScadaReadTimeUnixMs": 1793209795356
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank3-depth3-micro-v",
+   "Value": 1838294,
+   "ScadaReadTimeUnixMs": 1793209795356
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "dist-010v",
+   "Value": 35,
+   "ScadaReadTimeUnixMs": 1793209781795
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "secondary-010v",
+   "Value": 40,
+   "ScadaReadTimeUnixMs": 1793209781796
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "store-010v",
+   "Value": 35,
+   "ScadaReadTimeUnixMs": 1793209781797
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "primary-flow",
+   "Value": 556,
+   "ScadaReadTimeUnixMs": 1793209782591
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "primary-flow-hz",
+   "Value": 102983389,
+   "ScadaReadTimeUnixMs": 1793209782591
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "dist-flow",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209514576
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "dist-flow-hz",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209514576
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "secondary-flow",
+   "Value": 655,
+   "ScadaReadTimeUnixMs": 1793209781712
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "secondary-flow-hz",
+   "Value": 121362594,
+   "ScadaReadTimeUnixMs": 1793209781712
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "dist-swt",
+   "Value": 3459,
+   "ScadaReadTimeUnixMs": 1793209665041
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "dist-rwt",
+   "Value": 4030,
+   "ScadaReadTimeUnixMs": 1793209701461
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "hp-lwt",
+   "Value": 4240,
+   "ScadaReadTimeUnixMs": 1793209754272
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "hp-ewt",
+   "Value": 3470,
+   "ScadaReadTimeUnixMs": 1793209741666
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "store-hot-pipe",
+   "Value": 3367,
+   "ScadaReadTimeUnixMs": 1793209729076
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "store-cold-pipe",
+   "Value": 2143,
+   "ScadaReadTimeUnixMs": 1793209671029
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-hot-pipe",
+   "Value": 3817,
+   "ScadaReadTimeUnixMs": 1793209742266
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-cold-pipe",
+   "Value": 3361,
+   "ScadaReadTimeUnixMs": 1793209798513
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "transactive-power",
+   "Value": 4560,
+   "ScadaReadTimeUnixMs": 1793209500684
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "usable-energy",
+   "Value": 2169,
+   "ScadaReadTimeUnixMs": 1793209788818
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "required-energy",
+   "Value": 5300,
+   "ScadaReadTimeUnixMs": 1793209788983
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone1-living-kitchen-heat-call",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone2-bedrooms-heat-call",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone3-garage-heat-call",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "zone4-master-bedrm-heat-call",
+   "Value": 0,
+   "ScadaReadTimeUnixMs": 1793209500685
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-depth1",
+   "Value": 10339,
+   "ScadaReadTimeUnixMs": 1793209795455
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-depth2",
+   "Value": 10221,
+   "ScadaReadTimeUnixMs": 1793209795455
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "buffer-depth3",
+   "Value": 9129,
+   "ScadaReadTimeUnixMs": 1793209797534
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank1-depth1",
+   "Value": 10427,
+   "ScadaReadTimeUnixMs": 1793209796054
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank1-depth2",
+   "Value": 10427,
+   "ScadaReadTimeUnixMs": 1793209796054
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank1-depth3",
+   "Value": 9912,
+   "ScadaReadTimeUnixMs": 1793209796054
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank2-depth1",
+   "Value": 10025,
+   "ScadaReadTimeUnixMs": 1793209795780
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank2-depth2",
+   "Value": 10022,
+   "ScadaReadTimeUnixMs": 1793209795780
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank2-depth3",
+   "Value": 9426,
+   "ScadaReadTimeUnixMs": 1793209795780
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank3-depth1",
+   "Value": 9523,
+   "ScadaReadTimeUnixMs": 1793209795356
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank3-depth2",
+   "Value": 9514,
+   "ScadaReadTimeUnixMs": 1793209795356
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "tank3-depth3",
+   "Value": 9109,
+   "ScadaReadTimeUnixMs": 1793209795356
+  },
+  {
+   "TypeName": "single.reading",
+   "Version": "000",
+   "ChannelName": "secondary-pump-running",
+   "Value": 1,
+   "ScadaReadTimeUnixMs": 1793209500685
+  }
+ ],
+ "LatestStateList": [
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "s",
+   "StateEnum": "gw.top.state",
+   "State": "Admin",
+   "UnixMs": 1793209798802
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "ltn.la",
+   "StateEnum": "gw1.leaf.ally.buffer.only.state",
+   "State": "Dormant",
+   "UnixMs": 1793208161280
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "auto.five-v-boss",
+   "StateEnum": "five.v.boss.state",
+   "State": "PicoCycler",
+   "UnixMs": 1793208161282
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "buffer",
+   "StateEnum": "single.pico.state",
+   "State": "Alive",
+   "UnixMs": 1793209798018
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "tank1",
+   "StateEnum": "single.pico.state",
+   "State": "Alive",
+   "UnixMs": 1793209798018
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "tank2",
+   "StateEnum": "single.pico.state",
+   "State": "Alive",
+   "UnixMs": 1793209798018
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "tank3",
+   "StateEnum": "single.pico.state",
+   "State": "Alive",
+   "UnixMs": 1793209798018
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "primary-flow",
+   "StateEnum": "single.pico.state",
+   "State": "Alive",
+   "UnixMs": 1793209798018
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "dist-flow",
+   "StateEnum": "single.pico.state",
+   "State": "Alive",
+   "UnixMs": 1793209798018
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "secondary-flow",
+   "StateEnum": "single.pico.state",
+   "State": "Alive",
+   "UnixMs": 1793209798018
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "auto.lc",
+   "StateEnum": "gw2.lc.top.state",
+   "State": "Dormant",
+   "UnixMs": 1793208779257,
+   "Cause": "TopGoDormant"
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.hp-boss",
+   "StateEnum": "hp.boss.state",
+   "State": "HpOn",
+   "UnixMs": 1793208779267
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "hp-watch",
+   "StateEnum": "spruce.hack.hp.state",
+   "State": "HpDetectedOn",
+   "UnixMs": 1793208948555
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.hp-boss.hp-scada-ops-relay",
+   "StateEnum": "relay.closed.or.open",
+   "State": "RelayClosed",
+   "UnixMs": 1793209798090
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.charge-discharge-relay",
+   "StateEnum": "store.flow.relay",
+   "State": "DischargingStore",
+   "UnixMs": 1793209798094
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.store-pump-relay",
+   "StateEnum": "relay.closed.or.open",
+   "State": "RelayOpen",
+   "UnixMs": 1793209798088
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.tstat-common-relay",
+   "StateEnum": "relay.closed.or.open",
+   "State": "RelayClosed",
+   "UnixMs": 1793209798080
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.zone1-living-kitchen-failsafe-relay",
+   "StateEnum": "zone.call.source",
+   "State": "WallThermostat",
+   "UnixMs": 1793209798085
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.zone1-living-kitchen-ops-relay",
+   "StateEnum": "relay.closed.or.open",
+   "State": "RelayOpen",
+   "UnixMs": 1793209798083
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.zone2-bedrooms-failsafe-relay",
+   "StateEnum": "zone.call.source",
+   "State": "WallThermostat",
+   "UnixMs": 1793209798096
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.zone2-bedrooms-ops-relay",
+   "StateEnum": "relay.closed.or.open",
+   "State": "RelayOpen",
+   "UnixMs": 1793209798092
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.zone3-garage-failsafe-relay",
+   "StateEnum": "zone.call.source",
+   "State": "WallThermostat",
+   "UnixMs": 1793209798089
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.zone3-garage-ops-relay",
+   "StateEnum": "relay.closed.or.open",
+   "State": "RelayOpen",
+   "UnixMs": 1793209798100
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.zone4-master-bedrm-failsafe-relay",
+   "StateEnum": "zone.call.source",
+   "State": "WallThermostat",
+   "UnixMs": 1793209798098
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.zone4-master-bedrm-ops-relay",
+   "StateEnum": "relay.closed.or.open",
+   "State": "RelayOpen",
+   "UnixMs": 1793209798084
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.hp-failsafe-relay",
+   "StateEnum": "heat.pump.control",
+   "State": "Scada",
+   "UnixMs": 1793209798097
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.aquastat-ctrl-relay",
+   "StateEnum": "aquastat.control.state",
+   "State": "Scada",
+   "UnixMs": 1793209798099
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.hp-boss.secondary-pump-relay",
+   "StateEnum": "relay.closed.or.open",
+   "State": "RelayClosed",
+   "UnixMs": 1793209798082
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.hp-boss.secondary-pump-hack-relay",
+   "StateEnum": "relay.closed.or.open",
+   "State": "RelayClosed",
+   "UnixMs": 1793209798093
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.five-v-boss.pico-cycler",
+   "StateEnum": "pico.cycler.state",
+   "State": "PicosLive",
+   "UnixMs": 1793209798017
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "admin.five-v-boss.pico-cycler.vdc-relay",
+   "StateEnum": "relay.closed.or.open",
+   "State": "RelayClosed",
+   "UnixMs": 1793209798087
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "auto.lc.n",
+   "StateEnum": "gw1.local.control.buffer.only.state",
+   "State": "Dormant",
+   "UnixMs": 1793208779260,
+   "Cause": "GoDormant"
+  },
+  {
+   "TypeName": "single.machine.state",
+   "Version": "000",
+   "MachineHandle": "auto",
+   "StateEnum": "gw1.main.auto.state",
+   "State": "Dormant",
+   "UnixMs": 1793209798802
+  }
+ ]
+}
