@@ -10,6 +10,7 @@ This is the front-end of the GridWorks web application for managing our fleet of
 * Axios is used as a HTTP request library
 * Vite (which runs on the NodeJS platform) is used as the development server and build system
 * ESLint is used for static code analysis
+* Vitest runs the tests (`npm test`); zod schemas under `src/sema/` type and validate the sema words the browser reads
 
 ## Developing
 
