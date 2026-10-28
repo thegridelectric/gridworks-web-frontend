@@ -1,6 +1,8 @@
 import RealTimeStatusSystemDiagramPipes from "./RealTimeStatusSystemDiagramPipes";
 import { resolveActiveComponentFills, resolveActiveComponentFlags } from "./realTimeStatusSystemDiagramPipeAnimation";
-import { hasPrimaryLoopFlow } from "../sema/siegLoop";
+import type { DisplayReadings } from "../sema/displayReadings";
+import { formatReading } from "../sema/displayReadings";
+import { hasPrimaryLoopFlow } from "../sema/plantLoops";
 
 interface RelayStatus {
     state: string,
@@ -8,7 +10,7 @@ interface RelayStatus {
 }
 
 interface RealTimeStatusSystemDiagramProps {
-    readings: Record<string, number>,
+    readings: DisplayReadings,
     relays: Record<string, RelayStatus>,
     isSpruce: boolean,
     /** Extra vertical between HP→buffer top and bottom horizontals, just east of the heat pump. */
@@ -67,9 +69,9 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
     const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
 
     const hasSiegFlow =
-        siegLoop && (readings['sieg-flow'] ?? 0) > 0.5;
+        siegLoop && (readings['sieg-flow']?.display ?? 0) > 0.5;
     const hasSecondaryFlow =
-        isSpruce && (readings['secondary-flow'] ?? 0) > 0;
+        isSpruce && (readings['secondary-flow']?.display ?? 0) > 0;
 
     const activeComponentFills = resolveActiveComponentFills({
         currentState,
@@ -559,9 +561,9 @@ function getTempColor(temp: number) {
     return backgroundColor;
 }
 
-function getGradientStopStyle(readings: Record<string, number>, channelName: string) {
-    const temp = tempValueToFahrenheit(channelName, readings[channelName]);
-    if (temp === null) {
+function getGradientStopStyle(readings: DisplayReadings, channelName: string) {
+    const temp = readings[channelName]?.display;
+    if (temp === undefined) {
         return {
             stopOpacity: 1,
             stopColor: '#888'
@@ -574,77 +576,43 @@ function getGradientStopStyle(readings: Record<string, number>, channelName: str
     };
 }
 
-function getSectionFill(readings: Record<string, number>, channelName: string) {
-    const temp = tempValueToFahrenheit(channelName, readings[channelName]);
-    if (temp === null) {
+function getSectionFill(readings: DisplayReadings, channelName: string) {
+    const temp = readings[channelName]?.display;
+    if (temp === undefined) {
         return '#444';
     }
 
     return getTempColor(temp);
 }
 
-function formatTempDelta(readings: Record<string, number>, channelName1: string, channelName2: string) {
-    const val1 = tempValueToFahrenheit(channelName1, readings[channelName1]);
-    const val2 = tempValueToFahrenheit(channelName2, readings[channelName2]);
+function formatTempDelta(readings: DisplayReadings, channelName1: string, channelName2: string) {
+    const val1 = readings[channelName1]?.display;
+    const val2 = readings[channelName2]?.display;
 
-    if (val1 === null || val2 === null) {
+    if (val1 === undefined || val2 === undefined) {
         return '-';
     }
 
     return `${(val1 - val2).toFixed(1)}°F`;
 }
 
-function formatTemp(readings: Record<string, number>, channelName: string) {
-    const value = tempValueToFahrenheit(channelName, readings[channelName]);
-    if (value === null) {
-        return '-';
-    }
-
-    return `${value.toFixed(1)}°F`;
-}
-
-// TEMP UNIT HOTFIX (JM / 2026-01)
-// Depth channels (buffer-depth*, tank*-depth*) are now Fahrenheit × 100.
-// This helper normalizes values for display only.
-// REMOVE once channel units are sourced from registry metadata.
-function tempValueToFahrenheit(channelName: string, rawValue: number | null | undefined): number | null {
-    if (rawValue === null || rawValue === undefined) {
-        return null;
-    }
-
-    const isDepthChannel =
-        /^(buffer|tank\d+)-depth\d+$/.test(channelName);
-    const isFloorTempChannel =
-        channelName === 'floor-swt' || channelName === 'floor-rwt';
-
-    if (isDepthChannel) {
-        return (rawValue / 100);
-    }
-    if (isFloorTempChannel) {
-        return (rawValue / 100);
-    }
-
-    const tempC = rawValue / 1000;
-    return ((tempC * 9 / 5) + 32);
+function formatTemp(readings: DisplayReadings, channelName: string) {
+    return formatReading(readings[channelName], 1, '°F');
 }
 
 function getCurrentState(
     relays: Record<string, RelayStatus>,
-    readings: Record<string, number>,
+    readings: DisplayReadings,
     siegLoop: boolean,
 ) {
 
-    const distFlowReading = readings['dist-flow'];
-    const hasDistFlow = !!(distFlowReading && distFlowReading > 0);
+    const hasDistFlow = (readings['dist-flow']?.display ?? 0) > 0;
 
     const hasPrimFlow = hasPrimaryLoopFlow(readings, siegLoop);
 
-    const storeFlowReading = readings['store-flow'];
-    const hasStoreFlow = !!(storeFlowReading && storeFlowReading > 0);
+    const hasStoreFlow = (readings['store-flow']?.display ?? 0) > 0;
 
-    const hpIduReading = readings['hp-idu-pwr'];
-    const hpOduReading = readings['hp-odu-pwr'];
-    const totalHpKw = (hpIduReading ?? 0) / 1000 + (hpOduReading ?? 0) / 1000;
+    const totalHpKw = (readings['hp-idu-pwr']?.display ?? 0) + (readings['hp-odu-pwr']?.display ?? 0);
     const hasHpPower = totalHpKw > 0.5;
 
     // Check relay states to determine system state
@@ -692,7 +660,7 @@ function getCurrentState(
     return { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow, storeCharge };
 }
 
-function shouldAnimateSpruceFloorLoop(readings: Record<string, number>): boolean {
+function shouldAnimateSpruceFloorLoop(readings: DisplayReadings): boolean {
     const floorZoneKeywords = ['garage', 'living-rm', 'bedroom'];
     for (const [channelName, value] of Object.entries(readings)) {
         const loweredName = channelName.toLowerCase();
@@ -700,7 +668,7 @@ function shouldAnimateSpruceFloorLoop(readings: Record<string, number>): boolean
         if (!isZoneHeatCall) {
             continue;
         }
-        if (value !== 1) {
+        if (value.raw !== 1) {
             continue;
         }
         if (floorZoneKeywords.some((keyword) => loweredName.includes(keyword))) {
@@ -710,14 +678,14 @@ function shouldAnimateSpruceFloorLoop(readings: Record<string, number>): boolean
     return false;
 }
 
-function shouldAnimateSpruceUpstairsLoop(readings: Record<string, number>): boolean {
+function shouldAnimateSpruceUpstairsLoop(readings: DisplayReadings): boolean {
     for (const [channelName, value] of Object.entries(readings)) {
         const loweredName = channelName.toLowerCase();
         const isUpstairsHeatCall =
             loweredName.includes('zone') &&
             loweredName.includes('heat-call') &&
             loweredName.includes('upstairs');
-        if (isUpstairsHeatCall && value === 1) {
+        if (isUpstairsHeatCall && value.raw === 1) {
             return true;
         }
     }
@@ -776,10 +744,10 @@ function renderStaticHeatPump() {
     </>
 }
 
-function renderBufferTank(readings: Record<string, number>, isSpruce: boolean) {
+function renderBufferTank(readings: DisplayReadings, isSpruce: boolean) {
     const BUFFER_ELEMENT_ACTIVE_POWER_W = 3000;
-    const bufferTopElementOn = (readings['elt-buffer-top-pwr'] ?? 0) > BUFFER_ELEMENT_ACTIVE_POWER_W;
-    const bufferBottomElementOn = (readings['elt-buffer-bottom-pwr'] ?? 0) > BUFFER_ELEMENT_ACTIVE_POWER_W;
+    const bufferTopElementOn = (readings['elt-buffer-top-pwr']?.raw ?? 0) > BUFFER_ELEMENT_ACTIVE_POWER_W;
+    const bufferBottomElementOn = (readings['elt-buffer-bottom-pwr']?.raw ?? 0) > BUFFER_ELEMENT_ACTIVE_POWER_W;
 
     return <>
         <rect x="860" y="50" width="120" height="200" rx="10" fill="transparent" />
@@ -814,7 +782,7 @@ function renderStaticHouse(houseLeftX: number, houseWidth: number, houseTextX: n
     </>
 }
 
-function renderStorageTank3(readings: Record<string, number>) {
+function renderStorageTank3(readings: DisplayReadings) {
     return <>
         {/* Tank 3 (bottom left) */}
         <rect x="200" y="280" width="120" height="200" rx="10" fill="transparent" />
@@ -836,7 +804,7 @@ function renderStorageTank3(readings: Record<string, number>) {
 
 }
 
-function renderStorageTank2(readings: Record<string, number>) {
+function renderStorageTank2(readings: DisplayReadings) {
     return <>
         {/* Tank 2 (bottom center) */}
         <rect x="330" y="280" width="120" height="200" rx="10" fill="transparent" />
@@ -857,15 +825,15 @@ function renderStorageTank2(readings: Record<string, number>) {
     </>
 }
 
-function renderStorageTank1(readings: Record<string, number>, tankX: number, textX: number, isSpruce: boolean) {
+function renderStorageTank1(readings: DisplayReadings, tankX: number, textX: number, isSpruce: boolean) {
     const leftX = tankX;
     const innerLeftX = tankX + 10;
     const innerRightX = tankX + 110;
     const rightX = tankX + 120;
 
     const STORE_ELEMENT_ACTIVE_POWER_W = 3000;
-    const storeTopElementOn = (readings['elt-store-top-pwr'] ?? 0) > STORE_ELEMENT_ACTIVE_POWER_W;
-    const storeBottomElementOn = (readings['elt-store-bottom-pwr'] ?? 0) > STORE_ELEMENT_ACTIVE_POWER_W;
+    const storeTopElementOn = (readings['elt-store-top-pwr']?.raw ?? 0) > STORE_ELEMENT_ACTIVE_POWER_W;
+    const storeBottomElementOn = (readings['elt-store-bottom-pwr']?.raw ?? 0) > STORE_ELEMENT_ACTIVE_POWER_W;
 
     return <>
         {/* Tank 1 (bottom right) */}

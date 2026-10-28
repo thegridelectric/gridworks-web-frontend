@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import './RealTimeStatusPage.css';
 import RealTimeStatusHeader from "./RealTimeStatusHeader";
@@ -8,7 +8,9 @@ import { Spinner } from "react-bootstrap";
 import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
 import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
 import SessionContext, { canConnectRealTimeData, installationRoleForGNode } from "../_util/SessionContext";
-import { layoutHasSiegLoop } from '../sema/siegLoop';
+import { displayReadings, formatReading, type DisplayReading } from '../sema/displayReadings';
+import { layoutHasSecondaryLoop, layoutHasSiegLoop } from '../sema/plantLoops';
+import { AnyLayoutLite } from '../sema/types/AnyLayoutLite';
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketBaseUrl } from "../_util/visualizerApi";
 import { controlFromSnapshot, type SnapshotPayload } from "./snapshotState";
@@ -120,25 +122,54 @@ const LOG_RAW_DASHBOARD_WS_INBOUND = false;
 //
 // const DEFAULT_SNAPSHOT_INTERVAL_SEC = 2;
 
+/** The unit table displays power in kW; the pump table shows W, clamped at zero. */
+const W_PER_KW = 1000;
+
+function formatPumpWatts(reading: DisplayReading | undefined): string {
+    if (reading?.display === undefined) {
+        return formatReading(reading, 0);
+    }
+    return Math.max(0, reading.display * W_PER_KW).toFixed(1);
+}
+
+/** The house's `layout.lite` from the installation summary, parsed as the
+ *  word; a summary whose layout fails to parse gets none, and every reading
+ *  then shows raw. */
+function parseLayout(layout: unknown): AnyLayoutLite | undefined {
+    if (layout === undefined || layout === null) {
+        return undefined;
+    }
+    const parsed = AnyLayoutLite.safeParse(layout);
+    if (!parsed.success) {
+        console.warn('layout.lite in the installation summary does not parse', parsed.error.issues);
+        return undefined;
+    }
+    return parsed.data;
+}
+
 function RealTimeStatusConnection({
     currentInstallationId,
     houseAlias,
     isSpruce,
+    layout,
     defaultSiegLoop,
+    secondaryLoop,
 }: {
     currentInstallationId: string | undefined;
     houseAlias: string;
     isSpruce: boolean;
+    layout: AnyLayoutLite | undefined;
     defaultSiegLoop: boolean;
+    secondaryLoop: boolean;
 }) {
-    function getSpruceResistiveElements(readings: Record<string, number>) {
+    function getSpruceResistiveElements(readings: Record<string, DisplayReading>) {
         return Object.entries(readings)
             .filter(([channelName]) => channelName.startsWith('elt-') && channelName.endsWith('-pwr'))
             .sort(([a], [b]) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
-            .map(([channelName, value]) => ({
+            .map(([channelName, reading]) => ({
                 key: channelName,
                 label: channelName.replace(/^elt-/, '').replace(/-pwr$/, ''),
-                kw: value / 1000,
+                kw: formatReading(reading, 1),
             }));
     }
 
@@ -160,7 +191,11 @@ function RealTimeStatusConnection({
     /** Kept (although currently only written) so the [auto-snapshot] code can be restored. */
     const wsRef = useRef<WebSocket | null>(null);
     const hasLoggedSpruceChannelsRef = useRef(false);
-    const diagramReadings = latestReadings ?? {};
+    /** Every reading converted through the unit the layout declares; the diagram and the tables read these. */
+    const shown = useMemo(() => displayReadings(layout, latestReadings ?? {}), [layout, latestReadings]);
+    const hpTotalKw = shown['hp-idu-pwr']?.display !== undefined && shown['hp-odu-pwr']?.display !== undefined
+        ? (shown['hp-idu-pwr'].display + shown['hp-odu-pwr'].display).toFixed(2)
+        : '-';
     const shouldShowLoadingSpinner = isConnected && !latestReadings;
 
     useEffect(() => {
@@ -426,14 +461,14 @@ function RealTimeStatusConnection({
                 }
                 <RealTimeStatusSystemDiagram
                     relays={relays}
-                    readings={diagramReadings}
+                    readings={shown}
                     isSpruce={isSpruce}
                     siegLoop={siegLoopEnabled}
                 />
                 {latestReadings ?
                     <>
                         <div id="dashboard-monitoring-tables">
-                            <RealTimeStatusThermostatTable thermostatNames={thermostatNames} readings={latestReadings} isSpruce={isSpruce} />
+                            <RealTimeStatusThermostatTable thermostatNames={thermostatNames} readings={shown} isSpruce={isSpruce} />
 
                             <div>
                                 <table id="dashboard-hp-power-table">
@@ -446,15 +481,15 @@ function RealTimeStatusConnection({
                                     <tbody id="dashboard-hp-power-tbody">
                                         <tr>
                                             <td>Outdoor Unit</td>
-                                            <td>{((latestReadings['hp-odu-pwr'] ?? 0) / 1000).toFixed(2)}</td>
+                                            <td>{formatReading(shown['hp-odu-pwr'], 2)}</td>
                                         </tr>
                                         <tr>
                                             <td>Indoor Unit</td>
-                                            <td>{((latestReadings['hp-idu-pwr'] ?? 0) / 1000).toFixed(2)}</td>
+                                            <td>{formatReading(shown['hp-idu-pwr'], 2)}</td>
                                         </tr>
                                         <tr>
                                             <td>Total</td>
-                                            <td>{(((latestReadings['hp-idu-pwr'] ?? 0) + (latestReadings['hp-odu-pwr'] ?? 0)) / 1000).toFixed(2)}</td>
+                                            <td>{hpTotalKw}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -470,10 +505,10 @@ function RealTimeStatusConnection({
                                             </tr>
                                         </thead>
                                         <tbody id="dashboard-resistive-tbody">
-                                            {getSpruceResistiveElements(latestReadings).map((element) => (
+                                            {getSpruceResistiveElements(shown).map((element) => (
                                                 <tr key={element.key}>
                                                     <td>{element.label}</td>
-                                                    <td>{element.kw.toFixed(1)}</td>
+                                                    <td>{element.kw}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -493,37 +528,37 @@ function RealTimeStatusConnection({
                                     <tbody id="dashboard-pump-tbody">
                                         <tr>
                                             <td>Primary</td>
-                                            <td>{((latestReadings['primary-flow'] ?? 0) / 100).toFixed(1)}</td>
-                                            <td>{Math.max(0, (latestReadings['primary-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                            <td>{formatReading(shown['primary-flow'], 1)}</td>
+                                            <td>{formatPumpWatts(shown['primary-pump-pwr'])}</td>
                                         </tr>
-                                        {isSpruce &&
+                                        {secondaryLoop &&
                                             <tr>
                                                 <td>Secondary</td>
-                                                <td>{((latestReadings['secondary-flow'] ?? 0) / 100).toFixed(1)}</td>
-                                                <td>{Math.max(0, (latestReadings['secondary-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                                <td>{formatReading(shown['secondary-flow'], 1)}</td>
+                                                <td>{formatPumpWatts(shown['secondary-pump-pwr'])}</td>
                                             </tr>
                                         }
                                         <tr>
                                             <td>Distribution</td>
-                                            <td>{((latestReadings['dist-flow'] ?? 0) / 100).toFixed(1)}</td>
-                                            <td>{Math.max(0, (latestReadings['dist-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                            <td>{formatReading(shown['dist-flow'], 1)}</td>
+                                            <td>{formatPumpWatts(shown['dist-pump-pwr'])}</td>
                                         </tr>
                                         <tr>
                                             <td>Store</td>
-                                            <td>{((latestReadings['store-flow'] ?? 0) / 100).toFixed(1)}</td>
-                                            <td>{Math.max(0, (latestReadings['store-pump-pwr'] ?? 0)).toFixed(1)}</td>
+                                            <td>{formatReading(shown['store-flow'], 1)}</td>
+                                            <td>{formatPumpWatts(shown['store-pump-pwr'])}</td>
                                         </tr>
                                         {siegLoopEnabled &&
                                             <tr>
                                                 <td>Sieg Loop</td>
-                                                <td>{((latestReadings['sieg-flow'] ?? 0) / 100).toFixed(1)}</td>
+                                                <td>{formatReading(shown['sieg-flow'], 1)}</td>
                                                 <td>-</td>
                                             </tr>
                                         }
                                         {siegLoopEnabled &&
                                             <tr>
                                                 <td>Sieg Send</td>
-                                                <td>{((latestReadings['sieg-send'] ?? 0) / 100).toFixed(1)}</td>
+                                                <td>{formatReading(shown['sieg-send'], 1)}</td>
                                                 <td>-</td>
                                             </tr>
                                         }
@@ -560,7 +595,9 @@ export default function RealTimeStatusPage() {
     const realTimeNotPermittedForAlias =
         showConnectedContent && !canConnectRealTimeData(session, installationGNode!);
 
-    const defaultSiegLoop = layoutHasSiegLoop(installation?.Layout);
+    const layout = useMemo(() => parseLayout(installation?.Layout), [installation?.Layout]);
+    const defaultSiegLoop = layoutHasSiegLoop(layout);
+    const secondaryLoop = layoutHasSecondaryLoop(layout);
 
     if (!showConnectedContent) {
         return (
@@ -658,7 +695,9 @@ export default function RealTimeStatusPage() {
             currentInstallationId={installationGNode}
             houseAlias={houseShortAlias}
             isSpruce={isSpruce}
+            layout={layout}
             defaultSiegLoop={defaultSiegLoop}
+            secondaryLoop={secondaryLoop}
         />
     );
 }

@@ -1,24 +1,17 @@
 import type { ReactNode } from "react";
+import type { DisplayReading, DisplayReadings } from "../sema/displayReadings";
+import { formatReading } from "../sema/displayReadings";
 
 interface RealTimeStatusThermostatTableProps {
     thermostatNames: string[] | null,
-    readings: Record<string, number>,
+    readings: DisplayReadings,
     isSpruce: boolean,
 }
 
 export default function RealTimeStatusThermostatTable({ thermostatNames, readings, isSpruce }: RealTimeStatusThermostatTableProps) {
     if (isSpruce) {
-        function formatTemperature(value: number | undefined): string {
-            if (value === undefined || Number.isNaN(value)) {
-                return '-';
-            }
-            const tempC = value / 100;
-            const tempF = (tempC * 9 / 5) + 32;
-            return `${tempF.toFixed(1)}°F`;
-        }
-
         function formatState(value: number | undefined): string {
-            if (value === undefined || Number.isNaN(value)) {
+            if (value === undefined) {
                 return '-';
             }
             if (value === 0) {
@@ -31,7 +24,7 @@ export default function RealTimeStatusThermostatTable({ thermostatNames, reading
         }
 
         const channelNames = Object.keys(readings);
-        const spruceZoneRows = new Map<string, { zoneLabel?: string; temperature?: number; state?: number }>();
+        const spruceZoneRows = new Map<string, { zoneLabel?: string; temperature?: DisplayReading; state?: number }>();
         for (const channelName of channelNames) {
             const lowered = channelName.toLowerCase();
             const zoneMatch = lowered.match(/^(zone[1-9]\d*)/);
@@ -45,7 +38,7 @@ export default function RealTimeStatusThermostatTable({ thermostatNames, reading
                 existing.temperature = readings[channelName];
             }
             if (lowered.includes('heat-call')) {
-                existing.state = readings[channelName];
+                existing.state = readings[channelName].raw;
             }
             spruceZoneRows.set(zoneKey, existing);
         }
@@ -78,7 +71,7 @@ export default function RealTimeStatusThermostatTable({ thermostatNames, reading
                             rows.map(([zoneKey, row]) => (
                                 <tr key={zoneKey}>
                                     <td>{row.zoneLabel ?? zoneKey}</td>
-                                    <td>{formatTemperature(row.temperature)}</td>
+                                    <td>{formatReading(row.temperature, 1, '°F')}</td>
                                     <td>{formatState(row.state)}</td>
                                 </tr>
                             ))
@@ -119,14 +112,12 @@ export default function RealTimeStatusThermostatTable({ thermostatNames, reading
             const setPointReading = readings[`${zone.key}-set`];
             const stateReading = readings[`${zone.key}-state`];
             
-            const tempF = tempReading ? (tempReading / 1000).toFixed(1) : '-';
-            const setPointF = setPointReading ? (setPointReading / 1000).toFixed(1) : '-';
-            const state = stateReading ? (stateReading > 0 ? 'heating' : 'idle') : 'idle';
-            
+            const state = (stateReading?.raw ?? 0) > 0 ? 'heating' : 'idle';
+
             return <tr key={zone.key}>
                 <td>{zone.display}</td>
-                <td>{setPointF}°F</td>
-                <td>{tempF}°F</td>
+                <td>{formatReading(setPointReading, 1, '°F')}</td>
+                <td>{formatReading(tempReading, 1, '°F')}</td>
                 <td>{state}</td>
             </tr>
         });

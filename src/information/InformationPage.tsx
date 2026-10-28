@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 import SingleInstallationPicker from '../_shared/SingleInstallationPicker';
 import SessionContext, { installationRoleForGNode } from '../_util/SessionContext';
 import { useRouteInfo } from '../_util/useRouteInfo';
-import { layoutHasSiegLoop } from '../sema/siegLoop';
+import { layoutHasSiegLoop } from '../sema/plantLoops';
 
 import './InformationPage.css';
 
