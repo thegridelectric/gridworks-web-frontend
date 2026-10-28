@@ -24,3 +24,12 @@ export const Uuid4Str = z
 
 /** Sema: https://schemas.electricity.works/formats/utc.milliseconds */
 export const UtcMilliseconds = z.number().int().min(946684800000).max(32503680000000);
+
+/** Sema: https://schemas.electricity.works/formats/utc.seconds */
+export const UtcSeconds = z.number().int().min(946684800).max(32503680000);
+
+/** Sema: https://schemas.electricity.works/formats/positive.int */
+export const PositiveInt = z.number().int().min(1);
+
+/** Sema: https://schemas.electricity.works/formats/sema.version */
+export const SemaVersion = z.string().regex(/^[0-9]{3}$/, 'Fails SemaVersion format');

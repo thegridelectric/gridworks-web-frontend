@@ -1,0 +1,2501 @@
+{
+ "ShNodes": [
+  {
+   "Name": "s",
+   "Version": "303",
+   "ShNodeId": "6be1b2dc-fc0c-4119-b6c8-38264ce0b960",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "PrimaryScada",
+   "DisplayName": "ELM SCADA"
+  },
+  {
+   "Name": "s2",
+   "Version": "303",
+   "ShNodeId": "1fe2406a-4410-4d6c-a9e8-d19ee4c61562",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "SecondaryScada",
+   "DisplayName": "Secondary Scada"
+  },
+  {
+   "Name": "admin",
+   "Handle": "admin",
+   "Version": "303",
+   "ShNodeId": "e7e025f1-8344-416b-9ffb-61d4e88f1e03",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Local Admin"
+  },
+  {
+   "Name": "auto",
+   "Handle": "auto",
+   "Version": "303",
+   "ShNodeId": "18707206-3675-4427-96ab-386eaaefe329",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Auto - FSM for dispatch contract"
+  },
+  {
+   "Name": "ltn",
+   "Version": "303",
+   "ShNodeId": "017ba2ed-1f67-4356-a64b-00e0c558523b",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "LeafTransactiveNode"
+  },
+  {
+   "Name": "la",
+   "Handle": "ltn.la",
+   "Version": "303",
+   "ShNodeId": "5d53de39-2b7f-4bdd-98f9-c67a824e7fde",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "LeafAlly",
+   "DisplayName": "Leaf Ally",
+   "ActorHierarchyName": "s.la"
+  },
+  {
+   "Name": "five-v-boss",
+   "Handle": "auto.five-v-boss",
+   "Version": "303",
+   "ShNodeId": "2a89a865-8e2a-4e9e-9818-d114d5d0436a",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "FiveVBoss",
+   "DisplayName": "Five V Boss - can hold the picos' 5VDC supply off",
+   "ActorHierarchyName": "s.five-v-boss"
+  },
+  {
+   "Name": "pico-cycler",
+   "Handle": "auto.five-v-boss.pico-cycler",
+   "Version": "303",
+   "ShNodeId": "ea04ffe5-c81c-41aa-8ec8-88116839620e",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "PicoCycler",
+   "DisplayName": "Pico Cycler - responsible for power cycling the 5VDC bus",
+   "ActorHierarchyName": "s.pico-cycler"
+  },
+  {
+   "Name": "derived-generator",
+   "Version": "303",
+   "ShNodeId": "3d4e1195-cd17-4ee9-9169-03c9f31b0182",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "DerivedGenerator",
+   "DisplayName": "Derived Generator",
+   "ActorHierarchyName": "s.derived-generator"
+  },
+  {
+   "Name": "cold-watch",
+   "Version": "303",
+   "ShNodeId": "9e3f9728-c763-473a-88e1-9bf228eaf3e1",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ColdWatch",
+   "DisplayName": "Cold Watch",
+   "ActorHierarchyName": "s.cold-watch"
+  },
+  {
+   "Name": "lc",
+   "Handle": "auto.lc",
+   "Version": "303",
+   "ShNodeId": "0e5c8ae8-a2a0-4d91-8f73-e4092dc26fb0",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "LocalControl",
+   "DisplayName": "LocalControl",
+   "ActorHierarchyName": "s.lc"
+  },
+  {
+   "Name": "n",
+   "Handle": "auto.lc.n",
+   "Version": "303",
+   "ShNodeId": "800ef75e-cc01-4b65-9228-19af0f080be6",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "LocalControl Normal"
+  },
+  {
+   "Name": "backup",
+   "Handle": "auto.lc.backup",
+   "Version": "303",
+   "ShNodeId": "0e48854a-b2c8-41e2-a5c4-1364bd68f1cd",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "LocalControl Backup"
+  },
+  {
+   "Name": "cold-override",
+   "Handle": "auto.lc.cold-override",
+   "Version": "303",
+   "ShNodeId": "457a5c5e-42ed-4c81-ae70-8bc1d3536869",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "LocalControl Cold Override"
+  },
+  {
+   "Name": "scada-blind",
+   "Handle": "auto.lc.scada-blind",
+   "Version": "303",
+   "ShNodeId": "9610c4b6-c32a-4acf-8357-1ec7ee4a7390",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "LocalControl Scada Blind"
+  },
+  {
+   "Name": "standby",
+   "Handle": "auto.lc.standby",
+   "Version": "303",
+   "ShNodeId": "b0247653-5c67-4fca-a4f1-b07fa54e9f58",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "LocalControl Standby"
+  },
+  {
+   "Name": "hp-boss",
+   "Handle": "auto.lc.n.hp-boss",
+   "Version": "303",
+   "ShNodeId": "2f8d0349-ff8c-4927-9ebc-8884018b1333",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "HpBoss",
+   "DisplayName": "HeatpumpBoss",
+   "ActorHierarchyName": "s.hp-boss"
+  },
+  {
+   "Name": "hp-watch",
+   "Version": "303",
+   "ShNodeId": "f58ad2b2-c99e-42e2-8e37-4b2762218ff0",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "HpWatch",
+   "DisplayName": "Hp Watch - the heat pump's sensed running state",
+   "ActorHierarchyName": "s.hp-watch"
+  },
+  {
+   "Name": "power-meter",
+   "Version": "303",
+   "ShNodeId": "bc48c79c-bf20-46c9-9e31-91568c0e82db",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "PowerMeter",
+   "ComponentId": "d5e0545e-6ca0-4986-ad72-57665199f4a5",
+   "DisplayName": "Primary Power Meter",
+   "ActorHierarchyName": "s.power-meter"
+  },
+  {
+   "Name": "hp-odu",
+   "Version": "303",
+   "ShNodeId": "fd9b3a34-f7c5-442a-a499-9e0e18901168",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "ComponentId": "e253ef7e-a956-42d2-a4f2-9e727e522421",
+   "DisplayName": "Hp Odu",
+   "NameplatePowerW": 9660
+  },
+  {
+   "Name": "oil-boiler",
+   "Version": "303",
+   "ShNodeId": "ed07a81c-8d50-4919-bbc5-7db63078105e",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Oil Boiler",
+   "NameplatePowerW": 10
+  },
+  {
+   "Name": "dist-pump",
+   "Version": "303",
+   "ShNodeId": "2f2c7141-35bc-4b71-bde6-ef17011b629b",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Dist Pump",
+   "NameplatePowerW": 10
+  },
+  {
+   "Name": "secondary-pump",
+   "Version": "303",
+   "ShNodeId": "fac4e450-ca97-46e6-8f50-2c372d671075",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Secondary Pump",
+   "NameplatePowerW": 10
+  },
+  {
+   "Name": "primary-pump",
+   "Version": "303",
+   "ShNodeId": "980cab0f-33f2-40c9-b2eb-4401d5db8a29",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Primary Pump",
+   "NameplatePowerW": 10
+  },
+  {
+   "Name": "store-pump",
+   "Version": "303",
+   "ShNodeId": "18eb60c8-2b04-4f09-baa6-d675460a1a9e",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Store Pump",
+   "NameplatePowerW": 10
+  },
+  {
+   "Name": "zone1-living-kitchen-whitewire",
+   "Version": "303",
+   "ShNodeId": "17ade1c3-e5e8-4999-8e51-363e0e681678",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Zone1 Living Kitchen Whitewire",
+   "NameplatePowerW": 10
+  },
+  {
+   "Name": "zone2-bedrooms-whitewire",
+   "Version": "303",
+   "ShNodeId": "2f865757-9e0b-4c1c-9a97-fd0e966c0c9f",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Zone2 Bedrooms Whitewire",
+   "NameplatePowerW": 10
+  },
+  {
+   "Name": "zone3-garage-whitewire",
+   "Version": "303",
+   "ShNodeId": "3509d18a-fe5a-4620-8fc2-54ae9c2d164e",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Zone3 Garage Whitewire",
+   "NameplatePowerW": 10
+  },
+  {
+   "Name": "zone4-master-bedrm-whitewire",
+   "Version": "303",
+   "ShNodeId": "0bcccd91-0e8f-4fc8-ac02-70e762dca1c1",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Zone4 Master Bedrm Whitewire",
+   "NameplatePowerW": 10
+  },
+  {
+   "Name": "web-server",
+   "Version": "303",
+   "ShNodeId": "172158d3-a8f0-4a35-9cf2-637ccfe4ca36",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "ComponentId": "144f75ec-d960-43ec-8e76-d941b63844cf",
+   "DisplayName": "Web Server"
+  },
+  {
+   "Name": "hubitat",
+   "Version": "303",
+   "ShNodeId": "fce7ecb7-0318-45db-98d6-6b4801b31852",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Hubitat",
+   "ComponentId": "4fa14391-8b25-442a-92a1-1f28c56bac97",
+   "DisplayName": "Hubitat 81:19:01",
+   "ActorHierarchyName": "s.hubitat"
+  },
+  {
+   "Name": "zone1-living-kitchen-stat",
+   "Version": "303",
+   "ShNodeId": "ac0a9770-98e8-4df1-a49b-f79581562514",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "HoneywellThermostat",
+   "ComponentId": "1d270e42-a381-49d3-93eb-4b45207e45e0",
+   "DisplayName": "Zone 1 Living-kitchen Thermostat",
+   "ActorHierarchyName": "s2.zone1-living-kitchen-stat"
+  },
+  {
+   "Name": "zone1-living-kitchen",
+   "Version": "303",
+   "ShNodeId": "9e349dd9-0608-494e-a1d4-cbcb9cb8eb03",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Zone 1 Living-kitchen"
+  },
+  {
+   "Name": "zone2-bedrooms-stat",
+   "Version": "303",
+   "ShNodeId": "aaa4e726-e14c-4b12-b3b9-1bb6fc0536fc",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "HoneywellThermostat",
+   "ComponentId": "d2ff7b8d-d1e0-4a65-a974-77c1802c6cdb",
+   "DisplayName": "Zone 2 Bedrooms Thermostat",
+   "ActorHierarchyName": "s2.zone2-bedrooms-stat"
+  },
+  {
+   "Name": "zone2-bedrooms",
+   "Version": "303",
+   "ShNodeId": "27791cd7-3a0e-4989-82f0-4c12015c1073",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Zone 2 Bedrooms"
+  },
+  {
+   "Name": "zone3-garage-stat",
+   "Version": "303",
+   "ShNodeId": "8bc3d280-59ab-401a-8cf5-f22ecfc136ef",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "HoneywellThermostat",
+   "ComponentId": "eef7bcf0-f7e7-4182-81e7-2bbc503428e0",
+   "DisplayName": "Zone 3 Garage Thermostat",
+   "ActorHierarchyName": "s2.zone3-garage-stat"
+  },
+  {
+   "Name": "zone3-garage",
+   "Version": "303",
+   "ShNodeId": "41084ea8-91e4-431a-aafc-cc28003b440f",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Zone 3 Garage"
+  },
+  {
+   "Name": "zone4-master-bedrm-stat",
+   "Version": "303",
+   "ShNodeId": "35746928-cbf1-4d28-ba02-fb7dade909b4",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "HoneywellThermostat",
+   "ComponentId": "ffe8267b-aced-4359-8cb6-ee2f7632b6e5",
+   "DisplayName": "Zone 4 Master-bedrm Thermostat",
+   "ActorHierarchyName": "s2.zone4-master-bedrm-stat"
+  },
+  {
+   "Name": "zone4-master-bedrm",
+   "Version": "303",
+   "ShNodeId": "8aa9282c-4a31-4235-add6-9f69bd50d49e",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "Zone 4 Master-bedrm"
+  },
+  {
+   "Name": "krida",
+   "Version": "303",
+   "ShNodeId": "5fe97b91-5775-47f4-8714-3a76c76741e1",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "ComponentId": "4128ffad-eede-4b13-b0c9-01dcd02d8158",
+   "DisplayName": "Krida relay panel"
+  },
+  {
+   "Name": "i2c-bus",
+   "Version": "303",
+   "ShNodeId": "85a14139-3a58-48a0-bb95-d070a29a1a31",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "I2cBus",
+   "DisplayName": "I2C Bus",
+   "ActorHierarchyName": "s.i2c-bus"
+  },
+  {
+   "Name": "vdc-relay",
+   "Handle": "auto.five-v-boss.pico-cycler.vdc-relay",
+   "Version": "303",
+   "ShNodeId": "419e6658-9c62-4bb9-8806-fa797ba9c7d2",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "1663ff2c-548e-4add-b9c2-8c8094e5eb18",
+   "DisplayName": "5VDC Relay",
+   "ActorHierarchyName": "s.vdc-relay"
+  },
+  {
+   "Name": "tstat-common-relay",
+   "Handle": "auto.lc.n.tstat-common-relay",
+   "Version": "303",
+   "ShNodeId": "478c7dba-3cf3-4035-b61c-c3b31607bf26",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "479ab219-e96b-4e87-be35-c71f4c3ff865",
+   "DisplayName": "TStat Common Relay",
+   "ActorHierarchyName": "s.tstat-common-relay"
+  },
+  {
+   "Name": "charge-discharge-relay",
+   "Handle": "auto.lc.n.charge-discharge-relay",
+   "Version": "303",
+   "ShNodeId": "bd10e4db-df0f-46da-bd05-9523e319d9ac",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "0fdaa312-5d48-4104-9927-9e8067194238",
+   "DisplayName": "Store Charge/Discharge Relay",
+   "ActorHierarchyName": "s.charge-discharge-relay"
+  },
+  {
+   "Name": "hp-failsafe-relay",
+   "Handle": "auto.lc.n.hp-failsafe-relay",
+   "Version": "303",
+   "ShNodeId": "9f664c92-a529-4c19-bb97-90edf4445d44",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "fa95f427-5d15-477d-bc2e-f34edf3a7a80",
+   "DisplayName": "Hp Failsafe Relay",
+   "ActorHierarchyName": "s.hp-failsafe-relay"
+  },
+  {
+   "Name": "hp-scada-ops-relay",
+   "Handle": "auto.lc.n.hp-boss.hp-scada-ops-relay",
+   "Version": "303",
+   "ShNodeId": "ee4909ea-221e-4476-a00e-35d26bbac4f0",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "65c12864-43a6-48e8-9d12-8ca5b4c271d3",
+   "DisplayName": "Hp Scada Ops Relay",
+   "ActorHierarchyName": "s.hp-scada-ops-relay"
+  },
+  {
+   "Name": "aquastat-ctrl-relay",
+   "Handle": "auto.lc.n.aquastat-ctrl-relay",
+   "Version": "303",
+   "ShNodeId": "a569a4c3-fc14-4429-9ab5-1f835da47dcf",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "c855edb4-82a6-417f-9dea-27c77c23b65e",
+   "DisplayName": "Aquastat Ctrl Relay",
+   "ActorHierarchyName": "s.aquastat-ctrl-relay"
+  },
+  {
+   "Name": "store-pump-relay",
+   "Handle": "auto.lc.n.store-pump-relay",
+   "Version": "303",
+   "ShNodeId": "0d4608cb-fe6b-424e-b229-0c30c26461d9",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "5537c05d-79e7-4871-9743-8a80d370d9b3",
+   "DisplayName": "Store Pump Relay",
+   "ActorHierarchyName": "s.store-pump-relay"
+  },
+  {
+   "Name": "secondary-pump-relay",
+   "Handle": "auto.lc.n.hp-boss.secondary-pump-relay",
+   "Version": "303",
+   "ShNodeId": "186ecf29-a511-4964-a28f-f00a91235c7d",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "01b37040-ca59-4b16-9014-d5f79fc75502",
+   "DisplayName": "Secondary Pump Relay",
+   "ActorHierarchyName": "s.secondary-pump-relay"
+  },
+  {
+   "Name": "secondary-pump-hack-relay",
+   "Handle": "auto.lc.n.hp-boss.secondary-pump-hack-relay",
+   "Version": "303",
+   "ShNodeId": "2d8769ef-f80c-4bff-988e-8143f962e929",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "6632d073-33aa-4632-9e4e-cf68ffd87aeb",
+   "DisplayName": "Secondary Pump Hack Relay",
+   "ActorHierarchyName": "s.secondary-pump-hack-relay"
+  },
+  {
+   "Name": "zone1-living-kitchen-failsafe-relay",
+   "Handle": "auto.lc.n.zone1-living-kitchen-failsafe-relay",
+   "Version": "303",
+   "ShNodeId": "98428e3b-60cc-46e5-8d49-38c81e38af45",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "ea6e1f48-677e-4a78-8411-d40131696b68",
+   "DisplayName": "Living-kitchen Zone 1 Failsf",
+   "ActorHierarchyName": "s.zone1-living-kitchen-failsafe-relay"
+  },
+  {
+   "Name": "zone1-living-kitchen-ops-relay",
+   "Handle": "auto.lc.n.zone1-living-kitchen-ops-relay",
+   "Version": "303",
+   "ShNodeId": "f9a7f920-ba85-4431-bf84-e8aa7a3268d4",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "1c343bd3-9ed4-4054-b4fe-ba3afd7dcef5",
+   "DisplayName": "Living-kitchen Zone Scada Ops",
+   "ActorHierarchyName": "s.zone1-living-kitchen-ops-relay"
+  },
+  {
+   "Name": "zone2-bedrooms-failsafe-relay",
+   "Handle": "auto.lc.n.zone2-bedrooms-failsafe-relay",
+   "Version": "303",
+   "ShNodeId": "4034de31-0e62-4e45-8624-1f4d27e0b285",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "24c35bc6-9dda-4999-9d2e-34842e81cc6b",
+   "DisplayName": "Bedrooms Zone 2 Failsf",
+   "ActorHierarchyName": "s.zone2-bedrooms-failsafe-relay"
+  },
+  {
+   "Name": "zone2-bedrooms-ops-relay",
+   "Handle": "auto.lc.n.zone2-bedrooms-ops-relay",
+   "Version": "303",
+   "ShNodeId": "4436129b-de90-403c-8444-3f95801eeada",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "657fa4ca-2e80-4551-a033-54c77500d0ac",
+   "DisplayName": "Bedrooms Zone Scada Ops",
+   "ActorHierarchyName": "s.zone2-bedrooms-ops-relay"
+  },
+  {
+   "Name": "zone3-garage-failsafe-relay",
+   "Handle": "auto.lc.n.zone3-garage-failsafe-relay",
+   "Version": "303",
+   "ShNodeId": "039af0c5-b32b-4246-8e06-c01b4c8da464",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "c39d4cf8-5f97-4db5-a7d2-3b25c8b6cfc1",
+   "DisplayName": "Garage Zone 3 Failsf",
+   "ActorHierarchyName": "s.zone3-garage-failsafe-relay"
+  },
+  {
+   "Name": "zone3-garage-ops-relay",
+   "Handle": "auto.lc.n.zone3-garage-ops-relay",
+   "Version": "303",
+   "ShNodeId": "8cb58662-fe1f-470d-ade2-abd83859e5e5",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "2af3a480-a841-47f8-85c6-4000d5e09227",
+   "DisplayName": "Garage Zone Scada Ops",
+   "ActorHierarchyName": "s.zone3-garage-ops-relay"
+  },
+  {
+   "Name": "zone4-master-bedrm-failsafe-relay",
+   "Handle": "auto.lc.n.zone4-master-bedrm-failsafe-relay",
+   "Version": "303",
+   "ShNodeId": "5f08c6a1-b521-4911-8414-14a9615d694a",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "75c6372c-becb-400b-b657-a77003f14cbd",
+   "DisplayName": "Master-bedrm Zone 4 Failsf",
+   "ActorHierarchyName": "s.zone4-master-bedrm-failsafe-relay"
+  },
+  {
+   "Name": "zone4-master-bedrm-ops-relay",
+   "Handle": "auto.lc.n.zone4-master-bedrm-ops-relay",
+   "Version": "303",
+   "ShNodeId": "14db6747-e4ae-4cd5-8836-666f79c11b54",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "Relay",
+   "ComponentId": "1ccb3e93-f726-4497-bf08-eb79bd1ad320",
+   "DisplayName": "Master-bedrm Zone Scada Ops",
+   "ActorHierarchyName": "s.zone4-master-bedrm-ops-relay"
+  },
+  {
+   "Name": "buffer",
+   "Version": "303",
+   "ShNodeId": "c7273526-3dba-44ea-bd4f-c3cc3f10f134",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ApiTankModule",
+   "ComponentId": "2a5599bb-9040-4e29-88af-0c360c065e00",
+   "DisplayName": "Buffer Tank",
+   "ActorHierarchyName": "s.buffer"
+  },
+  {
+   "Name": "buffer-depth1",
+   "Version": "303",
+   "ShNodeId": "a7236332-c1d0-402e-8c33-31488369fab0",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "buffer-depth1"
+  },
+  {
+   "Name": "buffer-depth2",
+   "Version": "303",
+   "ShNodeId": "786e68d0-3275-4694-b413-62865cbf3e5a",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "buffer-depth2"
+  },
+  {
+   "Name": "buffer-depth3",
+   "Version": "303",
+   "ShNodeId": "1dbacbd2-239b-4ade-b304-e718c17c0773",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "buffer-depth3"
+  },
+  {
+   "Name": "tank1",
+   "Version": "303",
+   "ShNodeId": "41b05f40-27ee-4cbc-ba61-5dff662c3c4b",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ApiTankModule",
+   "ComponentId": "559a7242-a855-4f51-a267-18ebb0f77a01",
+   "DisplayName": "Tank1 Tank",
+   "ActorHierarchyName": "s.tank1"
+  },
+  {
+   "Name": "tank1-depth1",
+   "Version": "303",
+   "ShNodeId": "a6588ca6-f136-4ebd-a215-94ec4609ecb2",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "tank1-depth1"
+  },
+  {
+   "Name": "tank1-depth2",
+   "Version": "303",
+   "ShNodeId": "47a1aa37-cb69-4a42-b705-457335992de8",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "tank1-depth2"
+  },
+  {
+   "Name": "tank1-depth3",
+   "Version": "303",
+   "ShNodeId": "876f48ab-30a5-49dc-84f5-f3504242e40e",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "tank1-depth3"
+  },
+  {
+   "Name": "tank2",
+   "Version": "303",
+   "ShNodeId": "07daa4d0-2f8f-4ca1-a07a-f95add037175",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ApiTankModule",
+   "ComponentId": "bfd0e466-e7f8-4e9f-9555-04aeac087e3b",
+   "DisplayName": "Tank2 Tank",
+   "ActorHierarchyName": "s.tank2"
+  },
+  {
+   "Name": "tank2-depth1",
+   "Version": "303",
+   "ShNodeId": "00e3fa5c-3108-4c67-8bac-8cd48ebf7f88",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "tank2-depth1"
+  },
+  {
+   "Name": "tank2-depth2",
+   "Version": "303",
+   "ShNodeId": "a765dcb9-f217-438b-bd0b-e73880e18a70",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "tank2-depth2"
+  },
+  {
+   "Name": "tank2-depth3",
+   "Version": "303",
+   "ShNodeId": "8ed34fbc-9461-4924-a28a-6723ab064437",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "tank2-depth3"
+  },
+  {
+   "Name": "tank3",
+   "Version": "303",
+   "ShNodeId": "c0191e9d-ae40-4edb-920b-c5cb7e247c12",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ApiTankModule",
+   "ComponentId": "825cc546-6151-47c7-b505-a727109985f9",
+   "DisplayName": "Tank3 Tank",
+   "ActorHierarchyName": "s.tank3"
+  },
+  {
+   "Name": "tank3-depth1",
+   "Version": "303",
+   "ShNodeId": "b5083d03-ec67-4762-97a4-8bdeb78957c2",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "tank3-depth1"
+  },
+  {
+   "Name": "tank3-depth2",
+   "Version": "303",
+   "ShNodeId": "692cbf21-6ebc-4254-96d0-5db52de914e9",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "tank3-depth2"
+  },
+  {
+   "Name": "tank3-depth3",
+   "Version": "303",
+   "ShNodeId": "699266f0-ca04-4c2c-9e9f-72be960d0ec5",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "tank3-depth3"
+  },
+  {
+   "Name": "dist-010v",
+   "Handle": "auto.lc.n.dist-010v",
+   "Version": "303",
+   "ShNodeId": "77900736-042a-4cf3-a4dc-900096afa4c9",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ZeroTenOutputer",
+   "ComponentId": "330b97e7-6ff5-4361-8c35-ab94523caac3",
+   "DisplayName": "Dist Pump 010V",
+   "ActorHierarchyName": "s.dist-010v"
+  },
+  {
+   "Name": "secondary-010v",
+   "Handle": "auto.lc.n.secondary-010v",
+   "Version": "303",
+   "ShNodeId": "b6eeaeb6-2cf0-4f9d-bf02-a55c35c7fe6c",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ZeroTenOutputer",
+   "ComponentId": "d02f07b2-aa44-4a1a-a034-6c915acb8098",
+   "DisplayName": "Secondary Pump 010V",
+   "ActorHierarchyName": "s.secondary-010v"
+  },
+  {
+   "Name": "store-010v",
+   "Handle": "auto.lc.n.store-010v",
+   "Version": "303",
+   "ShNodeId": "9bbc6f1a-6154-4ad6-a6df-f95c42db9be1",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ZeroTenOutputer",
+   "ComponentId": "5beea128-d64c-49be-ac7a-462017c4bf67",
+   "DisplayName": "Store Pump 010V",
+   "ActorHierarchyName": "s.store-010v"
+  },
+  {
+   "Name": "primary-flow",
+   "Version": "303",
+   "ShNodeId": "22660cde-a140-4a7d-87cd-f9c33b94aa79",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ApiFlowModule",
+   "ComponentId": "1e2fa3de-1143-49e6-bc88-867d7d87dc91",
+   "DisplayName": "Primary Flow",
+   "ActorHierarchyName": "s.primary-flow"
+  },
+  {
+   "Name": "dist-flow",
+   "Version": "303",
+   "ShNodeId": "5bf14719-879a-46a5-9bd4-cb5f55f15245",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ApiFlowModule",
+   "ComponentId": "7e61fed7-9aa8-44c6-8aba-33b766224528",
+   "DisplayName": "Dist Flow",
+   "ActorHierarchyName": "s.dist-flow"
+  },
+  {
+   "Name": "store-flow",
+   "Version": "303",
+   "ShNodeId": "d45dbff8-aa55-403b-a827-f62203fa5bdc",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ApiFlowModule",
+   "ComponentId": "02a41b11-288a-430a-8245-ce5b71a3d7e6",
+   "DisplayName": "Store Flow",
+   "ActorHierarchyName": "s.store-flow"
+  },
+  {
+   "Name": "secondary-flow",
+   "Version": "303",
+   "ShNodeId": "e3eb5f1a-5a43-472a-bb45-820d6e1a4f5e",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "ApiFlowModule",
+   "ComponentId": "4219be73-d1ec-4896-aa91-57271aeb85f7",
+   "DisplayName": "Secondary Flow",
+   "ActorHierarchyName": "s.secondary-flow"
+  },
+  {
+   "Name": "analog-temp",
+   "Version": "303",
+   "ShNodeId": "dc040b89-6676-4a96-a65b-2f92e4b8abea",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "MultipurposeSensor",
+   "ComponentId": "117fda0c-9b3d-44a3-ab7b-f4066d1b40a3",
+   "DisplayName": "ANALOG TEMP",
+   "ActorHierarchyName": "s2.analog-temp"
+  },
+  {
+   "Name": "dist-swt",
+   "Version": "303",
+   "ShNodeId": "b72c4fb1-419c-437b-86bb-c5e38647f1d2",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "DIST SWT"
+  },
+  {
+   "Name": "dist-rwt",
+   "Version": "303",
+   "ShNodeId": "898735a6-1b27-4659-a187-f28d60587f1e",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "DIST RWT"
+  },
+  {
+   "Name": "hp-lwt",
+   "Version": "303",
+   "ShNodeId": "00edd2fe-b29f-49f8-8614-bd6b749622a6",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "HP LWT"
+  },
+  {
+   "Name": "hp-ewt",
+   "Version": "303",
+   "ShNodeId": "37f8fc1f-9df9-47ba-be3e-30ef3090d376",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "HP EWT"
+  },
+  {
+   "Name": "store-hot-pipe",
+   "Version": "303",
+   "ShNodeId": "6f7c6719-b0ea-4a8d-a12a-55a66a1171f1",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "STORE HOT PIPE"
+  },
+  {
+   "Name": "store-cold-pipe",
+   "Version": "303",
+   "ShNodeId": "88fa55f0-8f65-4d17-9e11-ca3e02ba9af5",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "STORE COLD PIPE"
+  },
+  {
+   "Name": "buffer-hot-pipe",
+   "Version": "303",
+   "ShNodeId": "d071932e-75c2-4360-9689-a517b3856b70",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "BUFFER HOT PIPE"
+  },
+  {
+   "Name": "buffer-cold-pipe",
+   "Version": "303",
+   "ShNodeId": "7a07127d-1de4-433a-8e62-17e9cd9dbf6f",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "BUFFER COLD PIPE"
+  },
+  {
+   "Name": "secondary-lwt",
+   "Version": "303",
+   "ShNodeId": "cbe35cae-57b2-4e2d-a978-a5369403d832",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "SECONDARY LWT"
+  },
+  {
+   "Name": "secondary-ewt",
+   "Version": "303",
+   "ShNodeId": "baa9a783-09bc-4f1d-ba7f-13c81c4a4250",
+   "TypeName": "spaceheat.node.gt",
+   "ActorClass": "NoActor",
+   "DisplayName": "SECONDARY EWT"
+  }
+ ],
+ "Version": "013",
+ "TypeName": "layout.lite",
+ "ZoneList": [
+  "living-kitchen",
+  "bedrooms",
+  "garage",
+  "master-bedrm"
+ ],
+ "CreatedMs": 1793208162435,
+ "MessageId": "86b0b495-0e46-4f2f-bd94-34397283ae5d",
+ "DataChannels": [
+  {
+   "Id": "8bc11768-c974-410d-8e58-7cc7b5f3adab",
+   "Name": "hp-odu-pwr",
+   "Version": "004",
+   "Quantity": "Power",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "HP ODU PWR",
+   "AboutNodeName": "hp-odu",
+   "TelemetryName": "PowerW",
+   "CapturedByNodeName": "power-meter",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "2551a8c4-ba5d-4354-b329-0dbe193548e8",
+   "Name": "oil-boiler-pwr",
+   "Version": "004",
+   "Quantity": "Power",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "OIL BOILER PWR",
+   "AboutNodeName": "oil-boiler",
+   "TelemetryName": "PowerW",
+   "CapturedByNodeName": "power-meter",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "8b1fbd53-7203-45b9-b485-f837a81bd430",
+   "Name": "dist-pump-pwr",
+   "Version": "004",
+   "Quantity": "Power",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "DIST PUMP PWR",
+   "AboutNodeName": "dist-pump",
+   "TelemetryName": "PowerW",
+   "CapturedByNodeName": "power-meter",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "62ade064-ae71-4eef-a7ff-31b188a8ce1b",
+   "Name": "secondary-pump-pwr",
+   "Version": "004",
+   "Quantity": "Power",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "SECONDARY PUMP PWR",
+   "AboutNodeName": "secondary-pump",
+   "TelemetryName": "PowerW",
+   "CapturedByNodeName": "power-meter",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "8d065ed3-4fbe-4782-a9ef-0b48dc0cca03",
+   "Name": "primary-pump-pwr",
+   "Version": "004",
+   "Quantity": "Power",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "PRIMARY PUMP PWR",
+   "AboutNodeName": "primary-pump",
+   "TelemetryName": "PowerW",
+   "CapturedByNodeName": "power-meter",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "41474905-a530-4db8-ae1f-8fc736cd8fd3",
+   "Name": "store-pump-pwr",
+   "Version": "004",
+   "Quantity": "Power",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "STORE PUMP PWR",
+   "AboutNodeName": "store-pump",
+   "TelemetryName": "PowerW",
+   "CapturedByNodeName": "power-meter",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "8cfeb062-2052-44d9-afee-bf316ee9ac97",
+   "Name": "zone1-living-kitchen-whitewire-pwr",
+   "Version": "004",
+   "Quantity": "Power",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "ZONE1 LIVING KITCHEN WHITEWIRE PWR",
+   "AboutNodeName": "zone1-living-kitchen-whitewire",
+   "TelemetryName": "PowerW",
+   "CapturedByNodeName": "power-meter",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "53e1c176-2f79-4792-b792-b85e8dfaf454",
+   "Name": "zone2-bedrooms-whitewire-pwr",
+   "Version": "004",
+   "Quantity": "Power",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "ZONE2 BEDROOMS WHITEWIRE PWR",
+   "AboutNodeName": "zone2-bedrooms-whitewire",
+   "TelemetryName": "PowerW",
+   "CapturedByNodeName": "power-meter",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "bad41d02-ff5e-4d18-9333-50bfd5795305",
+   "Name": "zone3-garage-whitewire-pwr",
+   "Version": "004",
+   "Quantity": "Power",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "ZONE3 GARAGE WHITEWIRE PWR",
+   "AboutNodeName": "zone3-garage-whitewire",
+   "TelemetryName": "PowerW",
+   "CapturedByNodeName": "power-meter",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "773c7221-cb0b-4bca-9866-3d5946a7ab29",
+   "Name": "zone4-master-bedrm-whitewire-pwr",
+   "Version": "004",
+   "Quantity": "Power",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "ZONE4 MASTER BEDRM WHITEWIRE PWR",
+   "AboutNodeName": "zone4-master-bedrm-whitewire",
+   "TelemetryName": "PowerW",
+   "CapturedByNodeName": "power-meter",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "b842531d-6ec3-4ca8-a8b3-04925d9a70e3",
+   "Name": "zone1-living-kitchen-temp",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Zone1 Living Kitchen Temp",
+   "AboutNodeName": "zone1-living-kitchen",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "zone1-living-kitchen-stat",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "bd337b1f-d222-48a0-962c-902bd3e7c385",
+   "Name": "zone1-living-kitchen-set",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Zone1 Living Kitchen Set",
+   "AboutNodeName": "zone1-living-kitchen-stat",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "zone1-living-kitchen-stat",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "e09b69f3-f8b9-413f-b646-7cae418d0c19",
+   "Name": "zone2-bedrooms-temp",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Zone2 Bedrooms Temp",
+   "AboutNodeName": "zone2-bedrooms",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "zone2-bedrooms-stat",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "e3bb170c-b5f7-470a-ba47-aeb23f55b3ed",
+   "Name": "zone2-bedrooms-set",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Zone2 Bedrooms Set",
+   "AboutNodeName": "zone2-bedrooms-stat",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "zone2-bedrooms-stat",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "0592245f-f616-4385-b5f2-0b2474aa75cc",
+   "Name": "zone3-garage-temp",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Zone3 Garage Temp",
+   "AboutNodeName": "zone3-garage",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "zone3-garage-stat",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "9ddfb5b4-8784-4653-8037-699bb0fad1bc",
+   "Name": "zone3-garage-set",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Zone3 Garage Set",
+   "AboutNodeName": "zone3-garage-stat",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "zone3-garage-stat",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "65705b5a-fe0c-4c46-b5c8-42c3a2a86dc4",
+   "Name": "zone4-master-bedrm-temp",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Zone4 Master Bedrm Temp",
+   "AboutNodeName": "zone4-master-bedrm",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "zone4-master-bedrm-stat",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "811536a8-4594-4fac-9de6-eda1e4c636f0",
+   "Name": "zone4-master-bedrm-set",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Zone4 Master Bedrm Set",
+   "AboutNodeName": "zone4-master-bedrm-stat",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "zone4-master-bedrm-stat",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "97ec2231-6a74-41a0-88d7-d09f4ef2c434",
+   "Name": "vdc-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "5V DC Bus Relay State",
+   "AboutNodeName": "vdc-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "vdc-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "00b10d67-ac1f-4cbe-a4ec-75be55575d80",
+   "Name": "tstat-common-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "TStat Common Relay State",
+   "AboutNodeName": "tstat-common-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "tstat-common-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "d31b4671-e1c7-4e20-8a21-5f0661c50217",
+   "Name": "charge-discharge-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Charge/Discharge Relay State",
+   "AboutNodeName": "charge-discharge-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "charge-discharge-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "f7778369-fa1e-4f4e-96bc-f27589e0d22a",
+   "Name": "hp-failsafe-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Hp Failsafe Relay State",
+   "AboutNodeName": "hp-failsafe-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "hp-failsafe-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "f0b55912-68da-4aad-a234-5207be14bc66",
+   "Name": "hp-scada-ops-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Hp Scada Ops Relay State",
+   "AboutNodeName": "hp-scada-ops-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "hp-scada-ops-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "c5f61595-6723-4129-98b8-f66f062b909f",
+   "Name": "aquastat-ctrl-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Aquastat Control Relay State",
+   "AboutNodeName": "aquastat-ctrl-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "aquastat-ctrl-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "e4792400-c139-42a8-be1f-e2cff1f3e225",
+   "Name": "store-pump-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Store Pump Relay State",
+   "AboutNodeName": "store-pump-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "store-pump-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "4442d56d-09c1-458e-b511-93dfa33a0034",
+   "Name": "secondary-pump-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Secondary Pump Relay State",
+   "AboutNodeName": "secondary-pump-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "secondary-pump-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "439a3551-bed7-4e61-ad45-75fd4586cf40",
+   "Name": "secondary-pump-hack-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Secondary Pump Hack Relay State",
+   "AboutNodeName": "secondary-pump-hack-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "secondary-pump-hack-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "883d3a0a-016f-406d-9792-c9c486a0ab63",
+   "Name": "zone1-living-kitchen-failsafe-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Living-kitchen Zone 1 Failsf Relay State",
+   "AboutNodeName": "zone1-living-kitchen-failsafe-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "zone1-living-kitchen-failsafe-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "21c8790d-ac29-4ef0-a107-c7260f5ad77c",
+   "Name": "zone1-living-kitchen-ops-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Living-kitchen Zone 1 Scada Ops Relay State",
+   "AboutNodeName": "zone1-living-kitchen-ops-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "zone1-living-kitchen-ops-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "3df50507-93fe-4252-a3b7-821d3c679f52",
+   "Name": "zone2-bedrooms-failsafe-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Bedrooms Zone 2 Failsf Relay State",
+   "AboutNodeName": "zone2-bedrooms-failsafe-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "zone2-bedrooms-failsafe-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "b05eee14-3f27-4476-8a80-665821d7357a",
+   "Name": "zone2-bedrooms-ops-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Bedrooms Zone 2 Scada Ops Relay State",
+   "AboutNodeName": "zone2-bedrooms-ops-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "zone2-bedrooms-ops-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "c7a6580d-2396-4ca3-8ee3-9c6fe0d95b1e",
+   "Name": "zone3-garage-failsafe-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Garage Zone 3 Failsf Relay State",
+   "AboutNodeName": "zone3-garage-failsafe-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "zone3-garage-failsafe-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "5b914489-147b-4776-b294-4bc6430910b5",
+   "Name": "zone3-garage-ops-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Garage Zone 3 Scada Ops Relay State",
+   "AboutNodeName": "zone3-garage-ops-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "zone3-garage-ops-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "b0bdf2bd-990b-4bb9-9650-9d72757e883d",
+   "Name": "zone4-master-bedrm-failsafe-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Master-bedrm Zone 4 Failsf Relay State",
+   "AboutNodeName": "zone4-master-bedrm-failsafe-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "zone4-master-bedrm-failsafe-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "40aba840-daca-4f18-bfd5-b9c5155de625",
+   "Name": "zone4-master-bedrm-ops-relay",
+   "Version": "004",
+   "Quantity": "Unitless",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Master-bedrm Zone 4 Scada Ops Relay State",
+   "AboutNodeName": "zone4-master-bedrm-ops-relay",
+   "TelemetryName": "RelayState",
+   "CapturedByNodeName": "zone4-master-bedrm-ops-relay",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "56d33875-af8c-45e1-97ab-0e5327edc7a3",
+   "Name": "buffer-depth1-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Buffer Depth 1 Device Temp",
+   "AboutNodeName": "buffer-depth1",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "buffer",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "ea597ed1-c809-4373-9f41-4683d848857c",
+   "Name": "buffer-depth2-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Buffer Depth 2 Device Temp",
+   "AboutNodeName": "buffer-depth2",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "buffer",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "65646df5-96bf-4e86-8d64-dc24eb813b95",
+   "Name": "buffer-depth3-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Buffer Depth 3 Device Temp",
+   "AboutNodeName": "buffer-depth3",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "buffer",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "429fbe92-586e-438b-b6b7-eb0aa353df62",
+   "Name": "buffer-depth1-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Buffer Depth 1 MicroVolts",
+   "AboutNodeName": "buffer-depth1",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "buffer",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "90db4636-e13e-44a1-b9c1-e32fd0c6f9b7",
+   "Name": "buffer-depth2-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Buffer Depth 2 MicroVolts",
+   "AboutNodeName": "buffer-depth2",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "buffer",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "c46e39a2-a90d-48a5-b590-bb9d6dabe2dc",
+   "Name": "buffer-depth3-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Buffer Depth 3 MicroVolts",
+   "AboutNodeName": "buffer-depth3",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "buffer",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "8314968b-f00e-4f21-b20b-487126b8a453",
+   "Name": "tank1-depth1-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank1 Depth 1 Device Temp",
+   "AboutNodeName": "tank1-depth1",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "tank1",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "809620c9-5304-48ea-b757-bf2e86d5a31e",
+   "Name": "tank1-depth2-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank1 Depth 2 Device Temp",
+   "AboutNodeName": "tank1-depth2",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "tank1",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "09cbe661-de77-4ccb-88dd-e39bf26313cf",
+   "Name": "tank1-depth3-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank1 Depth 3 Device Temp",
+   "AboutNodeName": "tank1-depth3",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "tank1",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "51e72515-9b12-491a-9e24-bbd489e38267",
+   "Name": "tank1-depth1-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank1 Depth 1 MicroVolts",
+   "AboutNodeName": "tank1-depth1",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "tank1",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "8681d460-1932-4087-9c5c-9ef62287e954",
+   "Name": "tank1-depth2-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank1 Depth 2 MicroVolts",
+   "AboutNodeName": "tank1-depth2",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "tank1",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "f309a503-40f9-4fd5-bd41-e4c1fdb6d5a6",
+   "Name": "tank1-depth3-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank1 Depth 3 MicroVolts",
+   "AboutNodeName": "tank1-depth3",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "tank1",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "a8754132-479c-4444-a71a-51067bf94a49",
+   "Name": "tank2-depth1-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank2 Depth 1 Device Temp",
+   "AboutNodeName": "tank2-depth1",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "tank2",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "9b27a9b8-896b-4bf6-a52e-d965b28d73a3",
+   "Name": "tank2-depth2-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank2 Depth 2 Device Temp",
+   "AboutNodeName": "tank2-depth2",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "tank2",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "a3e43dea-9ce2-4d61-a02f-750b15e7644f",
+   "Name": "tank2-depth3-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank2 Depth 3 Device Temp",
+   "AboutNodeName": "tank2-depth3",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "tank2",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "18b4c32b-437c-41db-8811-61bc13f6906e",
+   "Name": "tank2-depth1-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank2 Depth 1 MicroVolts",
+   "AboutNodeName": "tank2-depth1",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "tank2",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "76035ffb-15c7-43dc-86af-bd272e0f1a86",
+   "Name": "tank2-depth2-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank2 Depth 2 MicroVolts",
+   "AboutNodeName": "tank2-depth2",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "tank2",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "4dcaea28-c234-4cee-a3e8-ab1451dcd174",
+   "Name": "tank2-depth3-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank2 Depth 3 MicroVolts",
+   "AboutNodeName": "tank2-depth3",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "tank2",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "1a920a6c-f495-4f89-a1ef-c966b9419eef",
+   "Name": "tank3-depth1-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank3 Depth 1 Device Temp",
+   "AboutNodeName": "tank3-depth1",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "tank3",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "94b9f9c7-bf58-427b-a440-b904302790b9",
+   "Name": "tank3-depth2-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank3 Depth 2 Device Temp",
+   "AboutNodeName": "tank3-depth2",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "tank3",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "be5cee80-6f84-4e63-99c4-6a160f2b6c97",
+   "Name": "tank3-depth3-device",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank3 Depth 3 Device Temp",
+   "AboutNodeName": "tank3-depth3",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "tank3",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "a5362b68-4ad0-43b7-ae21-5f0e940b8145",
+   "Name": "tank3-depth1-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank3 Depth 1 MicroVolts",
+   "AboutNodeName": "tank3-depth1",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "tank3",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "8ced0aef-5419-4f07-bfb2-71a21e8f9048",
+   "Name": "tank3-depth2-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank3 Depth 2 MicroVolts",
+   "AboutNodeName": "tank3-depth2",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "tank3",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "0cea3f02-dead-4dce-8465-d4f938356e6d",
+   "Name": "tank3-depth3-micro-v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Tank3 Depth 3 MicroVolts",
+   "AboutNodeName": "tank3-depth3",
+   "TelemetryName": "MicroVolts",
+   "CapturedByNodeName": "tank3",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "a0dab65b-fdc8-49c2-8f99-e5fcb9048ad3",
+   "Name": "dist-010v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Dist Pump 010V Level",
+   "AboutNodeName": "dist-010v",
+   "TelemetryName": "VoltsTimesTen",
+   "CapturedByNodeName": "dist-010v",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "5c375c60-86b2-4235-8022-d67b7976d856",
+   "Name": "secondary-010v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Secondary Pump 010V Level",
+   "AboutNodeName": "secondary-010v",
+   "TelemetryName": "VoltsTimesTen",
+   "CapturedByNodeName": "secondary-010v",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "b7f37724-71ed-40fa-b14b-6f83de1ee8f0",
+   "Name": "store-010v",
+   "Version": "004",
+   "Quantity": "Voltage",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Store Pump 010V Level",
+   "AboutNodeName": "store-010v",
+   "TelemetryName": "VoltsTimesTen",
+   "CapturedByNodeName": "store-010v",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "2fb03bf9-319d-412d-b110-8d9ca47540a2",
+   "Name": "primary-flow",
+   "Version": "004",
+   "Quantity": "FlowRate",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Primary Flow Gpm X 100",
+   "AboutNodeName": "primary-flow",
+   "TelemetryName": "GpmTimes100",
+   "CapturedByNodeName": "primary-flow",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "ae568560-379a-4c45-be28-fc344ec928fc",
+   "Name": "primary-flow-hz",
+   "Version": "004",
+   "Quantity": "Frequency",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Primary Flow MicroHz",
+   "AboutNodeName": "primary-flow",
+   "TelemetryName": "MicroHz",
+   "CapturedByNodeName": "primary-flow",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "d9679dc5-385b-481e-9b55-31918876b9ae",
+   "Name": "dist-flow",
+   "Version": "004",
+   "Quantity": "FlowRate",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Dist Flow Gpm X 100",
+   "AboutNodeName": "dist-flow",
+   "TelemetryName": "GpmTimes100",
+   "CapturedByNodeName": "dist-flow",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "2562325c-7f19-435d-8b34-3857c5080ef7",
+   "Name": "dist-flow-hz",
+   "Version": "004",
+   "Quantity": "Frequency",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Dist Flow MicroHz",
+   "AboutNodeName": "dist-flow",
+   "TelemetryName": "MicroHz",
+   "CapturedByNodeName": "dist-flow",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "e6651efd-beb2-42e3-a3be-d5fa1aed9392",
+   "Name": "store-flow",
+   "Version": "004",
+   "Quantity": "FlowRate",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Store Flow Gpm X 100",
+   "AboutNodeName": "store-flow",
+   "TelemetryName": "GpmTimes100",
+   "CapturedByNodeName": "store-flow",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "cba07788-949e-4a4f-a332-29f528e659fb",
+   "Name": "store-flow-hz",
+   "Version": "004",
+   "Quantity": "Frequency",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Store Flow MicroHz",
+   "AboutNodeName": "store-flow",
+   "TelemetryName": "MicroHz",
+   "CapturedByNodeName": "store-flow",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "49b56218-9a8f-4169-b6d7-3cd04041e312",
+   "Name": "secondary-flow",
+   "Version": "004",
+   "Quantity": "FlowRate",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Secondary Flow Gpm X 100",
+   "AboutNodeName": "secondary-flow",
+   "TelemetryName": "GpmTimes100",
+   "CapturedByNodeName": "secondary-flow",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "de5f1355-6596-43fe-ae00-26a32762cc10",
+   "Name": "secondary-flow-hz",
+   "Version": "004",
+   "Quantity": "Frequency",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "Secondary Flow MicroHz",
+   "AboutNodeName": "secondary-flow",
+   "TelemetryName": "MicroHz",
+   "CapturedByNodeName": "secondary-flow",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "719749c7-5067-41b0-91e2-0f5fed7975a7",
+   "Name": "dist-swt",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "DIST SWT",
+   "AboutNodeName": "dist-swt",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "analog-temp",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "bf3e0881-1045-47d1-b308-2178dc58e133",
+   "Name": "dist-rwt",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "DIST RWT",
+   "AboutNodeName": "dist-rwt",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "analog-temp",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "094757e2-961a-4806-af40-53a94dbca7f0",
+   "Name": "hp-lwt",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "HP LWT",
+   "AboutNodeName": "hp-lwt",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "analog-temp",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "ff1f1321-e0fd-45db-98ac-356bf0be288d",
+   "Name": "hp-ewt",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "HP EWT",
+   "AboutNodeName": "hp-ewt",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "analog-temp",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "105b2cc5-8ec0-43d0-9b42-27f7a7a724f6",
+   "Name": "store-hot-pipe",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "STORE HOT PIPE",
+   "AboutNodeName": "store-hot-pipe",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "analog-temp",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "2fb3d8f1-783c-4cb9-9373-bc1f1fe91fc1",
+   "Name": "store-cold-pipe",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "STORE COLD PIPE",
+   "AboutNodeName": "store-cold-pipe",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "analog-temp",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "cb8a2253-3d07-40c5-a9a2-1abed9560151",
+   "Name": "buffer-hot-pipe",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "BUFFER HOT PIPE",
+   "AboutNodeName": "buffer-hot-pipe",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "analog-temp",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "8e8a41c7-4d8d-4bd3-8ee7-ed845806188b",
+   "Name": "buffer-cold-pipe",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "BUFFER COLD PIPE",
+   "AboutNodeName": "buffer-cold-pipe",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "analog-temp",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "70ab05c9-e12f-4d76-95ea-b63c1ea08511",
+   "Name": "secondary-lwt",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "SECONDARY LWT",
+   "AboutNodeName": "secondary-lwt",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "analog-temp",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "029c6a22-cb01-4e0f-bec7-5bfbeda71956",
+   "Name": "secondary-ewt",
+   "Version": "004",
+   "Quantity": "Temperature",
+   "TypeName": "data.channel.gt",
+   "DisplayName": "SECONDARY EWT",
+   "AboutNodeName": "secondary-ewt",
+   "TelemetryName": "CelsiusTimes100",
+   "CapturedByNodeName": "analog-temp",
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  }
+ ],
+ "StateMachines": [
+  {
+   "Version": "000",
+   "NodeName": "aquastat-ctrl-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "aquastat.control.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "auto",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "gw1.main.auto.state",
+   "StateEnumVersion": "001"
+  },
+  {
+   "Version": "000",
+   "NodeName": "buffer",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "single.pico.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "charge-discharge-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "store.flow.relay",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "dist-flow",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "single.pico.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "five-v-boss",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "five.v.boss.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "hp-boss",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "hp.boss.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "hp-failsafe-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "heat.pump.control",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "hp-scada-ops-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "relay.closed.or.open",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "hp-watch",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "spruce.hack.hp.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "la",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "gw1.leaf.ally.buffer.only.state",
+   "StateEnumVersion": "001"
+  },
+  {
+   "Version": "000",
+   "NodeName": "lc",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "gw2.lc.top.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "n",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "gw1.local.control.buffer.only.state",
+   "StateEnumVersion": "001"
+  },
+  {
+   "Version": "000",
+   "NodeName": "pico-cycler",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "pico.cycler.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "primary-flow",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "single.pico.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "s",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "gw.top.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "secondary-flow",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "single.pico.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "secondary-pump-hack-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "relay.closed.or.open",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "secondary-pump-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "relay.closed.or.open",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "store-pump-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "relay.closed.or.open",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "tank1",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "single.pico.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "tank2",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "single.pico.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "tank3",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "single.pico.state",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "tstat-common-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "relay.closed.or.open",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "vdc-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "relay.closed.or.open",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "zone1-living-kitchen-failsafe-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "zone.call.source",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "zone1-living-kitchen-ops-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "relay.closed.or.open",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "zone2-bedrooms-failsafe-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "zone.call.source",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "zone2-bedrooms-ops-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "relay.closed.or.open",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "zone3-garage-failsafe-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "zone.call.source",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "zone3-garage-ops-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "relay.closed.or.open",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "zone4-master-bedrm-failsafe-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "zone.call.source",
+   "StateEnumVersion": "000"
+  },
+  {
+   "Version": "000",
+   "NodeName": "zone4-master-bedrm-ops-relay",
+   "TypeName": "gw.state.machine",
+   "StateEnum": "relay.closed.or.open",
+   "StateEnumVersion": "000"
+  }
+ ],
+ "FromGNodeAlias": "hw1.isone.me.versant.keene.elm.scada",
+ "DerivedChannels": [
+  {
+   "Id": "9c801d42-becc-4350-b4b8-123dd20e1ce9",
+   "Name": "transactive-power",
+   "Version": "003",
+   "Strategy": "transactive-power",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "Watts",
+   "DisplayName": "Transactive Power W",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Power",
+   "CreatedByNodeName": "power-meter",
+   "InputChannelNames": [
+    "hp-odu-pwr"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "759eec6b-d6a7-42f1-a731-e96c54ba4c26",
+   "Name": "usable-energy",
+   "Version": "003",
+   "Strategy": "system-model",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "WattHours",
+   "Parameters": {
+    "EnergyModel": {
+     "Version": "000",
+     "TypeName": "gw0.usable.energy.layered"
+    }
+   },
+   "DisplayName": "Usable Energy Wh",
+   "EmitPeriodS": 60,
+   "EmissionMethod": "Periodic",
+   "OutputQuantity": "Energy",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "4fae861f-2c80-42d1-a3d9-9d68c8dd6743",
+   "Name": "required-energy",
+   "Version": "003",
+   "Strategy": "system-model",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "WattHours",
+   "Parameters": {
+    "EnergyModel": {
+     "Version": "000",
+     "TypeName": "gw0.required.energy.layered"
+    }
+   },
+   "DisplayName": "Required Energy Wh",
+   "EmitPeriodS": 60,
+   "EmissionMethod": "Periodic",
+   "OutputQuantity": "Energy",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "a79c2275-bcfb-4dc3-b85c-d2f64f66b39e",
+   "Name": "zone1-living-kitchen-heat-call",
+   "Version": "003",
+   "Strategy": "heat-call",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "Unitless",
+   "Parameters": {
+    "Threshold": 10,
+    "Interpretation": "GreaterThanThreshold"
+   },
+   "DisplayName": "Zone1 Living Kitchen Heat Call",
+   "EmitPeriodS": 300,
+   "AsyncEmitDelta": 1,
+   "EmissionMethod": "AsyncAndPeriodic",
+   "OutputQuantity": "Unitless",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "zone1-living-kitchen-whitewire-pwr"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "b75c8831-03d7-42d7-b86d-127f1ee68ed2",
+   "Name": "zone2-bedrooms-heat-call",
+   "Version": "003",
+   "Strategy": "heat-call",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "Unitless",
+   "Parameters": {
+    "Threshold": 10,
+    "Interpretation": "GreaterThanThreshold"
+   },
+   "DisplayName": "Zone2 Bedrooms Heat Call",
+   "EmitPeriodS": 300,
+   "AsyncEmitDelta": 1,
+   "EmissionMethod": "AsyncAndPeriodic",
+   "OutputQuantity": "Unitless",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "zone2-bedrooms-whitewire-pwr"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "2c2e5e1f-969a-4de5-8199-2674c85d3965",
+   "Name": "zone3-garage-heat-call",
+   "Version": "003",
+   "Strategy": "heat-call",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "Unitless",
+   "Parameters": {
+    "Threshold": 10,
+    "Interpretation": "GreaterThanThreshold"
+   },
+   "DisplayName": "Zone3 Garage Heat Call",
+   "EmitPeriodS": 300,
+   "AsyncEmitDelta": 1,
+   "EmissionMethod": "AsyncAndPeriodic",
+   "OutputQuantity": "Unitless",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "zone3-garage-whitewire-pwr"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "d0d3d2b7-678e-4f9c-9b08-1749de190e42",
+   "Name": "zone4-master-bedrm-heat-call",
+   "Version": "003",
+   "Strategy": "heat-call",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "Unitless",
+   "Parameters": {
+    "Threshold": 10,
+    "Interpretation": "GreaterThanThreshold"
+   },
+   "DisplayName": "Zone4 Master Bedrm Heat Call",
+   "EmitPeriodS": 300,
+   "AsyncEmitDelta": 1,
+   "EmissionMethod": "AsyncAndPeriodic",
+   "OutputQuantity": "Unitless",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "zone4-master-bedrm-whitewire-pwr"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "3ffefe41-c78c-47d4-9b15-5975f81b0b42",
+   "Name": "buffer-depth1",
+   "Version": "003",
+   "Strategy": "affine",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "Parameters": {
+    "Calibration": {
+     "B": -1844,
+     "M": 1.28,
+     "Version": "000",
+     "TypeName": "linear.one.dimensional.calibration"
+    }
+   },
+   "DisplayName": "Buffer Depth1 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "buffer-depth1-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "2b3e48bd-1ce5-49e0-9400-5e3184e7c8bf",
+   "Name": "buffer-depth2",
+   "Version": "003",
+   "Strategy": "identity",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "DisplayName": "Buffer Depth2 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "buffer-depth2-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "57464a6f-be09-4dc3-8e2e-d90895e89a81",
+   "Name": "buffer-depth3",
+   "Version": "003",
+   "Strategy": "affine",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "Parameters": {
+    "Calibration": {
+     "B": -1844,
+     "M": 1.28,
+     "Version": "000",
+     "TypeName": "linear.one.dimensional.calibration"
+    }
+   },
+   "DisplayName": "Buffer Depth3 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "buffer-depth3-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "ae2428af-0684-4721-bc6a-92e3984474df",
+   "Name": "tank1-depth1",
+   "Version": "003",
+   "Strategy": "affine",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "Parameters": {
+    "Calibration": {
+     "B": 0,
+     "M": 1.0,
+     "Version": "000",
+     "TypeName": "linear.one.dimensional.calibration"
+    }
+   },
+   "DisplayName": "Tank1 Depth1 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "tank1-depth1-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "815da9bb-33fc-4b20-9236-a6e8e532f1d4",
+   "Name": "tank1-depth2",
+   "Version": "003",
+   "Strategy": "identity",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "DisplayName": "Tank1 Depth2 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "tank1-depth2-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "74244da6-bd94-4dac-acf3-3043451e1632",
+   "Name": "tank1-depth3",
+   "Version": "003",
+   "Strategy": "affine",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "Parameters": {
+    "Calibration": {
+     "B": 0,
+     "M": 1.0,
+     "Version": "000",
+     "TypeName": "linear.one.dimensional.calibration"
+    }
+   },
+   "DisplayName": "Tank1 Depth3 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "tank1-depth3-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "6dd9cb31-9dbb-4359-97fa-a268ce31a7cf",
+   "Name": "tank2-depth1",
+   "Version": "003",
+   "Strategy": "affine",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "Parameters": {
+    "Calibration": {
+     "B": 0,
+     "M": 1.0,
+     "Version": "000",
+     "TypeName": "linear.one.dimensional.calibration"
+    }
+   },
+   "DisplayName": "Tank2 Depth1 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "tank2-depth1-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "dbe6e392-60a4-4be3-b122-b10287c5b32d",
+   "Name": "tank2-depth2",
+   "Version": "003",
+   "Strategy": "identity",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "DisplayName": "Tank2 Depth2 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "tank2-depth2-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "bf9739e7-08f1-4723-9084-da9be19a21c8",
+   "Name": "tank2-depth3",
+   "Version": "003",
+   "Strategy": "affine",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "Parameters": {
+    "Calibration": {
+     "B": 0,
+     "M": 1.0,
+     "Version": "000",
+     "TypeName": "linear.one.dimensional.calibration"
+    }
+   },
+   "DisplayName": "Tank2 Depth3 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "tank2-depth3-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "0e7789f1-c733-478d-9224-624e4a8e97ba",
+   "Name": "tank3-depth1",
+   "Version": "003",
+   "Strategy": "affine",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "Parameters": {
+    "Calibration": {
+     "B": 0,
+     "M": 1.0,
+     "Version": "000",
+     "TypeName": "linear.one.dimensional.calibration"
+    }
+   },
+   "DisplayName": "Tank3 Depth1 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "tank3-depth1-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "e4bde861-fb6d-474c-a806-9c3261569f69",
+   "Name": "tank3-depth2",
+   "Version": "003",
+   "Strategy": "identity",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "DisplayName": "Tank3 Depth2 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "tank3-depth2-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "9f25a061-3bb2-4681-96eb-084623a644b5",
+   "Name": "tank3-depth3",
+   "Version": "003",
+   "Strategy": "affine",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "FahrenheitX100",
+   "Parameters": {
+    "Calibration": {
+     "B": 0,
+     "M": 1.0,
+     "Version": "000",
+     "TypeName": "linear.one.dimensional.calibration"
+    }
+   },
+   "DisplayName": "Tank3 Depth3 Effective Temperature",
+   "EmissionMethod": "OnTrigger",
+   "OutputQuantity": "Temperature",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "tank3-depth3-device"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  },
+  {
+   "Id": "3259bbf7-1584-468a-918a-4d9499e66974",
+   "Name": "secondary-pump-running",
+   "Version": "003",
+   "Strategy": "circulator-running",
+   "TypeName": "derived.channel.gt",
+   "OutputUnit": "Unitless",
+   "Parameters": {
+    "ThresholdW": 5
+   },
+   "DisplayName": "Secondary Pump Running",
+   "EmitPeriodS": 300,
+   "AsyncEmitDelta": 1,
+   "EmissionMethod": "AsyncAndPeriodic",
+   "OutputQuantity": "Unitless",
+   "CreatedByNodeName": "derived-generator",
+   "InputChannelNames": [
+    "secondary-pump-pwr"
+   ],
+   "TerminalAssetAlias": "hw1.isone.me.versant.keene.elm.ta"
+  }
+ ],
+ "CriticalZoneList": [
+  "living-kitchen",
+  "bedrooms",
+  "master-bedrm"
+ ],
+ "HardwareLayoutTypeName": "gw.house0.no.sieg"
+}
