@@ -11,7 +11,7 @@ import {
 import { getIsDarkMode } from "../_util/theme";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import GridWorksApi from '../_util/GridWorksApi';
-import type { SyncedReadingsBundle } from "../sema";
+import { SyncedReadingsBundle } from "../sema/types/SyncedReadingsBundle";
 import { VisualizerOptionsPanel } from "./VisualizerControls";
 import { CLIENT_ONLY_VISUALIZER_CHANNEL_IDS } from "./visualizerChannels";
 import { useVisualizerControls } from "./useVisualizerControls";
@@ -131,7 +131,7 @@ export default function VisualizerPage() {
         setPlotError(null);
         setReadingsBundleData(null);
         try {
-            const apiResult = await GridWorksApi.get<SyncedReadingsBundle>(
+            const apiResult = await GridWorksApi.get<unknown>(
                 `/api/v2/installations/${installationGNode}/synced.readings.bundle`,
                 {
                     params: {
@@ -147,7 +147,7 @@ export default function VisualizerPage() {
                 endDate: endDate,
                 installationGNode
             })
-            setReadingsBundleData(apiResult.data);
+            setReadingsBundleData(SyncedReadingsBundle.parse(apiResult.data));
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);

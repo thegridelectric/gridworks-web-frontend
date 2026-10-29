@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { HouseSummary } from "../sema";
+import type { HouseSummary } from "../sema/types/HouseSummary";
 
 export default function MultiInstallationDisplay({ installations, selectedInstallationIds }: { 
     installations: HouseSummary[],

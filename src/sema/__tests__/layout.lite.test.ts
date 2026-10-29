@@ -135,8 +135,9 @@ describe('layout.lite 011 reader', () => {
         expect(hpEwt?.TelemetryName).toBe('WaterTempCTimes1000');
     });
 
-    it('rejects a 011 data channel with a telemetry name the 006 enum lacks', () => {
+    it('decodes a 011 data channel with a telemetry name the 006 enum lacks to Unknown', () => {
         const channels = [{ ...beech011.DataChannels[0], TelemetryName: 'BinaryState' }];
-        expect(AnyLayoutLite.safeParse({ ...beech011, DataChannels: channels }).success).toBe(false);
+        const parsed = AnyLayoutLite.parse({ ...beech011, DataChannels: channels });
+        expect(parsed.DataChannels[0].TelemetryName).toBe('Unknown');
     });
 });

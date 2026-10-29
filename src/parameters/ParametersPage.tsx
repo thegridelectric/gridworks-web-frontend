@@ -17,7 +17,7 @@ import {
 import { DEFAULT_HEATING_PARAMS, type HeatingParams } from './types';
 
 import './ParametersPage.css';
-import type { HouseSummary } from '../sema';
+import type { HouseSummary } from '../sema/types/HouseSummary';
 
 function useHtmlThemeMutationTick() {
     const [tick, setTick] = useState(0);

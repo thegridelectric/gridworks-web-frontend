@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { Gw1Quantity } from '../enums/Gw1Quantity';
-import { Gw1Unit } from '../enums/Gw1Unit';
+import { Quantity } from '../enums/Quantity';
+import { Unit } from '../enums/Unit';
 
-const PROJECTION: Record<Gw1Unit, Gw1Quantity> = {
+const PROJECTION: Record<Unit, Quantity> = {
     Unknown: 'Unknown',
     Unitless: 'Unitless',
     FahrenheitX100: 'Temperature',
@@ -21,15 +21,15 @@ const PROJECTION: Record<Gw1Unit, Gw1Quantity> = {
     FahrenheitX10: 'Temperature',
 };
 
-export function projectUnit(unit: Gw1Unit): Gw1Quantity {
+export function projectUnit(unit: Unit): Quantity {
     return PROJECTION[unit];
 }
 
 /** Sema: https://schemas.electricity.works/types/gw1.unit.quantity.projection/001 */
-export const Gw1UnitQuantityProjection = z
+export const UnitQuantityProjection = z
     .strictObject({
-        Unit: Gw1Unit,
-        Quantity: Gw1Quantity,
+        Unit: Unit,
+        Quantity: Quantity,
         TypeName: z.literal('gw1.unit.quantity.projection'),
         Version: z.literal('001'),
     })
@@ -37,8 +37,8 @@ export const Gw1UnitQuantityProjection = z
         message: 'Axiom 1 (EnumeratedProjectionMapping) failed: Unit and Quantity do not match the enumerated projection',
         path: ['Quantity'],
     });
-export type Gw1UnitQuantityProjection = z.infer<typeof Gw1UnitQuantityProjection>;
+export type UnitQuantityProjection = z.infer<typeof UnitQuantityProjection>;
 
-function checkAxiom1(p: { Unit: Gw1Unit; Quantity: Gw1Quantity }): boolean {
+function checkAxiom1(p: { Unit: Unit; Quantity: Quantity }): boolean {
     return projectUnit(p.Unit) === p.Quantity;
 }

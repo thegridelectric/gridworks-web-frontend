@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Gw1Quantity } from '../../enums/Gw1Quantity';
+import { Quantity } from '../../enums/Quantity';
 import { SpaceheatTelemetryName } from '../../enums/SpaceheatTelemetryName';
 import { LeftRightDot, SpaceheatName, UtcSeconds, Uuid4Str } from '../../formats';
 
@@ -10,7 +10,7 @@ export const DataChannelGt002 = z.strictObject({
     AboutNodeName: SpaceheatName,
     CapturedByNodeName: SpaceheatName,
     TelemetryName: SpaceheatTelemetryName,
-    Quantity: Gw1Quantity,
+    Quantity: Quantity,
     TerminalAssetAlias: LeftRightDot,
     InPowerMetering: z.boolean().optional(),
     StartS: UtcSeconds.optional(),

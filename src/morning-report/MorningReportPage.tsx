@@ -15,7 +15,7 @@ import GridWorksApi from '../_util/GridWorksApi';
 import './MorningReportPage.css';
 import { DateTime } from 'luxon';
 import MultiInstallationDisplay from '../_shared/MultiInstallationDisplay';
-import type { HouseSummary } from '../sema';
+import type { HouseSummary } from '../sema/types/HouseSummary';
 
 const MESSAGE_TYPES = [
     { value: 'gridworks.event.problem', label: 'gridworks.event.problem' },

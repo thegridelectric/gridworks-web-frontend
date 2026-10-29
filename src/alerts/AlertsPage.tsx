@@ -8,7 +8,7 @@ import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import { NEW_YORK_TIME_ZONE } from '../_util/newYorkTime';
 
 import './AlertsPage.css';
-import type { HouseSummary } from '../sema';
+import type { HouseSummary } from '../sema/types/HouseSummary';
 import GridWorksApi from '../_util/GridWorksApi';
 
 const LOOKBACK_DAYS = 10;

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { LeftRightDot, UtcMilliseconds, Uuid4Str } from '../formats';
 import { DataChannelGt } from './DataChannelGt';
 import { DerivedChannelGt } from './DerivedChannelGt';
-import { GwStateMachine } from './GwStateMachine';
+import { StateMachine } from './StateMachine';
 import { SpaceheatNodeGt } from './SpaceheatNodeGt';
 
 /** Sema: https://schemas.electricity.works/types/layout.lite/013 */
@@ -17,7 +17,7 @@ export const LayoutLite = z
         ShNodes: z.array(SpaceheatNodeGt),
         DataChannels: z.array(DataChannelGt),
         DerivedChannels: z.array(DerivedChannelGt),
-        StateMachines: z.array(GwStateMachine),
+        StateMachines: z.array(StateMachine),
         TypeName: z.literal('layout.lite'),
         Version: z.literal('013'),
     })

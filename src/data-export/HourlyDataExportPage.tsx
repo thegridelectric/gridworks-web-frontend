@@ -19,7 +19,7 @@ import Plot, { type PlotParams } from 'react-plotly.js';
 import type { Layout, PlotData } from 'plotly.js';
 import { formatForDisplay, getDefaultPlotLayout } from '../visualizer/plot-configs';
 import { DateTime } from 'luxon';
-import type { HouseSummary } from '../sema';
+import type { HouseSummary } from '../sema/types/HouseSummary';
 
 const EMPTY_INSTALLATIONS: HouseSummary[] = [];
 

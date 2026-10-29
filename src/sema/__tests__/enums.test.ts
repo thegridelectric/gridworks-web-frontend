@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Gw1Unit } from '../enums/Gw1Unit';
+import { Unit } from '../enums/Unit';
 import { SpaceheatTelemetryName } from '../enums/SpaceheatTelemetryName';
 
 describe('spaceheat.telemetry.name 007', () => {
@@ -9,19 +9,20 @@ describe('spaceheat.telemetry.name 007', () => {
         }
     });
 
-    it('rejects a value outside the enum', () => {
-        expect(SpaceheatTelemetryName.safeParse('CelsiusX100').success).toBe(false);
-        expect(SpaceheatTelemetryName.safeParse('celsiustimes100').success).toBe(false);
+    it('decodes a value outside the enum to the default, and rejects a non-string', () => {
+        expect(SpaceheatTelemetryName.parse('CelsiusX100')).toBe('Unknown');
+        expect(SpaceheatTelemetryName.parse('celsiustimes100')).toBe('Unknown');
+        expect(SpaceheatTelemetryName.safeParse(7).success).toBe(false);
     });
 });
 
 describe('gw1.unit 003', () => {
     it('accepts the derived-channel units', () => {
-        expect(Gw1Unit.parse('FahrenheitX100')).toBe('FahrenheitX100');
-        expect(Gw1Unit.parse('GpmX100')).toBe('GpmX100');
+        expect(Unit.parse('FahrenheitX100')).toBe('FahrenheitX100');
+        expect(Unit.parse('GpmX100')).toBe('GpmX100');
     });
 
-    it('rejects a telemetry-name spelling of the same quantity', () => {
-        expect(Gw1Unit.safeParse('GpmTimes100').success).toBe(false);
+    it('decodes a telemetry-name spelling of the same quantity to Unknown', () => {
+        expect(Unit.parse('GpmTimes100')).toBe('Unknown');
     });
 });

@@ -6,7 +6,7 @@ import { useRouteInfo } from "../_util/useRouteInfo";
 
 import "../installations/InstallationsPage.css";
 import { DateTime } from "luxon";
-import type { HouseSummary } from "../sema";
+import type { HouseSummary } from "../sema/types/HouseSummary";
 
 type SortColumn = "short_alias" | /* "commit" | */ "status";
 type SortDirection = "asc" | "desc";

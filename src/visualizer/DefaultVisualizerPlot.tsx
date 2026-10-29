@@ -1,5 +1,5 @@
 import type { PlotParams } from "react-plotly.js";
-import type { SyncedReadingsBundle } from "../sema";
+import type { SyncedReadingsBundle } from "../sema/types/SyncedReadingsBundle";
 import { getHoverTemplate, getValueConverter } from "../sema/units";
 import { formatForDisplay, formatIsoTimeForDisplay, getDefaultPlotLayout, getThemeColor, type PlotAxisConfig, type PlotConfig, type PlotTraceConfig } from "./plot-configs";
 import type { Datum, PlotData, Shape } from "plotly.js";

@@ -10,7 +10,7 @@ import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
 import SessionContext, { canConnectRealTimeData, installationRoleForGNode } from "../_util/SessionContext";
 import { displayReadings, formatReading, type DisplayReading } from '../sema/displayReadings';
 import { layoutHasSecondaryLoop, layoutHasSiegLoop } from '../sema/plantLoops';
-import { AnyLayoutLite } from '../sema/types/AnyLayoutLite';
+import type { AnyLayoutLite } from '../sema/types/AnyLayoutLite';
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketBaseUrl } from "../_util/visualizerApi";
 import { controlFromSnapshot, type SnapshotPayload } from "./snapshotState";
@@ -130,21 +130,6 @@ function formatPumpWatts(reading: DisplayReading | undefined): string {
         return formatReading(reading, 0);
     }
     return Math.max(0, reading.display * W_PER_KW).toFixed(1);
-}
-
-/** The house's `layout.lite` from the installation summary, parsed as the
- *  word; a summary whose layout fails to parse gets none, and every reading
- *  then shows raw. */
-function parseLayout(layout: unknown): AnyLayoutLite | undefined {
-    if (layout === undefined || layout === null) {
-        return undefined;
-    }
-    const parsed = AnyLayoutLite.safeParse(layout);
-    if (!parsed.success) {
-        console.warn('layout.lite in the installation summary does not parse', parsed.error.issues);
-        return undefined;
-    }
-    return parsed.data;
 }
 
 function RealTimeStatusConnection({
@@ -595,7 +580,7 @@ export default function RealTimeStatusPage() {
     const realTimeNotPermittedForAlias =
         showConnectedContent && !canConnectRealTimeData(session, installationGNode!);
 
-    const layout = useMemo(() => parseLayout(installation?.Layout), [installation?.Layout]);
+    const layout = installation?.Layout;
     const defaultSiegLoop = layoutHasSiegLoop(layout);
     const secondaryLoop = layoutHasSecondaryLoop(layout);
 

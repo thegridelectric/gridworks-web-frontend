@@ -1,6 +1,6 @@
 import Plot from 'react-plotly.js';
 import type { PlotData, Shape } from 'plotly.js';
-import type { ChannelReadingsListItem } from '../sema';
+import type { ChannelReadingsListItem } from '../sema/types/ChannelReadingsListItem';
 import { formatIsoTimeForDisplay, getDefaultPlotLayout, getThemeColor } from './plot-configs';
 import type { DefaultPlotParams } from './DefaultVisualizerPlot';
 import { PlotlyWrapper } from './PlotlyWrapper';

@@ -1,6 +1,22 @@
 import { DateTime } from 'luxon';
 import { createContext } from 'react';
-import type { HouseSummary } from '../sema';
+import { z } from 'zod';
+import { HouseSummary } from '../sema/types/HouseSummary';
+
+/** The summaries response parsed as `gw.house.summary` words. A summary
+ *  that fails to parse is left out and warned about, so one house's seam
+ *  fault does not blank the dashboard for the rest. */
+export function parseHouseSummaries(data: unknown): HouseSummary[] {
+    const items = z.array(z.unknown()).parse(data);
+    return items.flatMap((item) => {
+        const parsed = HouseSummary.safeParse(item);
+        if (!parsed.success) {
+            console.warn('gw.house.summary does not parse', item, parsed.error.issues);
+            return [];
+        }
+        return [parsed.data];
+    });
+}
 
 export function installationRoleForGNode(
     installationRoles: HouseSummary[] | undefined,
