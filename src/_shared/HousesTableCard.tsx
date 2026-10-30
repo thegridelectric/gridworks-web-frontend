@@ -324,14 +324,6 @@ function HousesCardTable({
                             Alias
                         </th>
                         <th
-                            data-sort="commit"
-                            className={sortClass("commit")}
-                            scope="col"
-                            onClick={() => onSortHeaderClick("commit")}
-                        >
-                            Commit
-                        </th>
-                        <th
                             data-sort="status"
                             className={sortClass("status")}
                             scope="col"
@@ -340,6 +332,14 @@ function HousesCardTable({
                             Status
                         </th>
                         <th scope="col">Active heat call</th>
+                        <th
+                            data-sort="commit"
+                            className={sortClass("commit")}
+                            scope="col"
+                            onClick={() => onSortHeaderClick("commit")}
+                        >
+                            Commit
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -371,9 +371,6 @@ function HousesCardTable({
                                         {h.DisplayName ?? h.GNodeAlias}
                                     </span>
                                 </td>
-                                <td className="json-cell">
-                                    <ScadaCommitCell h={h} />
-                                </td>
                                 <td>{formatHouseStatusLabel(h)}</td>
                                 <td>
                                     {h.LongestRunningZoneName ?
@@ -383,6 +380,9 @@ function HousesCardTable({
                                         </span> :
                                         <span>(none)</span>
                                     }
+                                </td>
+                                <td className="json-cell">
+                                    <ScadaCommitCell h={h} />
                                 </td>
                             </tr>
                         );
