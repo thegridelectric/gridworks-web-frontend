@@ -6,27 +6,62 @@ import { useRouteInfo } from "../_util/useRouteInfo";
 
 import "../installations/InstallationsPage.css";
 import { DateTime } from "luxon";
-import type { HouseSummary } from "../sema/types/HouseSummary";
+import { scadaCommit, scadaCommitStanding, type AnyHouseSummary } from "../sema/types/AnyHouseSummary";
+import type { HouseOperatingStatus } from "../sema/types/HouseOperatingStatus";
 
-type SortColumn = "short_alias" | /* "commit" | */ "status";
+type SortColumn = "short_alias" | "commit" | "status";
 type SortDirection = "asc" | "desc";
 
-/** The house's operating status as one label: Standby, else the service
- *  mode, then the scada's top state. */
-function formatHouseStatusLabel(installation: HouseSummary | null): string {
+/** Who decides what the house's plant does, in the words of sema's
+ *  `gw.house.control.mode`: Admin when an admin session holds the command
+ *  tree, Ltn under a live dispatch contract, else LocalControl. Derived
+ *  here from TopState and LtnDispatching until the backend sends the
+ *  enum on the operating status. */
+function houseControlMode(status: HouseOperatingStatus): "Admin" | "Ltn" | "LocalControl" {
+    if (status.TopState === "Admin") {
+        return "Admin";
+    }
+    return status.LtnDispatching ? "Ltn" : "LocalControl";
+}
+
+/** The house's operating status as one label: who is in control, then
+ *  which tanks the store uses. */
+function formatHouseStatusLabel(installation: AnyHouseSummary | null): string {
     const status = installation?.OperatingStatus;
     if (!status) {
         return "—";
     }
-    return `${status.Standby ? "Standby" : status.ServiceMode}, ${status.TopState}`;
+    return `${houseControlMode(status)} / ${status.SeasonalStorageMode}`;
 }
 
-function isLatestSnapshotFresh(h: HouseSummary, refreshTime: DateTime): boolean {
+/** The scada's commit as the table shows it: the short hash, with the
+ *  `-dirty` suffix kept; empty for a house whose summary names none. */
+function formatScadaCommit(h: AnyHouseSummary): string {
+    const commit = scadaCommit(h);
+    if (commit === undefined) {
+        return "";
+    }
+    return commit.replace(/^([0-9a-f]{40})/, (_, hash: string) => hash.slice(0, 7));
+}
+
+/** The commit cell: a check for a scada on main's head, else the short
+ *  hash, tinted by where the commit stands. */
+function ScadaCommitCell({ h }: { h: AnyHouseSummary }) {
+    const standing = scadaCommitStanding(h);
+    const commit = scadaCommit(h);
+    if (standing === "OnMainHead") {
+        return <span className="commit-on-main" title={commit}>&#x2713;</span>;
+    }
+    const tint = standing === undefined || standing === "Unknown" ? "" : ` commit-${standing.toLowerCase()}`;
+    return <span className={`text-muted${tint}`} title={standing}>{formatScadaCommit(h)}</span>;
+}
+
+function isLatestSnapshotFresh(h: AnyHouseSummary, refreshTime: DateTime): boolean {
     return !!h.LatestSnapshotTime && DateTime.fromISO(h.LatestSnapshotTime) > refreshTime.minus({seconds: 60})
 }
 
 function aliasBadgeClassForHouse(
-    h: HouseSummary,
+    h: AnyHouseSummary,
     refreshTime: DateTime,
 ): string {
     // [alert-status-badge] from backoffice `alert_status`:
@@ -38,29 +73,22 @@ function aliasBadgeClassForHouse(
 }
 
 function compareInstallations(
-    a: HouseSummary,
-    b: HouseSummary,
+    a: AnyHouseSummary,
+    b: AnyHouseSummary,
     column: SortColumn,
     direction: SortDirection,
 ): number {
-    const cell = (h: HouseSummary) => {
+    const cell = (h: AnyHouseSummary) => {
         if (column === "short_alias") {
             return (h.DisplayName || "").trim();
         }
         if (column === "status") {
             return formatHouseStatusLabel(h).trim();
         }
-        // [commit-column] return (h.commit || "N/A").trim();
-        return "";
+        return (scadaCommit(h) ?? "").trim();
     };
-    let av = cell(a);
-    let bv = cell(b);
-    if (av === "N/A") {
-        av = "";
-    }
-    if (bv === "N/A") {
-        bv = "";
-    }
+    const av = cell(a);
+    const bv = cell(b);
     let cmp = av.localeCompare(bv, undefined, { sensitivity: "base" });
     if (direction === "desc") {
         cmp = -cmp;
@@ -69,12 +97,12 @@ function compareInstallations(
 }
 
 function useHousesTableState(
-    homes: HouseSummary[],
+    homes: AnyHouseSummary[],
     refreshTime: DateTime,
 ) {
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [aliasFilter, setAliasFilter] = useState("");
-    // [commit-column] const [commitFilter, setCommitFilter] = useState("");
+    const [commitFilter, setCommitFilter] = useState("");
     const [sortColumn, setSortColumn] = useState<SortColumn>("short_alias");
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
@@ -112,14 +140,11 @@ function useHousesTableState(
 
     const filteredSorted = useMemo(() => {
         const af = aliasFilter.trim().toLowerCase();
-        // [commit-column] const cof = commitFilter.trim().toLowerCase();
+        const cof = commitFilter.trim().toLowerCase();
         let list = homes.filter((h) => {
             const alias = (h.DisplayName || "").toLowerCase();
-            // [commit-column] const commit = (h.commit || "N/A").toLowerCase();
-            return (
-                alias.startsWith(af)
-                // [commit-column] && commit.startsWith(cof)
-            );
+            const commit = (scadaCommit(h) ?? "").toLowerCase();
+            return alias.startsWith(af) && commit.startsWith(cof);
         });
         list = [...list].sort((a, b) =>
             compareInstallations(a, b, sortColumn, sortDirection),
@@ -128,7 +153,7 @@ function useHousesTableState(
     }, [
         homes,
         aliasFilter,
-        // commitFilter,
+        commitFilter,
         sortColumn,
         sortDirection,
     ]);
@@ -144,7 +169,7 @@ function useHousesTableState(
 
     function clearFilters() {
         setAliasFilter("");
-        // [commit-column] setCommitFilter("");
+        setCommitFilter("");
     }
 
     const showNoSearchResults =
@@ -162,8 +187,8 @@ function useHousesTableState(
         setFiltersVisible,
         aliasFilter,
         setAliasFilter,
-        // [commit-column] commitFilter,
-        // [commit-column] setCommitFilter,
+        commitFilter,
+        setCommitFilter,
         okCount,
         alertCount,
         filteredSorted,
@@ -213,16 +238,16 @@ function HousesCardHeader({
 function HousesCardFilters({
     filtersVisible,
     aliasFilter,
-    // [commit-column] commitFilter,
+    commitFilter,
     setAliasFilter,
-    // [commit-column] setCommitFilter,
+    setCommitFilter,
     clearFilters,
 }: {
     filtersVisible: boolean;
     aliasFilter: string;
-    // [commit-column] commitFilter: string;
+    commitFilter: string;
     setAliasFilter: (value: string) => void;
-    // [commit-column] setCommitFilter: (value: string) => void;
+    setCommitFilter: (value: string) => void;
     clearFilters: () => void;
 }) {
     return (
@@ -241,7 +266,6 @@ function HousesCardFilters({
                     />
                 </div>
             </div>
-            {/* [commit-column]
             <div className="search-group commit">
                 <div className="search-input-wrapper">
                     <i className="bi bi-search search-icon" aria-hidden />
@@ -256,7 +280,6 @@ function HousesCardFilters({
                     />
                 </div>
             </div>
-            */}
             <button
                 type="button"
                 className="clear-filters-btn"
@@ -279,11 +302,11 @@ function HousesCardTable({
     rowSelectedClass,
     showNoSearchResults,
 }: {
-    homes: HouseSummary[];
+    homes: AnyHouseSummary[];
     refreshTime: DateTime;
     sortClass: (column: SortColumn) => string;
     onSortHeaderClick: (column: SortColumn) => void;
-    onRowActivate: (home: HouseSummary) => void;
+    onRowActivate: (home: AnyHouseSummary) => void;
     rowSelectedClass: (id: string) => string;
     showNoSearchResults: boolean;
 }) {
@@ -300,7 +323,6 @@ function HousesCardTable({
                         >
                             Alias
                         </th>
-                        {/* [commit-column]
                         <th
                             data-sort="commit"
                             className={sortClass("commit")}
@@ -309,7 +331,6 @@ function HousesCardTable({
                         >
                             Commit
                         </th>
-                        */}
                         <th
                             data-sort="status"
                             className={sortClass("status")}
@@ -350,11 +371,9 @@ function HousesCardTable({
                                         {h.DisplayName ?? h.GNodeAlias}
                                     </span>
                                 </td>
-                                {/* [commit-column]
-                                <td className="json-cell text-muted">
-                                    {h.commit || "N/A"}
+                                <td className="json-cell">
+                                    <ScadaCommitCell h={h} />
                                 </td>
-                                */}
                                 <td>{formatHouseStatusLabel(h)}</td>
                                 <td>
                                     {h.LongestRunningZoneName ?
@@ -398,8 +417,8 @@ export default function HousesTableCard() {
         setFiltersVisible,
         aliasFilter,
         setAliasFilter,
-        // [commit-column] commitFilter,
-        // [commit-column] setCommitFilter,
+        commitFilter,
+        setCommitFilter,
         okCount,
         alertCount,
         filteredSorted,
@@ -409,7 +428,7 @@ export default function HousesTableCard() {
         sortClass,
     } = useHousesTableState(homes, session!.refreshTime);
 
-    function selectHouse(h: HouseSummary) {
+    function selectHouse(h: AnyHouseSummary) {
         const root = pathRoot ?? "installations";
         const targetRoot = root === "installations" ? "real-time" : root;
         navigate(
@@ -418,7 +437,7 @@ export default function HousesTableCard() {
         );
     }
 
-    function onRowActivate(h: HouseSummary) {
+    function onRowActivate(h: AnyHouseSummary) {
         if (isSelectionMode) {
             toggleInstallationSelection(String(h.GNodeAlias));
             return;
@@ -458,7 +477,9 @@ export default function HousesTableCard() {
                     <HousesCardFilters
                         filtersVisible={filtersVisible}
                         aliasFilter={aliasFilter}
+                        commitFilter={commitFilter}
                         setAliasFilter={setAliasFilter}
+                        setCommitFilter={setCommitFilter}
                         clearFilters={clearFilters}
                     />
 

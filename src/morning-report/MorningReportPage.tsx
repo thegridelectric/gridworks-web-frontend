@@ -15,7 +15,7 @@ import GridWorksApi from '../_util/GridWorksApi';
 import './MorningReportPage.css';
 import { DateTime } from 'luxon';
 import MultiInstallationDisplay from '../_shared/MultiInstallationDisplay';
-import type { HouseSummary } from '../sema/types/HouseSummary';
+import type { AnyHouseSummary } from '../sema/types/AnyHouseSummary';
 
 const MESSAGE_TYPES = [
     { value: 'gridworks.event.problem', label: 'gridworks.event.problem' },
@@ -35,7 +35,7 @@ function dataColumnKeys(data: MorningReportData): string[] {
 
 function aliasesForQuery(
     selectedIds: ReadonlySet<string>,
-    installations: HouseSummary[],
+    installations: AnyHouseSummary[],
 ): string {
     if (selectedIds.size === 0) {
         return '';

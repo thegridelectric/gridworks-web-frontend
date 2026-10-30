@@ -2,6 +2,9 @@
  *  format definitions and regenerate. */
 import { z } from 'zod';
 
+/** Sema: https://schemas.electricity.works/formats/git.commit */
+export const GitCommit = z.string().regex(/^[0-9a-f]{40}(-dirty)?$/, 'Fails GitCommit format');
+
 /** Sema: https://schemas.electricity.works/formats/handle.name */
 export const HandleName = z
     .string()

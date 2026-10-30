@@ -1,4 +1,5 @@
 export * from './ActorClass';
+export * from './CommitStanding';
 export * from './DashboardRole';
 export * from './DispatchRefusalReason';
 export * from './EmissionMethod';

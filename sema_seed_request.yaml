@@ -18,6 +18,7 @@ initial_targets:
       versions: ["003"]
     gw1.unit:
       versions: ["000", "001", "003"]
+    gw.commit.standing: {}
     gw.dashboard.role: {}
     gw.dispatch.refusal.reason: {}
     gw.standby.posture: {}
