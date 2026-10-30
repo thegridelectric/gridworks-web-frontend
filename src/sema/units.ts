@@ -2,10 +2,10 @@
  *  hover format. Keys are values of `spaceheat.telemetry.name` (a data
  *  channel's TelemetryName) and `gw1.unit` (a derived channel's
  *  OutputUnit). A unit with no row is shown as the raw integer. */
-import type { Gw1Unit } from './enums/Gw1Unit';
+import type { Unit } from './enums/Unit';
 import type { SpaceheatTelemetryName } from './enums/SpaceheatTelemetryName';
 
-export type ChannelUnitValue = SpaceheatTelemetryName | Gw1Unit;
+export type ChannelUnitValue = SpaceheatTelemetryName | Unit;
 export type ConverterFunction = (x: number) => number;
 
 export const C2F: ConverterFunction = (c) => (9 * c) / 5 + 32;

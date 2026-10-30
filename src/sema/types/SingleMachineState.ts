@@ -23,5 +23,5 @@ function checkAxiom1(s: { StateEnum: string; State: string }): boolean {
     if (s.StateEnum !== 'relay.closed.or.open') {
         return true;
     }
-    return RelayClosedOrOpen.safeParse(s.State).success;
+    return (RelayClosedOrOpen.options as readonly string[]).includes(s.State);
 }

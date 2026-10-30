@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Gw1Quantity } from '../enums/Gw1Quantity';
+import { Quantity } from '../enums/Quantity';
 import { SpaceheatTelemetryName } from '../enums/SpaceheatTelemetryName';
 import { LeftRightDot, SpaceheatName, UtcSeconds, Uuid4Str } from '../formats';
 import { projectTelemetryName } from './SpaceheatTelemetryQuantityProjection';
@@ -12,7 +12,7 @@ export const DataChannelGt = z
         AboutNodeName: SpaceheatName,
         CapturedByNodeName: SpaceheatName,
         TelemetryName: SpaceheatTelemetryName,
-        Quantity: Gw1Quantity,
+        Quantity: Quantity,
         TerminalAssetAlias: LeftRightDot,
         StartS: UtcSeconds.optional(),
         Id: Uuid4Str,
@@ -25,6 +25,6 @@ export const DataChannelGt = z
     });
 export type DataChannelGt = z.infer<typeof DataChannelGt>;
 
-function checkAxiom1(c: { TelemetryName: SpaceheatTelemetryName; Quantity: Gw1Quantity }): boolean {
+function checkAxiom1(c: { TelemetryName: SpaceheatTelemetryName; Quantity: Quantity }): boolean {
     return projectTelemetryName(c.TelemetryName) === c.Quantity;
 }

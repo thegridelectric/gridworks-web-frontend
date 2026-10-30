@@ -17,7 +17,7 @@ import {
 import { DEFAULT_HEATING_PARAMS, type HeatingParams } from './types';
 
 import './ParametersPage.css';
-import type { HouseSummary } from '../sema';
+import type { AnyHouseSummary } from '../sema/types/AnyHouseSummary';
 
 function useHtmlThemeMutationTick() {
     const [tick, setTick] = useState(0);
@@ -30,7 +30,7 @@ function useHtmlThemeMutationTick() {
     return tick;
 }
 
-function ParametersCard({ installation }: { installation: HouseSummary | undefined }) {
+function ParametersCard({ installation }: { installation: AnyHouseSummary | undefined }) {
     const hasHouse = Boolean(installation);
     const [params, setParams] = useState<HeatingParams>(() => ({ ...DEFAULT_HEATING_PARAMS }));
 

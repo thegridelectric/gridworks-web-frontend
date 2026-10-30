@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { Gw1EmissionMethod } from '../enums/Gw1EmissionMethod';
-import { Gw1Quantity } from '../enums/Gw1Quantity';
-import { Gw1Unit } from '../enums/Gw1Unit';
+import { EmissionMethod } from '../enums/EmissionMethod';
+import { Quantity } from '../enums/Quantity';
+import { Unit } from '../enums/Unit';
 import { LeftRightDot, PositiveInt, SpaceheatName, Uuid4Str } from '../formats';
-import { projectUnit } from './Gw1UnitQuantityProjection';
+import { projectUnit } from './UnitQuantityProjection';
 
 /** Sema: https://schemas.electricity.works/types/derived.channel.gt/003 */
 export const DerivedChannelGt = z
@@ -13,9 +13,9 @@ export const DerivedChannelGt = z
         CreatedByNodeName: SpaceheatName,
         Strategy: SpaceheatName,
         InputChannelNames: z.array(SpaceheatName),
-        OutputUnit: Gw1Unit,
-        OutputQuantity: Gw1Quantity,
-        EmissionMethod: Gw1EmissionMethod,
+        OutputUnit: Unit,
+        OutputQuantity: Quantity,
+        EmissionMethod: EmissionMethod,
         AsyncEmitDelta: PositiveInt.optional(),
         EmitPeriodS: PositiveInt.optional(),
         Parameters: z.record(z.string(), z.unknown()).optional(),
@@ -34,7 +34,7 @@ export const DerivedChannelGt = z
     });
 export type DerivedChannelGt = z.infer<typeof DerivedChannelGt>;
 
-export function checkAxiom1(c: { EmissionMethod: Gw1EmissionMethod; AsyncEmitDelta?: number; EmitPeriodS?: number }): boolean {
+export function checkAxiom1(c: { EmissionMethod: EmissionMethod; AsyncEmitDelta?: number; EmitPeriodS?: number }): boolean {
     const period = c.EmitPeriodS !== undefined;
     const delta = c.AsyncEmitDelta !== undefined;
     switch (c.EmissionMethod) {
@@ -47,6 +47,6 @@ export function checkAxiom1(c: { EmissionMethod: Gw1EmissionMethod; AsyncEmitDel
     }
 }
 
-function checkAxiom2(c: { OutputUnit: Gw1Unit; OutputQuantity: Gw1Quantity }): boolean {
+function checkAxiom2(c: { OutputUnit: Unit; OutputQuantity: Quantity }): boolean {
     return projectUnit(c.OutputUnit) === c.OutputQuantity;
 }

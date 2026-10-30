@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { Gw1Unit } from '../enums/Gw1Unit';
+import { Unit } from '../enums/Unit';
 import { SpaceheatTelemetryName } from '../enums/SpaceheatTelemetryName';
-import { projectUnit } from '../types/Gw1UnitQuantityProjection';
+import { projectUnit } from '../types/UnitQuantityProjection';
 import { projectTelemetryName } from '../types/SpaceheatTelemetryQuantityProjection';
 import { UNIT_CONVERSIONS, UNIT_HOVER_FORMATS, getHoverTemplate, getValueConverter, toDisplayValue } from '../units';
 
@@ -18,7 +18,7 @@ describe('the unit table', () => {
     });
 
     it('has a conversion and a hover format for every temperature, flow, power and energy unit', () => {
-        for (const unit of Gw1Unit.options) {
+        for (const unit of Unit.options) {
             if (DISPLAYED_QUANTITIES.has(projectUnit(unit))) {
                 expect(UNIT_CONVERSIONS[unit], unit).toBeDefined();
                 expect(UNIT_HOVER_FORMATS[unit], unit).toBeDefined();

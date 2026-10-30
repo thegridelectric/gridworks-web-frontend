@@ -1,7 +1,7 @@
 import { isAxiosError } from "axios";
 import type { DateTime } from "luxon";
 import GridWorksApi from "../_util/GridWorksApi";
-import type { StopgapPriceForecast } from "../sema";
+import { StopgapPriceForecast } from "../sema/types/StopgapPriceForecast";
 
 /** The price panel's series: the word's two price lists plus Total, a
  *  display sum of the two computed here (no word states a total price). */
@@ -28,8 +28,8 @@ export async function fetchPriceForecast(params: {
 }): Promise<PriceSeries> {
     let forecast: StopgapPriceForecast;
     try {
-        const res = await GridWorksApi.get<StopgapPriceForecast>('/api/v2/price-forecast/latest');
-        forecast = res.data;
+        const res = await GridWorksApi.get<unknown>('/api/v2/price-forecast/latest');
+        forecast = StopgapPriceForecast.parse(res.data);
     } catch (error: unknown) {
         const detail = isAxiosError(error) ? error.response?.data?.detail : undefined;
         const errMsg = detail || (error instanceof Error ? error.message : `Unknown error type ${typeof error}`);

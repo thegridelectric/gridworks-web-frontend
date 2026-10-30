@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { Gw1Quantity } from '../enums/Gw1Quantity';
+import { Quantity } from '../enums/Quantity';
 import { SpaceheatTelemetryName } from '../enums/SpaceheatTelemetryName';
 
-const PROJECTION: Record<SpaceheatTelemetryName, Gw1Quantity> = {
+const PROJECTION: Record<SpaceheatTelemetryName, Quantity> = {
     Unknown: 'Unknown',
     PowerW: 'Power',
     WattHours: 'Energy',
@@ -28,7 +28,7 @@ const PROJECTION: Record<SpaceheatTelemetryName, Gw1Quantity> = {
     PercentKeep: 'Percent',
 };
 
-export function projectTelemetryName(telemetryName: SpaceheatTelemetryName): Gw1Quantity {
+export function projectTelemetryName(telemetryName: SpaceheatTelemetryName): Quantity {
     return PROJECTION[telemetryName];
 }
 
@@ -36,7 +36,7 @@ export function projectTelemetryName(telemetryName: SpaceheatTelemetryName): Gw1
 export const SpaceheatTelemetryQuantityProjection = z
     .strictObject({
         TelemetryName: SpaceheatTelemetryName,
-        Quantity: Gw1Quantity,
+        Quantity: Quantity,
         TypeName: z.literal('spaceheat.telemetry.quantity.projection'),
         Version: z.literal('001'),
     })
@@ -46,6 +46,6 @@ export const SpaceheatTelemetryQuantityProjection = z
     });
 export type SpaceheatTelemetryQuantityProjection = z.infer<typeof SpaceheatTelemetryQuantityProjection>;
 
-function checkAxiom1(p: { TelemetryName: SpaceheatTelemetryName; Quantity: Gw1Quantity }): boolean {
+function checkAxiom1(p: { TelemetryName: SpaceheatTelemetryName; Quantity: Quantity }): boolean {
     return projectTelemetryName(p.TelemetryName) === p.Quantity;
 }

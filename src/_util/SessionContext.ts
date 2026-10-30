@@ -1,11 +1,27 @@
 import { DateTime } from 'luxon';
 import { createContext } from 'react';
-import type { HouseSummary } from '../sema';
+import { z } from 'zod';
+import { AnyHouseSummary } from '../sema/types/AnyHouseSummary';
+
+/** The summaries response parsed as `gw.house.summary` words. A summary
+ *  that fails to parse is left out and warned about, so one house's seam
+ *  fault does not blank the dashboard for the rest. */
+export function parseHouseSummaries(data: unknown): AnyHouseSummary[] {
+    const items = z.array(z.unknown()).parse(data);
+    return items.flatMap((item) => {
+        const parsed = AnyHouseSummary.safeParse(item);
+        if (!parsed.success) {
+            console.warn('gw.house.summary does not parse', item, parsed.error.issues);
+            return [];
+        }
+        return [parsed.data];
+    });
+}
 
 export function installationRoleForGNode(
-    installationRoles: HouseSummary[] | undefined,
+    installationRoles: AnyHouseSummary[] | undefined,
     gNode: string | undefined,
-): HouseSummary | undefined {
+): AnyHouseSummary | undefined {
     if (!installationRoles?.length || gNode == null || gNode === '') {
         return undefined;
     }
@@ -17,7 +33,7 @@ export interface Session {
     username: string;
     isSystemAdmin: boolean;
     refreshTime: DateTime;
-    installations: HouseSummary[];
+    installations: AnyHouseSummary[];
 }
 
 

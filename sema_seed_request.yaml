@@ -1,0 +1,32 @@
+# The sema seed request for the browser's snapshot (src/sema). Copied from
+# sema's template_seed_request.yaml; formats come in through the closure.
+initial_targets:
+  types:
+    channel.readings.list.item: {}
+    gw.house.operating.status: {}
+    gw.house.summary: {}
+    gw.stopgap.price.forecast: {}
+    operating.state.sequence: {}
+    synced.readings.bundle: {}
+  enums:
+    gw1.actor.class:
+      versions: ["014"]
+    gw1.emission.method: {}
+    gw1.seasonal.storage.mode: {}
+    gw1.service.mode: {}
+    gw1.quantity:
+      versions: ["003"]
+    gw1.unit:
+      versions: ["000", "001", "003"]
+    gw.commit.standing: {}
+    gw.dashboard.role: {}
+    gw.dispatch.refusal.reason: {}
+    gw.standby.posture: {}
+    gw.top.state: {}
+    relay.closed.or.open: {}
+    spaceheat.telemetry.name:
+      versions: ["006", "007"]
+    ta.validation.state: {}
+
+local_names:
+  strip_prefixes: [gw1, gw]

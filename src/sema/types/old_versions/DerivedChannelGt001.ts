@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { Gw1EmissionMethod } from '../../enums/Gw1EmissionMethod';
-import { Gw1Unit000 } from '../../enums/old_versions/Gw1Unit000';
+import { EmissionMethod } from '../../enums/EmissionMethod';
+import { Unit000 } from '../../enums/old_versions/Unit000';
 import { LeftRightDot, PositiveInt, SpaceheatName, Uuid4Str } from '../../formats';
 import { checkAxiom1 } from '../DerivedChannelGt';
 
@@ -12,8 +12,8 @@ export const DerivedChannelGt001 = z
         CreatedByNodeName: SpaceheatName,
         Strategy: SpaceheatName,
         InputChannelNames: z.array(SpaceheatName),
-        OutputUnit: Gw1Unit000.optional(),
-        EmissionMethod: Gw1EmissionMethod,
+        OutputUnit: Unit000.optional(),
+        EmissionMethod: EmissionMethod,
         AsyncEmitDelta: PositiveInt.optional(),
         EmitPeriodS: PositiveInt.optional(),
         Parameters: z.record(z.string(), z.unknown()).optional(),

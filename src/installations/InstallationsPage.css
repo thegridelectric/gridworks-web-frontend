@@ -328,3 +328,18 @@
         padding: 0.3rem 0.5rem;
     }
 }
+
+/* The Houses card's commit cell, by where the scada's commit stands. */
+.houses-card .commit-on-main {
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.houses-card .commit-behindmain,
+.houses-card .commit-offmain {
+    color: var(--text-color);
+}
+
+.houses-card .commit-dirty {
+    color: var(--danger-color);
+}

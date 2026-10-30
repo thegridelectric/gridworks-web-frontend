@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Gw1ActorClass } from '../enums/Gw1ActorClass';
+import { ActorClass } from '../enums/ActorClass';
 import { HandleName, PositiveInt, SpaceheatName, Uuid4Str } from '../formats';
 
 /** Sema: https://schemas.electricity.works/types/spaceheat.node.gt/303 */
@@ -8,7 +8,7 @@ export const SpaceheatNodeGt = z
         Name: SpaceheatName,
         ActorHierarchyName: HandleName.optional(),
         Handle: HandleName.optional(),
-        ActorClass: Gw1ActorClass,
+        ActorClass: ActorClass,
         DisplayName: z.string().optional(),
         ComponentId: Uuid4Str.optional(),
         BoardComponentId: Uuid4Str.optional(),
@@ -32,7 +32,7 @@ function endsWithNameUniquely(dotted: string, name: string): boolean {
     return segments[segments.length - 1] === name && new Set(segments).size === segments.length;
 }
 
-function checkAxiom1(n: { Name: string; ActorClass: Gw1ActorClass; ActorHierarchyName?: string }): boolean {
+function checkAxiom1(n: { Name: string; ActorClass: ActorClass; ActorHierarchyName?: string }): boolean {
     if (n.ActorClass === 'NoActor') {
         return n.ActorHierarchyName === undefined;
     }

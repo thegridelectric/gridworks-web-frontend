@@ -5,7 +5,8 @@
  *  browser does not read. They go when the TypeScript emitter generates the
  *  full words. */
 import { z } from 'zod';
-import { LeftRightDot, UtcMilliseconds, Uuid4Str } from '../../formats';
+import { SeasonalStorageMode } from '../../enums/SeasonalStorageMode';
+import { LeftRightDot, PositiveInt, UtcMilliseconds, Uuid4Str } from '../../formats';
 import { DataChannelGt001 } from './DataChannelGt001';
 import { DataChannelGt002 } from './DataChannelGt002';
 import { DerivedChannelGt000 } from './DerivedChannelGt000';
@@ -15,6 +16,9 @@ export const LayoutLite011Reader = z.looseObject({
     FromGNodeAlias: LeftRightDot,
     MessageCreatedMs: UtcMilliseconds,
     MessageId: Uuid4Str,
+    Strategy: z.string(),
+    SeasonalStorageMode: SeasonalStorageMode,
+    TotalStoreTanks: PositiveInt,
     ZoneList: z.array(z.string()),
     CriticalZoneList: z.array(z.string()),
     DataChannels: z.array(DataChannelGt001),
@@ -28,6 +32,9 @@ export const LayoutLite012Reader = z.looseObject({
     FromGNodeAlias: LeftRightDot,
     MessageCreatedMs: UtcMilliseconds,
     MessageId: Uuid4Str,
+    Strategy: z.string(),
+    SeasonalStorageMode: SeasonalStorageMode,
+    TotalStoreTanks: PositiveInt,
     ZoneList: z.array(z.string()),
     CriticalZoneList: z.array(z.string()),
     DataChannels: z.array(DataChannelGt002),

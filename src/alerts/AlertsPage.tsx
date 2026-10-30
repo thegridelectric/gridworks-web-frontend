@@ -8,11 +8,11 @@ import { useHouseTableSelection } from '../_util/useHouseTableSelection';
 import { NEW_YORK_TIME_ZONE } from '../_util/newYorkTime';
 
 import './AlertsPage.css';
-import type { HouseSummary } from '../sema';
+import type { AnyHouseSummary } from '../sema/types/AnyHouseSummary';
 import GridWorksApi from '../_util/GridWorksApi';
 
 const LOOKBACK_DAYS = 10;
-const EMPTY_INSTALLATIONS: HouseSummary[] = [];
+const EMPTY_INSTALLATIONS: AnyHouseSummary[] = [];
 
 export type AlertRow = {
     time_sent: number;
@@ -25,7 +25,7 @@ export type AlertRow = {
 
 function selectedAliasList(
     selectedIds: ReadonlySet<string>,
-    installations: HouseSummary[],
+    installations: AnyHouseSummary[],
 ): string[] {
     if (selectedIds.size === 0) {
         return [];
