@@ -481,7 +481,10 @@ const LC_STATE_CONFIG: PlotConfig = {
 
 const WEATHER_CONFIG: PlotConfig = {
     title: 'Weather Forecasts',
-    plotType: 'WeatherForecast'
+    plotType: 'WeatherForecast',
+    yAxis1: {
+        titleText: 'Temperature [°F]',
+    },
 }
 
 export const PLOT_CONFIGS = [

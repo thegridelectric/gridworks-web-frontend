@@ -6,6 +6,11 @@ initial_targets:
     gw.house.operating.status: {}
     gw.house.summary: {}
     gw.stopgap.price.forecast: {}
+    # Both versions the journal holds: the service's 001 emissions have no
+    # ForecastUid and no upgrade path to 002.
+    gw.weather.forecast:
+      versions: ["001", "002"]
+    gw.weather.forecast.bundle.gt: {}
     operating.state.sequence: {}
     synced.readings.bundle: {}
   enums:
@@ -23,6 +28,7 @@ initial_targets:
     gw.dispatch.refusal.reason: {}
     gw.standby.posture: {}
     gw.top.state: {}
+    gw.weather.forecast.fidelity: {}
     relay.closed.or.open: {}
     spaceheat.telemetry.name:
       versions: ["006", "007"]
