@@ -16,6 +16,15 @@ export const LeftRightDot = z
     .min(1)
     .regex(/^[a-z][a-z0-9]*(\.[a-z0-9]+)*$/, 'Fails LeftRightDot format');
 
+/** Sema: https://schemas.electricity.works/formats/lowercase.token */
+export const LowercaseToken = z.string().regex(/^[a-z][a-z0-9]*$/, 'Fails LowercaseToken format');
+
+/** Sema: https://schemas.electricity.works/formats/non.empty.string */
+export const NonEmptyString = z.string().min(1);
+
+/** Sema: https://schemas.electricity.works/formats/non.negative.int */
+export const NonNegativeInt = z.number().int().min(0);
+
 /** Sema: https://schemas.electricity.works/formats/pascal.case */
 export const PascalCase = z.string().regex(/^[A-Z][A-Za-z0-9]*$/, 'Fails PascalCase format');
 

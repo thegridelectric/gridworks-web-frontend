@@ -12,3 +12,4 @@ export * from './StandbyPosture';
 export * from './TaValidationState';
 export * from './TopState';
 export * from './Unit';
+export * from './WeatherForecastFidelity';

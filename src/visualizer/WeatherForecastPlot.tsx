@@ -1,14 +1,11 @@
-
-
-
-
 import Plot, { type PlotParams } from "react-plotly.js";
 import React, { useEffect, useState } from "react";
 import { formatForDisplay, formatHourStartSForDisplay, type PlotConfig } from "./plot-configs";
 import { PlotlyWrapper } from "./PlotlyWrapper";
 import { generateDefaultPlotInfo, type TraceWithData } from "./DefaultVisualizerPlot";
 import type { DateTime } from "luxon";
-import GridWorksApi from "../_util/GridWorksApi";
+import { fetchForecastRuns, type ForecastRuns } from "./weather-api";
+import { houseWeatherBundle } from "./house-weather-bundles";
 
 
 export interface WeatherForecastPlotParams {
@@ -19,46 +16,6 @@ export interface WeatherForecastPlotParams {
     plotParams: Partial<PlotParams>,
     showPoints: boolean,
     isDarkMode: boolean
-}
-
-interface WeatherForecastMessage {
-    // Note that we are ignoring the time included in the message, 
-    // and assuming that the time intervals are always 1 hour
-    // Time: number[],
-    OatF: number[],
-    ForecastCreatedS: number,
-}
-
-interface WeatherForecastRun {
-    times_ms: number[];
-    oat_f: number[];
-    run_index: number;
-    is_latest: boolean;
-}
-
-export function parseWeatherForecastMessages(weatherForecasts: WeatherForecastMessage[]): WeatherForecastRun[] {
-    // Deduplicate by hour, keeping the last message per hour (same as dict assignment in Python).
-    const oatForecasts = new Map<number, number[]>();
-    for (const message of weatherForecasts) {
-        const forecastStartTime = Math.floor(message.ForecastCreatedS / 3600) * 3600;
-        oatForecasts.set(forecastStartTime, message.OatF);
-    }
-
-    const runs: WeatherForecastRun[] = [];
-    const n = oatForecasts.size;
-    let i = 0;
-    for (const [weatherTime, oat] of oatForecasts) {
-        const timesS = Array.from({ length: oat.length }, (_, j) => weatherTime + 3600 * j);
-        runs.push({
-            times_ms: timesS.map((t) => t * 1000),
-            oat_f: [...oat],
-            run_index: i,
-            is_latest: i === n - 1,
-        });
-        i++;
-    }
-
-    return runs;
 }
 
 const RDBU_REV = [
@@ -75,11 +32,13 @@ const RDBU_REV = [
     '#053061'
 ];
 
+/** Every temperature forecast run the house's bundle emitted over the
+ *  window, the newest in red and the older ones fading by age. */
 export default function WeatherForecastPlot(props: WeatherForecastPlotParams) {
 
 
     const { startDate, endDate, installationGNode } = props
-    const [weatherData, setWeatherData] = useState<WeatherForecastRun[] | null>(null);
+    const [weatherData, setWeatherData] = useState<ForecastRuns | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
 
@@ -88,21 +47,19 @@ export default function WeatherForecastPlot(props: WeatherForecastPlotParams) {
             setIsLoading(true);
             setPlotError(null);
             setWeatherData(null);
+            const bundleName = houseWeatherBundle(installationGNode);
+            if (!bundleName) {
+                setPlotError(`No weather bundle is known for ${installationGNode}`);
+                setIsLoading(false);
+                return;
+            }
             try {
-                const apiResult = await GridWorksApi.get<WeatherForecastMessage[]>(
-                    `/api/v2/installations/${installationGNode}/messages`, 
-                    {
-                        params: {
-                            start: startDate.minus({ hours: 24 }).toISO(),
-                            end: endDate.toISO(),
-                            message_types: 'weather.forecast'
-                        }
-                    }
-                )
-
-                const weatherMessages = apiResult.data.filter(m => !!m);
-                const parsedData = parseWeatherForecastMessages(weatherMessages);
-                setWeatherData(parsedData);
+                const runs = await fetchForecastRuns({ bundleName, startDate, endDate, quantity: 'Temperature' });
+                if (!runs) {
+                    setPlotError(`Bundle ${bundleName} forecasts no temperature`);
+                } else {
+                    setWeatherData(runs);
+                }
             } catch (error) {
                 const message = error instanceof Error ? error.message : 'Unknown error';
                 setPlotError(message);
@@ -116,19 +73,20 @@ export default function WeatherForecastPlot(props: WeatherForecastPlotParams) {
 
     let content: React.ReactNode;
     if (weatherData) {
-        const tracesWithData: TraceWithData[] = weatherData.map((data, idx) => ({
+        const n = weatherData.runs.length;
+        const tracesWithData: TraceWithData[] = weatherData.runs.map((run, idx) => ({
             seriesName: '',
-            unit: undefined,
-            xValues: data.times_ms.map(ms => formatHourStartSForDisplay(ms / 1000)),
-            yValues: data.oat_f,
+            unit: weatherData.unit,
+            xValues: run.sliceStartsS.map(formatHourStartSForDisplay),
+            yValues: run.values,
             trace: {
                 dataSeriesName: '',
                 lineShape: 'hv' as const,
-                opacity: data.is_latest ? 1 : 0.2,
-                color: data.is_latest ? 'red' : RDBU_REV[Math.floor((idx / weatherData.length) * (RDBU_REV.length - 1))]
+                opacity: idx === n - 1 ? 1 : 0.2,
+                color: idx === n - 1 ? 'red' : RDBU_REV[Math.floor((idx / n) * (RDBU_REV.length - 1))]
             }
         }));
-        
+
         const { plotlyData, plotlyLayout } = generateDefaultPlotInfo({
             plotConfig: props.plotConfig,
             tracesWithData,
@@ -140,7 +98,7 @@ export default function WeatherForecastPlot(props: WeatherForecastPlotParams) {
         content = <Plot data={plotlyData} layout={plotlyLayout} {...props.plotParams} />
 
     } else if (isLoading) {
-        content = <div className="loader" aria-label="Loading price data" />;
+        content = <div className="loader" aria-label="Loading weather forecasts" />;
     } else if (plotError) {
         content = <div className="alert alert-danger mt-3 mb-0" role="alert">{plotError}</div>
     }
