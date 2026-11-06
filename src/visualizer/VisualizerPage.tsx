@@ -218,7 +218,7 @@ export default function VisualizerPage() {
             await GridWorksApi.get(
                 `/api/v2/installations/${installationGNode}/flo.download`,
                 {
-                    timeout: 60000, // FLO can take quite a while to process
+                    timeout: 150000, // the solver is allowed 2.5 minutes
                     responseType: 'blob',
                     params: {
                         time: endDate.toISO(),
