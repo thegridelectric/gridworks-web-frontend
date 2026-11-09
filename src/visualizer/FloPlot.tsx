@@ -27,6 +27,8 @@ export interface FloPlotData {
         hpKw: number[];
         loadKw: number[];
         priceUsdMwh: number[];
+        priceNormalizedUsdMwh: number[];
+        thermalPriceUsdMwh: number[];
         yRange: [number, number] | null;
     };
     storage: {
@@ -76,14 +78,28 @@ export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean 
         trace({
             type: "scatter",
             mode: "lines",
-            name: "Electricity price",
+            name: "Thermal price",
             x: plot.power.time,
-            y: plot.power.priceUsdMwh,
+            y: plot.power.thermalPriceUsdMwh,
             xaxis: "x",
             yaxis: "y2",
             legend: "legend2",
             line: { shape: "hv", color: "rgba(128,128,128,0.6)", width: 1.5 },
-            hovertemplate: "%{y:.1f} $/MWh<extra>Electricity price</extra>",
+            hovertemplate: "%{y:.1f} $/MWh_th<extra>Thermal price</extra>",
+        }),
+        trace({
+            type: "scatter",
+            mode: "lines",
+            name: "Elec price (normalized)",
+            x: plot.power.time,
+            y: plot.power.priceNormalizedUsdMwh,
+            customdata: plot.power.priceUsdMwh,
+            xaxis: "x",
+            yaxis: "y2",
+            legend: "legend2",
+            visible: "legendonly",
+            line: { shape: "hv", color: "rgba(190,190,190,0.55)", width: 1.5 },
+            hovertemplate: "%{customdata:.1f} $/MWh<extra>Electricity price</extra>",
         }),
         ...plot.storage.layers.map((layer) => trace({
             type: "bar",
@@ -177,7 +193,7 @@ export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean 
         },
         yaxis2: {
             ...base.yaxis2,
-            title: { text: "Electricity price [$/MWh]" },
+            title: { text: "Thermal price [$/MWh_th]" },
             overlaying: "y",
             side: "right",
             showgrid: false,
