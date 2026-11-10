@@ -3,6 +3,13 @@
 initial_targets:
   types:
     channel.readings.list.item: {}
+    # Both versions the journal holds: 000 rows have no store state and no
+    # penalties.
+    flo.recommendation:
+      versions: ["000", "001"]
+    # The LTN's request the recommendation answers: the FLO view's price
+    # and load panels.
+    flo.params: {}
     gw.house.operating.status: {}
     gw.house.summary: {}
     gw.stopgap.price.forecast: {}
@@ -19,6 +26,8 @@ initial_targets:
     gw1.emission.method: {}
     gw1.seasonal.storage.mode: {}
     gw1.service.mode: {}
+    market.price.unit: {}
+    market.quantity.unit: {}
     gw1.quantity:
       versions: ["003"]
     gw1.unit:
