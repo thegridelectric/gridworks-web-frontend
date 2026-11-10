@@ -29,16 +29,18 @@ async function fetchSlotWord(
     params: { installationGNode: string; time: DateTime },
     typeName: "flo.recommendation" | "flo.params",
 ): Promise<unknown | null> {
+    // A 404 is the backend's "no FLO ran in this slot" and resolves as a
+    // response here, so the app's response interceptor never rewraps it.
     try {
         const res = await GridWorksApi.get<unknown>(
             `/api/v2/installations/${params.installationGNode}/${typeName}`,
-            { params: { time: params.time.toISO() } },
+            {
+                params: { time: params.time.toISO() },
+                validateStatus: (status) => status === 200 || status === 404,
+            },
         );
-        return res.data;
+        return res.status === 404 ? null : res.data;
     } catch (error: unknown) {
-        if (isAxiosError(error) && error.response?.status === 404) {
-            return null;
-        }
         const detail = isAxiosError(error) ? error.response?.data?.detail : undefined;
         const errMsg = detail || (error instanceof Error ? error.message : `Unknown error type ${typeof error}`);
         throw new Error(`FLO request failed: ${errMsg}`);
