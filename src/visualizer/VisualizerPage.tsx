@@ -3,6 +3,7 @@ import './VisualizerPage.css';
 import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
 import SessionContext, { canViewDataFromDate } from "../_util/SessionContext";
 import {
+    NEW_YORK_TIME_ZONE,
     formatDate,
     formatTime,
     getDefaultDate,
@@ -12,12 +13,17 @@ import { getIsDarkMode } from "../_util/theme";
 import { useRouteInfo } from "../_util/useRouteInfo";
 import GridWorksApi from '../_util/GridWorksApi';
 import { SyncedReadingsBundle } from "../sema/types/SyncedReadingsBundle";
+import type { AnyFloRecommendation } from "../sema/types/AnyFloRecommendation";
+import type { FloParams } from "../sema/types/FloParams";
 import { VisualizerOptionsPanel } from "./VisualizerControls";
 import { CLIENT_ONLY_VISUALIZER_CHANNEL_IDS } from "./visualizerChannels";
 import { useVisualizerControls } from "./useVisualizerControls";
 import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 import { PLOT_CONFIGS } from "./plot-configs";
 import VisualizerPlot from "./VisualizerPlot";
+import FloPlot from "./FloPlot";
+import { fetchParams, fetchRecommendation } from "./flo-api";
+import { defaultPairIndex } from "./flo-path-view";
 import type { VisualizerParams } from "./VisualizerParams";
 
 export default function VisualizerPage() {
@@ -28,6 +34,11 @@ export default function VisualizerPage() {
     const [readingsBundleData, setReadingsBundleData] = useState<SyncedReadingsBundle | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isFloLoading, setIsFloLoading] = useState(false);
+    const [floHourShift, setFloHourShift] = useState<-1 | 1 | null>(null);
+    const [floRecommendation, setFloRecommendation] = useState<AnyFloRecommendation | null>(null);
+    const [floParams, setFloParams] = useState<FloParams | null>(null);
+    const [floPairIndex, setFloPairIndex] = useState(0);
+    const [floNotice, setFloNotice] = useState<string | null>(null);
     const [plotError, setPlotError] = useState<string | null>(null);
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -212,8 +223,12 @@ export default function VisualizerPage() {
         await runPlotQuery(startDateTime, endDateTime);
     }
 
-    async function onFloClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-        event.preventDefault();
+    function shiftEndWall(endDt: Date, hours: number): Date {
+        const ny = wallDateTimeToUtc(endDt).plus({ hours }).setZone(NEW_YORK_TIME_ZONE);
+        return new Date(ny.year, ny.month - 1, ny.day, ny.hour, ny.minute, 0, 0);
+    }
+
+    async function runFloQuery(endDt: Date, hourShift: -1 | 1 | null = null) {
         setPlotError(null);
 
         if (!installationGNode) {
@@ -221,30 +236,50 @@ export default function VisualizerPage() {
             return;
         }
 
-        const endDate = wallDateTimeToUtc(endDateTime);
+        const endDate = wallDateTimeToUtc(endDt);
         if (!canViewDataFromDate(session, [installationGNode], endDate)) {
             window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
             return;
         }
 
+        setEndDateWindow(endDt);
+        setFloHourShift(hourShift);
         setIsFloLoading(true);
         try {
-            await GridWorksApi.get(
-                `/api/v2/installations/${installationGNode}/flo.download`,
-                {
-                    timeout: 60000, // FLO can take quite a while to process
-                    responseType: 'blob',
-                    params: {
-                        time: endDate.toISO(),
-                    }
-                }
-            );
+            const [recommendation, params] = await Promise.all([
+                fetchRecommendation({ installationGNode, time: endDate }),
+                fetchParams({ installationGNode, time: endDate }),
+            ]);
+            setReadingsBundleData(null);
+            setPlottedParams(null);
+            if (recommendation === null) {
+                setFloRecommendation(null);
+                setFloNotice('No FLO was run in this hour');
+            } else {
+                setFloNotice(null);
+                setFloPairIndex(defaultPairIndex(recommendation));
+                setFloRecommendation(recommendation);
+                setFloParams(params);
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
         } finally {
             setIsFloLoading(false);
+            setFloHourShift(null);
         }
+    }
+
+    async function onFloClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        await runFloQuery(endDateTime);
+    }
+
+    function onFloHourShift(hours: number) {
+        if (isLoading || isFloLoading) {
+            return;
+        }
+        void runFloQuery(shiftEndWall(endDateTime, hours), hours < 0 ? -1 : 1);
     }
 
     function onFullscreenToggle() {
@@ -363,6 +398,45 @@ export default function VisualizerPage() {
                 channels={channels}
                 setIncludesChannel={setIncludesChannel}
             />
+
+            {(floRecommendation || floNotice) &&
+                <div className="plot-container border-top">
+                    <div className="d-flex justify-content-center align-items-center gap-2 pt-3">
+                        <button
+                            className={`btn btn-sm btn-outline-secondary flo-hour-btn${floHourShift === -1 ? ' is-loading' : ''}`}
+                            type="button"
+                            aria-label="One hour earlier"
+                            aria-busy={floHourShift === -1}
+                            disabled={isLoading || isFloLoading}
+                            onClick={() => onFloHourShift(-1)}
+                        >
+                            {floHourShift === -1
+                                ? <div className="loader" aria-hidden />
+                                : <i className="bi bi-chevron-left" aria-hidden />}
+                        </button>
+                        <button
+                            className={`btn btn-sm btn-outline-secondary flo-hour-btn${floHourShift === 1 ? ' is-loading' : ''}`}
+                            type="button"
+                            aria-label="One hour later"
+                            aria-busy={floHourShift === 1}
+                            disabled={isLoading || isFloLoading}
+                            onClick={() => onFloHourShift(1)}
+                        >
+                            {floHourShift === 1
+                                ? <div className="loader" aria-hidden />
+                                : <i className="bi bi-chevron-right" aria-hidden />}
+                        </button>
+                    </div>
+                    {floNotice &&
+                        <div className="alert alert-secondary mt-3 mb-0 mx-3" role="status">{floNotice}</div>
+                    }
+                    {floRecommendation &&
+                        <div className="visualizer-server-plots-root">
+                            <FloPlot recommendation={floRecommendation} params={floParams} pairIndex={floPairIndex} isDarkMode={getIsDarkMode()} />
+                        </div>
+                    }
+                </div>
+            }
 
             {readingsBundleData && plottedParams &&
                 <div className="plot-container border-top">

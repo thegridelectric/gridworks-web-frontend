@@ -30,3 +30,27 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+.visualizer-card .flo-hour-btn {
+    min-width: 2rem;
+    justify-content: center;
+}
+
+.visualizer-card .flo-hour-btn .loader {
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
+}
+
+.visualizer-card .flo-hour-btn:disabled,
+.visualizer-card .flo-hour-btn:disabled:hover {
+    opacity: 0.35;
+    cursor: not-allowed;
+    color: var(--text-muted);
+}
+
+.visualizer-card .flo-hour-btn.is-loading:disabled,
+.visualizer-card .flo-hour-btn.is-loading:disabled:hover {
+    opacity: 1;
+    cursor: wait;
+}
