@@ -47,6 +47,9 @@ export interface FloPlotData {
 
 const trace = (value: object): Data => value as Data;
 
+/** Margins for FLO summary + bid so the plot area width aligns. */
+export const FLO_SUMMARY_MARGINS = { t: 64, b: 68, l: 70, r: 78 };
+
 export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean }) {
     const { plot, isDarkMode } = props;
     const base = getDefaultPlotLayout(isDarkMode);
@@ -148,7 +151,7 @@ export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean 
     const layout = {
         ...base,
         height: 820,
-        margin: { t: 64, b: 68, l: 70, r: 78 },
+        margin: FLO_SUMMARY_MARGINS,
         barmode: "overlay",
         title: {
             ...base.title,

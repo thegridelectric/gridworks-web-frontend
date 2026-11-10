@@ -20,7 +20,13 @@ import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 import { PLOT_CONFIGS } from "./plot-configs";
 import VisualizerPlot from "./VisualizerPlot";
 import FloPlot, { type FloPlotData } from "./FloPlot";
+import FloBidPlot, { type FloBidPlotData } from "./FloBidPlot";
 import type { VisualizerParams } from "./VisualizerParams";
+
+interface FloDownload {
+    summary: FloPlotData;
+    bid: FloBidPlotData;
+}
 
 export default function VisualizerPage() {
 
@@ -31,7 +37,7 @@ export default function VisualizerPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isFloLoading, setIsFloLoading] = useState(false);
     const [floHourShift, setFloHourShift] = useState<-1 | 1 | null>(null);
-    const [floPlot, setFloPlot] = useState<FloPlotData | null>(null);
+    const [floPlot, setFloPlot] = useState<FloDownload | null>(null);
     const [floNotice, setFloNotice] = useState<string | null>(null);
     const [plotError, setPlotError] = useState<string | null>(null);
     const [autoRefresh, setAutoRefresh] = useState(false);
@@ -229,7 +235,7 @@ export default function VisualizerPage() {
         setFloHourShift(hourShift);
         setIsFloLoading(true);
         try {
-            const response = await GridWorksApi.get<FloPlotData>(
+            const response = await GridWorksApi.get<FloDownload>(
                 `/api/v2/installations/${installationGNode}/flo.download`,
                 {
                     timeout: 150000, // the solver is allowed 2.5 minutes
@@ -437,7 +443,8 @@ export default function VisualizerPage() {
                     }
                     {floPlot &&
                         <div className="visualizer-server-plots-root">
-                            <FloPlot plot={floPlot} isDarkMode={getIsDarkMode()} />
+                            <FloPlot plot={floPlot.summary} isDarkMode={getIsDarkMode()} />
+                            <FloBidPlot bid={floPlot.bid} isDarkMode={getIsDarkMode()} />
                         </div>
                     }
                 </div>
