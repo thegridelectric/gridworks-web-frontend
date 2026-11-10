@@ -254,7 +254,8 @@ export default function VisualizerPage() {
             setPlottedParams(null);
             if (recommendation === null) {
                 setFloRecommendation(null);
-                setFloNotice('No FLO was run in this hour');
+                const slotStart = endDate.setZone(NEW_YORK_TIME_ZONE).startOf('hour');
+                setFloNotice(`No FLO was run for the slot starting ${slotStart.toFormat('yyyy-LL-dd HH:mm')} ET`);
             } else {
                 setFloNotice(null);
                 setFloPairIndex(defaultPairIndex(recommendation));
