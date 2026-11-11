@@ -10,6 +10,12 @@ export const HandleName = z
     .string()
     .regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*)*$/, 'Fails HandleName format');
 
+/** Sema: https://schemas.electricity.works/formats/hh.mm */
+export const HhMm = z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/, 'Fails HhMm format');
+
+/** Sema: https://schemas.electricity.works/formats/iana.timezone.str */
+export const IanaTimezoneStr = z.string().regex(/^[A-Za-z_]+(\/[A-Za-z0-9_+-]+){0,2}$/, 'Fails IanaTimezoneStr format');
+
 /** Sema: https://schemas.electricity.works/formats/left.right.dot */
 export const LeftRightDot = z
     .string()
