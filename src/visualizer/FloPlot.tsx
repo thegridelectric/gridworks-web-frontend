@@ -29,6 +29,8 @@ export interface FloPlotData {
         priceUsdMwh: number[];
         priceNormalizedUsdMwh: number[];
         thermalPriceUsdMwh: number[];
+        thermalLmpUsdMwh?: number[];
+        thermalLmpNormalizedUsdMwh?: number[];
         yRange: [number, number] | null;
     };
     storage: {
@@ -52,6 +54,10 @@ export const FLO_SUMMARY_MARGINS = { t: 64, b: 68, l: 70, r: 78 };
 
 export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean }) {
     const { plot, isDarkMode } = props;
+    const thermalLmp = plot.power.thermalLmpUsdMwh ?? [];
+    const thermalLmpNormalized =
+        plot.power.thermalLmpNormalizedUsdMwh
+        ?? (thermalLmp.length > 0 ? thermalLmp : []);
     const base = getDefaultPlotLayout(isDarkMode);
     const socColor = isDarkMode ? "rgba(240,240,240,0.75)" : "rgba(0,0,0,0.4)";
 
@@ -90,6 +96,19 @@ export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean 
             line: { shape: "hv", color: "rgba(128,128,128,0.6)", width: 1.5 },
             hovertemplate: "%{y:.1f} $/MWh_th<extra>Thermal price</extra>",
         }),
+        ...(thermalLmpNormalized.length > 0 ? [trace({
+            type: "scatter",
+            mode: "lines",
+            name: "Thermal LMP (normalized)",
+            x: plot.power.time,
+            y: thermalLmpNormalized,
+            customdata: thermalLmp,
+            xaxis: "x",
+            yaxis: "y2",
+            legend: "legend2",
+            line: { shape: "hv", color: "rgba(128,128,128,0.6)", width: 1.5, dash: "dot" },
+            hovertemplate: "%{customdata:.1f} $/MWh_th<extra>Thermal LMP</extra>",
+        })] : []),
         trace({
             type: "scatter",
             mode: "lines",
