@@ -3,25 +3,18 @@ import type { DateTime } from "luxon";
 import GridWorksApi from "../_util/GridWorksApi";
 import { StopgapPriceForecast } from "../sema/types/StopgapPriceForecast";
 
-/** The price panel's series: the word's two price lists plus Total, a
- *  display sum of the two computed here (no word states a total price). */
+/** The price panel's series: the hours of the word's LMP list that fall in
+ *  the window. The word's delivery list is not drawn. */
 export type PriceSeries = {
     HourStartS: number[],
     LmpList: number[],
-    DistList: number[],
-    TotalList: number[],
 };
 
-export const PriceSeriesNames: [keyof PriceSeries, keyof PriceSeries, keyof PriceSeries] = [
-    'LmpList',
-    'TotalList',
-    'DistList',
-]
+export const PriceSeriesNames: [keyof PriceSeries] = ['LmpList'];
 
-/** The hours of the backend's latest forecast from the window start to 48
- *  hours past its end, so the forecast ahead draws beside a window that
- *  ends at now. The forecast covers the next 48 hours from the request, so
- *  a window well in the past gets empty lists. */
+/** The hours of the backend's latest forecast inside the window. The
+ *  forecast covers the next 48 hours from the request, so a window in the
+ *  past gets empty lists and a live window gets its last hours. */
 export async function fetchPriceForecast(params: {
     startDate: DateTime;
     endDate: DateTime;
@@ -36,14 +29,12 @@ export async function fetchPriceForecast(params: {
         throw new Error(`Pricing request failed: ${errMsg}`);
     }
     const startS = params.startDate.toSeconds();
-    const endS = params.endDate.toSeconds() + 48 * 3600;
-    const series: PriceSeries = { HourStartS: [], LmpList: [], DistList: [], TotalList: [] };
+    const endS = params.endDate.toSeconds();
+    const series: PriceSeries = { HourStartS: [], LmpList: [] };
     forecast.HourStartS.forEach((hourStartS, i) => {
         if (hourStartS < startS || hourStartS > endS) return;
         series.HourStartS.push(hourStartS);
         series.LmpList.push(forecast.LmpList[i]);
-        series.DistList.push(forecast.DistList[i]);
-        series.TotalList.push(forecast.LmpList[i] + forecast.DistList[i]);
     });
     return series;
 }

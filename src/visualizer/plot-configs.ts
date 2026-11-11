@@ -376,29 +376,17 @@ const PRICING_CONFIG: PlotConfig = {
     title: 'Price Forecast',
     plotType: 'PriceForecast',
     yAxis1: {
-        titleText: 'Total price [$/MWh]'
-    },
-    yAxis2: {
         titleText: 'LMP [$/MWh]'
     },
     traces: [{
-        dataSeriesName: 'TotalList',
-        dataSource: 'prices',
-        color: 'theme-line-muted',
-        lineShape: 'hv',
-        opacity: 0.8,
-        legendText: 'Total'
-    }, {
         dataSeriesName: 'LmpList',
         dataSource: 'prices',
         color: 'theme-line-muted',
         lineShape: 'hv',
-        lineDash: 'dot',
-        opacity: 0.4,
-        yAxis2: true,
+        opacity: 0.8,
         legendText: 'LMP'
     }]
-}
+};
 
 const TOP_STATE_CONFIG: PlotConfig = {
     title: 'Top State',

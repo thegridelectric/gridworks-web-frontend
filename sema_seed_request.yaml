@@ -6,6 +6,8 @@ initial_targets:
     gw.house.operating.status: {}
     gw.house.summary: {}
     gw.stopgap.price.forecast: {}
+    # The fleet tariff the price panel shades its on-peak hours from.
+    gw.tou.tariff: {}
     # Both versions the journal holds: the service's 001 emissions have no
     # ForecastUid and no upgrade path to 002.
     gw.weather.forecast:
