@@ -41,7 +41,6 @@ export default function VisualizerPage() {
     const [floNotice, setFloNotice] = useState<string | null>(null);
     const [floPrefetchHours, setFloPrefetchHours] = useState('24');
     const [isFloPrefetching, setIsFloPrefetching] = useState(false);
-    const [floPrefetchStatus, setFloPrefetchStatus] = useState<string | null>(null);
     const [plotError, setPlotError] = useState<string | null>(null);
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -300,10 +299,9 @@ export default function VisualizerPage() {
         }
 
         setPlotError(null);
-        setFloPrefetchStatus(null);
         setIsFloPrefetching(true);
         try {
-            const response = await GridWorksApi.post<{ ready: number }>(
+            await GridWorksApi.post<{ ready: number }>(
                 `/api/v2/installations/${installationGNode}/flo.prefetch`,
                 null,
                 {
@@ -313,9 +311,6 @@ export default function VisualizerPage() {
                         hours,
                     },
                 },
-            );
-            setFloPrefetchStatus(
-                `Cached ${response.data.ready} FLO plot${response.data.ready === 1 ? '' : 's'} for the last ${hours} hour${hours === 1 ? '' : 's'}.`,
             );
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
@@ -497,34 +492,6 @@ export default function VisualizerPage() {
             {(floPlot || floNotice) &&
                 <div className="plot-container border-top">
                     <div className="d-flex flex-column align-items-center gap-2 pt-3">
-                        <div className="d-flex justify-content-center align-items-center gap-2 flo-prefetch-row">
-                            <span className="text-muted small">Last</span>
-                            <input
-                                type="number"
-                                className="form-control form-control-sm text-light flo-prefetch-hours"
-                                min={1}
-                                max={48}
-                                value={floPrefetchHours}
-                                disabled={isLoading || isFloLoading || isFloPrefetching}
-                                aria-label="Hours of FLO plots to prefetch"
-                                onChange={(evt) => setFloPrefetchHours(evt.currentTarget.value)}
-                            />
-                            <span className="text-muted small">hours</span>
-                            <button
-                                className={`btn btn-sm btn-outline-secondary${isFloPrefetching ? ' is-loading' : ''}`}
-                                type="button"
-                                aria-busy={isFloPrefetching}
-                                disabled={isLoading || isFloLoading || isFloPrefetching}
-                                onClick={onFloPrefetchClick}
-                            >
-                                {isFloPrefetching
-                                    ? <div className="loader" aria-hidden />
-                                    : 'OK'}
-                            </button>
-                        </div>
-                        {floPrefetchStatus &&
-                            <div className="text-muted small" role="status">{floPrefetchStatus}</div>
-                        }
                         <div className="d-flex justify-content-center align-items-center gap-2">
                         <button
                             className={`btn btn-sm btn-outline-secondary flo-hour-btn${floHourShift === -1 ? ' is-loading' : ''}`}
@@ -561,6 +528,31 @@ export default function VisualizerPage() {
                             <FloBidPlot bid={floPlot.bid} isDarkMode={getIsDarkMode()} />
                         </div>
                     }
+                    <div className="d-flex justify-content-center align-items-center gap-2 flo-prefetch-row pb-3">
+                        <span className="text-muted small">Compute last</span>
+                        <input
+                            type="number"
+                            className="form-control form-control-sm text-light flo-prefetch-hours"
+                            min={1}
+                            max={48}
+                            value={floPrefetchHours}
+                            disabled={isLoading || isFloLoading || isFloPrefetching}
+                            aria-label="Hours of FLO plots to prefetch"
+                            onChange={(evt) => setFloPrefetchHours(evt.currentTarget.value)}
+                        />
+                        <span className="text-muted small">hours</span>
+                        <button
+                            className={`btn btn-sm btn-outline-secondary${isFloPrefetching ? ' is-loading' : ''}`}
+                            type="button"
+                            aria-busy={isFloPrefetching}
+                            disabled={isLoading || isFloLoading || isFloPrefetching}
+                            onClick={onFloPrefetchClick}
+                        >
+                            {isFloPrefetching
+                                ? <div className="loader" aria-hidden />
+                                : 'OK'}
+                        </button>
+                    </div>
                 </div>
             }
 
