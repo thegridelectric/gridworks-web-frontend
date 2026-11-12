@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import './VisualizerPage.css';
 import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
 import SessionContext, { canViewDataFromDate } from "../_util/SessionContext";
@@ -20,12 +20,33 @@ import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 import { PLOT_CONFIGS } from "./plot-configs";
 import VisualizerPlot from "./VisualizerPlot";
 import FloPlot, { type FloPlotData } from "./FloPlot";
+import {
+    emptyFloHorizonBarSelections,
+    FloHorizonBars,
+    floHorizonSelectedPositions,
+    formatFloPenForcedHoursList,
+    type FloHorizonBarSelections,
+} from "./FloHorizonBars";
+import { floHighElecPriceStepMask } from "./floElecPriceHighlight";
+import {
+    floHorizonStepCount,
+    floSummaryXAxisMetricsEqual,
+    type FloSummaryXAxisMetrics,
+} from "./floPlotXAxisMetrics";
 import FloBidPlot, { type FloBidPlotData } from "./FloBidPlot";
+import { FloPenaltyTuning } from "./FloPenaltyTuning";
+import {
+    floPenaltyTuningDraft,
+    floPenaltyTuningFromDraft,
+    type FloPenaltyTuningDraft,
+    type FloPenaltyTuningValues,
+} from "./floPenaltyTuningValues";
 import type { VisualizerParams } from "./VisualizerParams";
 
 interface FloDownload {
     summary: FloPlotData;
     bid: FloBidPlotData;
+    tuning: FloPenaltyTuningValues;
 }
 
 export default function VisualizerPage() {
@@ -38,12 +59,28 @@ export default function VisualizerPage() {
     const [isFloLoading, setIsFloLoading] = useState(false);
     const [floHourShift, setFloHourShift] = useState<-1 | 1 | null>(null);
     const [floPlot, setFloPlot] = useState<FloDownload | null>(null);
+    const [floPlotEndDateTime, setFloPlotEndDateTime] = useState<Date | null>(null);
+    const [isFloRerunning, setIsFloRerunning] = useState(false);
     const [floNotice, setFloNotice] = useState<string | null>(null);
     const [floPrefetchHours, setFloPrefetchHours] = useState('24');
     const [isFloPrefetching, setIsFloPrefetching] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [isFloPenMode, setIsFloPenMode] = useState(false);
+    const [floHorizonBarSelections, setFloHorizonBarSelections] = useState<FloHorizonBarSelections>({
+        top: [],
+        bottom: [],
+    });
+    const [floTuningDraft, setFloTuningDraft] = useState<FloPenaltyTuningDraft>({});
+    const [floPenRerunSummary, setFloPenRerunSummary] = useState<{
+        forcedOn: number[];
+        forcedOff: number[];
+    } | null>(null);
+    const [floSummaryXAxisMetrics, setFloSummaryXAxisMetrics] = useState<FloSummaryXAxisMetrics | null>(null);
+    const onFloSummaryXAxisMetrics = useCallback((next: FloSummaryXAxisMetrics | null) => {
+        setFloSummaryXAxisMetrics((prev) => (floSummaryXAxisMetricsEqual(prev, next) ? prev : next));
+    }, []);
     const {
         channels,
         isShowingOptions,
@@ -250,6 +287,10 @@ export default function VisualizerPage() {
             setPlottedParams(null);
             setFloNotice(null);
             setFloPlot(response.data);
+            setFloPlotEndDateTime(endDt);
+            setFloHorizonBarSelections(emptyFloHorizonBarSelections(floHorizonStepCount(response.data.summary)));
+            setFloTuningDraft(floPenaltyTuningDraft(response.data.tuning ?? {}));
+            setFloPenRerunSummary(null);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             if (message === 'No FLO was run in this hour') {
@@ -275,6 +316,7 @@ export default function VisualizerPage() {
         if (isLoading || isFloLoading || isFloPrefetching) {
             return;
         }
+        setIsFloPenMode(false);
         void runFloQuery(shiftEndWall(endDateTime, hours), hours < 0 ? -1 : 1);
     }
 
@@ -317,6 +359,56 @@ export default function VisualizerPage() {
             setPlotError(message);
         } finally {
             setIsFloPrefetching(false);
+        }
+    }
+
+    const floHighElecPriceSteps = useMemo(() => {
+        if (!floPlot) {
+            return [];
+        }
+        const summary = floPlot.summary;
+        return floHighElecPriceStepMask(
+            summary.power.time,
+            summary.power.priceUsdMwh,
+            floHorizonStepCount(summary),
+        );
+    }, [floPlot]);
+
+    async function onFloPenRerunClick() {
+        if (isLoading || isFloLoading || isFloPrefetching || !installationGNode || !floPlot || !floPlotEndDateTime) {
+            return;
+        }
+        const tuning = floPenaltyTuningFromDraft(floTuningDraft);
+        if (!tuning) {
+            return;
+        }
+        const forcedOn = floHorizonSelectedPositions(floHorizonBarSelections.top);
+        const forcedOff = floHorizonSelectedPositions(floHorizonBarSelections.bottom);
+        setPlotError(null);
+        setIsFloLoading(true);
+        setIsFloRerunning(true);
+        try {
+            const response = await GridWorksApi.post<FloDownload>(
+                `/api/v2/installations/${installationGNode}/flo.rerun`,
+                {
+                    time: wallDateTimeToUtc(floPlotEndDateTime).toISO(),
+                    // The API takes 0-based horizon steps; the bars use 1-based hours.
+                    hp_forced_on_steps: forcedOn.map((hour) => hour - 1),
+                    hp_forced_off_steps: forcedOff.map((hour) => hour - 1),
+                    tuning,
+                },
+                {
+                    timeout: 150000, // the solver is allowed 2.5 minutes
+                }
+            );
+            setFloPlot(response.data);
+            setFloPenRerunSummary(forcedOn.length > 0 || forcedOff.length > 0 ? { forcedOn, forcedOff } : null);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setPlotError(message);
+        } finally {
+            setIsFloLoading(false);
+            setIsFloRerunning(false);
         }
     }
 
@@ -382,7 +474,21 @@ export default function VisualizerPage() {
         setFloPlot(null);
         setFloNotice(null);
         setPlotError(null);
+        setFloSummaryXAxisMetrics(null);
     }, [installationGNode]);
+
+    useEffect(() => {
+        // FloPlot only publishes metrics that changed, so keep them while a plot is replaced.
+        if (!floPlot) {
+            setFloSummaryXAxisMetrics(null);
+        }
+    }, [floPlot]);
+
+    useEffect(() => {
+        if (!isFloPenMode) {
+            setFloSummaryXAxisMetrics(null);
+        }
+    }, [isFloPenMode]);
 
     return (
         <div ref={visualizerCardRef} className={`card visualizer-card${isFullscreen ? ' fullscreen' : ''}`}>
@@ -517,14 +623,74 @@ export default function VisualizerPage() {
                                 ? <div className="loader" aria-hidden />
                                 : <i className="bi bi-chevron-right" aria-hidden />}
                         </button>
+                        <button
+                            className={`btn btn-sm btn-outline-secondary flo-hour-btn${isFloPenMode ? ' is-selected' : ''}`}
+                            type="button"
+                            aria-label="Edit"
+                            aria-pressed={isFloPenMode}
+                            disabled={isLoading || isFloLoading || isFloPrefetching}
+                            onClick={() => setIsFloPenMode((on) => !on)}
+                        >
+                            <i className="bi bi-pencil" aria-hidden />
+                        </button>
                         </div>
+                        {isFloPenMode &&
+                            <div className="flo-pen-controls">
+                                <p className="flo-pen-instructions text-muted small mb-0">
+                                    Re-run the same FLO but forcing the heat pump to be on or off in some of the
+                                    hours. Select the hours to force on (off) in the top (bottom) bar below.
+                                </p>
+                                <FloHorizonBars
+                                    metrics={floSummaryXAxisMetrics}
+                                    highPriceSteps={floHighElecPriceSteps}
+                                    isDarkMode={getIsDarkMode()}
+                                    barSelectedSteps={floHorizonBarSelections}
+                                    onBarSelectedStepsChange={setFloHorizonBarSelections}
+                                />
+                                <FloPenaltyTuning
+                                    draft={floTuningDraft}
+                                    onDraftChange={setFloTuningDraft}
+                                    disabled={isLoading || isFloLoading || isFloPrefetching}
+                                />
+                                <button
+                                    className={`btn btn-sm btn-outline-secondary flo-pen-rerun-btn${isFloRerunning ? ' is-loading' : ''}`}
+                                    type="button"
+                                    aria-busy={isFloRerunning}
+                                    disabled={
+                                        isLoading || isFloLoading || isFloPrefetching || !floPlot
+                                        || floPenaltyTuningFromDraft(floTuningDraft) === null
+                                    }
+                                    onClick={() => void onFloPenRerunClick()}
+                                >
+                                    {isFloRerunning
+                                        ? <div className="loader" aria-hidden />
+                                        : 'Re-run'}
+                                </button>
+                                {floPenRerunSummary &&
+                                    <div className="flo-pen-rerun-summary text-muted small">
+                                        <p className="mb-0">
+                                            Hours forced on:{" "}
+                                            {formatFloPenForcedHoursList(floPenRerunSummary.forcedOn)}
+                                        </p>
+                                        <p className="mb-0">
+                                            Hours forced off:{" "}
+                                            {formatFloPenForcedHoursList(floPenRerunSummary.forcedOff)}
+                                        </p>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
                     {floNotice &&
                         <div className="alert alert-secondary mt-3 mb-0 mx-3" role="status">{floNotice}</div>
                     }
                     {floPlot &&
                         <div className="visualizer-server-plots-root">
-                            <FloPlot plot={floPlot.summary} isDarkMode={getIsDarkMode()} />
+                            <FloPlot
+                                plot={floPlot.summary}
+                                isDarkMode={getIsDarkMode()}
+                                onXAxisMetrics={isFloPenMode ? onFloSummaryXAxisMetrics : undefined}
+                            />
                             <FloBidPlot bid={floPlot.bid} isDarkMode={getIsDarkMode()} />
                         </div>
                     }

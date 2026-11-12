@@ -1,8 +1,14 @@
+import { useCallback, useEffect, useRef } from "react";
 import Plot from "react-plotly.js";
+import type { Figure } from "react-plotly.js";
 import type { Data, Layout, Shape } from "plotly.js";
+import {
+    floSummaryXAxisMetricsEqual,
+    readFloSummaryXAxisMetrics,
+    type FloSummaryXAxisMetrics,
+} from "./floPlotXAxisMetrics";
+import { ELEC_PRICE_HIGHLIGHT_USD_MWH, elecPriceHighlightFillColor } from "./floElecPriceHighlight";
 import { getDefaultPlotLayout } from "./plot-configs";
-
-const ELEC_PRICE_HIGHLIGHT_USD_MWH = 400;
 
 /** Yellow bands on the power panel when forecast electricity exceeds $/MWh threshold. */
 function shapesForHighElecPrice(
@@ -10,9 +16,7 @@ function shapesForHighElecPrice(
     elecPriceUsdMwh: number[],
     isDarkMode: boolean,
 ): Partial<Shape>[] {
-    const fillcolor = isDarkMode
-        ? "rgba(255, 214, 100, 0.11)"
-        : "rgba(255, 244, 190, 0.42)";
+    const fillcolor = elecPriceHighlightFillColor(isDarkMode);
     const shapes: Partial<Shape>[] = [];
     const stepCount = Math.min(times.length - 1, elecPriceUsdMwh.length);
     for (let i = 0; i < stepCount; i++) {
@@ -106,8 +110,79 @@ export const FLO_SUMMARY_MARGINS = { t: 64, b: 68, l: 70, r: 78 };
 /** Plot height; y-axis domains leave 0.08 paper gaps between the three panels. */
 export const FLO_SUMMARY_HEIGHT = 1250;
 
-export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean }) {
-    const { plot, isDarkMode } = props;
+export default function FloPlot(props: {
+    plot: FloPlotData;
+    isDarkMode: boolean;
+    onXAxisMetrics?: (metrics: FloSummaryXAxisMetrics | null) => void;
+}) {
+    const { plot, isDarkMode, onXAxisMetrics } = props;
+    const plotShellRef = useRef<HTMLDivElement>(null);
+    const onXAxisMetricsRef = useRef(onXAxisMetrics);
+    onXAxisMetricsRef.current = onXAxisMetrics;
+    const lastPublishedMetricsRef = useRef<FloSummaryXAxisMetrics | null>(null);
+    const resizeFrameRef = useRef<number | null>(null);
+
+    const publishXAxisMetrics = useCallback((graphDiv: HTMLElement | null) => {
+        const notify = onXAxisMetricsRef.current;
+        if (!notify) {
+            return;
+        }
+        if (!graphDiv) {
+            if (lastPublishedMetricsRef.current !== null) {
+                lastPublishedMetricsRef.current = null;
+                notify(null);
+            }
+            return;
+        }
+        const shell = plotShellRef.current;
+        const next = readFloSummaryXAxisMetrics(
+            graphDiv as HTMLDivElement,
+            plot,
+            shell,
+        );
+        if (floSummaryXAxisMetricsEqual(lastPublishedMetricsRef.current, next)) {
+            return;
+        }
+        lastPublishedMetricsRef.current = next;
+        notify(next);
+    }, [plot]);
+
+    const onPlotReady = useCallback((_: Readonly<Figure>, graphDiv: Readonly<HTMLElement>) => {
+        publishXAxisMetrics(graphDiv);
+    }, [publishXAxisMetrics]);
+
+    useEffect(() => {
+        if (!onXAxisMetrics) {
+            lastPublishedMetricsRef.current = null;
+            return;
+        }
+        const shell = plotShellRef.current;
+        if (!shell) {
+            return;
+        }
+        const graphDiv = shell.querySelector<HTMLDivElement>(".js-plotly-plot, .plotly-graph-div");
+        if (!graphDiv) {
+            return;
+        }
+        publishXAxisMetrics(graphDiv);
+        const observer = new ResizeObserver(() => {
+            if (resizeFrameRef.current != null) {
+                cancelAnimationFrame(resizeFrameRef.current);
+            }
+            resizeFrameRef.current = requestAnimationFrame(() => {
+                resizeFrameRef.current = null;
+                publishXAxisMetrics(graphDiv);
+            });
+        });
+        observer.observe(shell);
+        return () => {
+            observer.disconnect();
+            if (resizeFrameRef.current != null) {
+                cancelAnimationFrame(resizeFrameRef.current);
+                resizeFrameRef.current = null;
+            }
+        };
+    }, [onXAxisMetrics, plot, publishXAxisMetrics]);
     const thermalLmp = plot.power.thermalLmpUsdMwh ?? [];
     const thermalOverlayRaw = plot.power.thermalOverlayUsdMwh ?? [];
     const thermalOverlayPlot =
@@ -347,13 +422,19 @@ export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean 
     } as Partial<Layout>;
 
     return (
-        <div className="plot-div" style={{ width: "100%", height: FLO_SUMMARY_HEIGHT }}>
+        <div
+            ref={plotShellRef}
+            className="plot-div"
+            style={{ width: "100%", height: FLO_SUMMARY_HEIGHT }}
+        >
             <Plot
                 data={data}
                 layout={layout}
                 config={{ displayModeBar: false, responsive: true }}
                 style={{ width: "100%", height: "100%" }}
                 useResizeHandler
+                onInitialized={onPlotReady}
+                onUpdate={onPlotReady}
             />
         </div>
     );

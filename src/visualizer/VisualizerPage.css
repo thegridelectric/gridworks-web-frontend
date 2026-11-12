@@ -70,3 +70,207 @@
     opacity: 1;
     cursor: wait;
 }
+
+.visualizer-card .flo-hour-btn.is-selected,
+.visualizer-card .flo-hour-btn.is-selected:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-color) 80%, #000);
+}
+
+.flo-pen-controls {
+    align-self: stretch;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.75rem;
+}
+
+.flo-pen-instructions {
+    align-self: center;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 1rem;
+    text-align: center;
+    line-height: 1.45;
+    max-width: 28rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.flo-horizon-bars-wrap {
+    align-self: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.25rem 1rem 0;
+}
+
+.visualizer-card .flo-pen-rerun-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.visualizer-card .flo-pen-rerun-btn .loader {
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
+}
+
+.visualizer-card .flo-pen-rerun-btn.is-loading:disabled {
+    opacity: 1;
+    cursor: wait;
+}
+
+.flo-pen-rerun-summary {
+    align-self: center;
+    width: 100%;
+    max-width: 28rem;
+    padding: 0 1rem;
+    text-align: center;
+    line-height: 1.45;
+}
+
+.flo-horizon-bars-track {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.flo-horizon-bar {
+    display: flex;
+    width: 100%;
+    height: 25px;
+    background-color: var(--hover-color);
+}
+
+.flo-horizon-bar__segment {
+    flex: 1 1 0;
+    min-width: 0;
+    box-sizing: border-box;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    border-right: 1px solid color-mix(in srgb, var(--text-muted) 50%, transparent);
+    background: transparent;
+    appearance: none;
+}
+
+.flo-horizon-bar__segment:hover {
+    filter: brightness(1.08);
+}
+
+.flo-horizon-bar__segment:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: -2px;
+    z-index: 1;
+}
+
+.flo-horizon-bar__segment:last-child {
+    border-right: none;
+}
+
+.flo-penalty-tuning {
+    align-self: stretch;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-top: 1.25rem;
+    padding: 0 1rem;
+    box-sizing: border-box;
+}
+
+.flo-penalty {
+    flex: 1 1 14rem;
+    max-width: 16rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+}
+
+.flo-penalty__toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-left: 0;
+    margin-bottom: 0.1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.flo-penalty__toggle .form-check-input {
+    margin: 0;
+    float: none;
+}
+
+.flo-penalty__formula {
+    margin: 0 0 0.65rem;
+    padding: 0 0.25rem;
+    font-size: 0.875rem;
+    font-style: italic;
+    line-height: 1.35;
+    text-align: center;
+}
+
+.flo-penalty__formula sub,
+.flo-penalty__formula sup {
+    font-size: 0.7em;
+    font-style: normal;
+}
+
+.flo-penalty__field {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 0.75rem;
+}
+
+.flo-penalty__field span {
+    font-size: inherit;
+}
+
+.flo-penalty__field input.form-control {
+    width: 4.75rem;
+    flex: 0 0 auto;
+    font-size: inherit;
+    padding: 0.05rem 0.3rem;
+    height: auto;
+    line-height: 1.4;
+}
+
+.flo-penalty__field input:disabled {
+    opacity: 0.5;
+}
+
+@media (max-width: 650px) {
+    .flo-pen-instructions,
+    .flo-horizon-bars-wrap,
+    .flo-penalty-tuning {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    .flo-penalty {
+        flex-basis: 100%;
+        max-width: none;
+    }
+}
