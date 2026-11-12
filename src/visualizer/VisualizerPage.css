@@ -31,6 +31,22 @@
     cursor: not-allowed;
 }
 
+.visualizer-card .flo-prefetch-hours {
+    width: 4.5rem;
+    text-align: center;
+}
+
+.visualizer-card .flo-prefetch-row .btn.is-loading {
+    min-width: 2rem;
+    justify-content: center;
+}
+
+.visualizer-card .flo-prefetch-row .loader {
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
+}
+
 .visualizer-card .flo-hour-btn {
     min-width: 2rem;
     justify-content: center;

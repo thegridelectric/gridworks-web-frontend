@@ -1,6 +1,38 @@
 import Plot from "react-plotly.js";
-import type { Data, Layout } from "plotly.js";
+import type { Data, Layout, Shape } from "plotly.js";
 import { getDefaultPlotLayout } from "./plot-configs";
+
+const ELEC_PRICE_HIGHLIGHT_USD_MWH = 400;
+
+/** Yellow bands on the power panel when forecast electricity exceeds $/MWh threshold. */
+function shapesForHighElecPrice(
+    times: string[],
+    elecPriceUsdMwh: number[],
+    isDarkMode: boolean,
+): Partial<Shape>[] {
+    const fillcolor = isDarkMode
+        ? "rgba(255, 214, 100, 0.11)"
+        : "rgba(255, 244, 190, 0.42)";
+    const shapes: Partial<Shape>[] = [];
+    const stepCount = Math.min(times.length - 1, elecPriceUsdMwh.length);
+    for (let i = 0; i < stepCount; i++) {
+        if (elecPriceUsdMwh[i] > ELEC_PRICE_HIGHLIGHT_USD_MWH) {
+            shapes.push({
+                type: "rect",
+                xref: "x",
+                yref: "y domain",
+                x0: times[i],
+                x1: times[i + 1],
+                y0: 0,
+                y1: 1,
+                fillcolor,
+                layer: "below",
+                line: { width: 0 },
+            });
+        }
+    }
+    return shapes;
+}
 
 export interface FloPlotLayer {
     y: number[];
@@ -30,6 +62,9 @@ export interface FloPlotData {
         priceNormalizedUsdMwh: number[];
         thermalPriceUsdMwh: number[];
         thermalLmpUsdMwh?: number[];
+        thermalOverlayUsdMwh?: number[];
+        thermalOverlayScaledUsdMwh?: number[];
+        /** @deprecated use thermalOverlayUsdMwh */
         thermalLmpNormalizedUsdMwh?: number[];
         yRange: [number, number] | null;
     };
@@ -49,15 +84,38 @@ export interface FloPlotData {
 
 const trace = (value: object): Data => value as Data;
 
+/** Affine stretch of overlay onto thermal min–max (matches backend visualizer). */
+function overlayScaledToThermalRange(thermal: number[], overlay: number[]): number[] {
+    if (overlay.length === 0 || overlay.length !== thermal.length) return [];
+    const tMin = Math.min(...thermal);
+    const tMax = Math.max(...thermal);
+    const oMin = Math.min(...overlay);
+    const oMax = Math.max(...overlay);
+    if (oMax <= oMin) {
+        const mid = (tMin + tMax) / 2;
+        return overlay.map(() => mid);
+    }
+    const spanT = tMax - tMin;
+    const spanO = oMax - oMin;
+    return overlay.map((x) => tMin + ((x - oMin) / spanO) * spanT);
+}
+
 /** Margins for FLO summary + bid so the plot area width aligns. */
 export const FLO_SUMMARY_MARGINS = { t: 64, b: 68, l: 70, r: 78 };
+
+/** Plot height; y-axis domains leave 0.08 paper gaps between the three panels. */
+export const FLO_SUMMARY_HEIGHT = 1250;
 
 export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean }) {
     const { plot, isDarkMode } = props;
     const thermalLmp = plot.power.thermalLmpUsdMwh ?? [];
-    const thermalLmpNormalized =
-        plot.power.thermalLmpNormalizedUsdMwh
-        ?? (thermalLmp.length > 0 ? thermalLmp : []);
+    const thermalOverlayRaw = plot.power.thermalOverlayUsdMwh ?? [];
+    const thermalOverlayPlot =
+        plot.power.thermalOverlayScaledUsdMwh
+        ?? (thermalOverlayRaw.length > 0
+            ? overlayScaledToThermalRange(plot.power.thermalPriceUsdMwh, thermalOverlayRaw)
+            : plot.power.thermalLmpNormalizedUsdMwh
+            ?? []);
     const base = getDefaultPlotLayout(isDarkMode);
     const socColor = isDarkMode ? "rgba(240,240,240,0.75)" : "rgba(0,0,0,0.4)";
 
@@ -84,6 +142,22 @@ export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean 
             line: { shape: "hv", color: "rgba(214,39,40,0.6)", width: 1.5 },
             hovertemplate: "%{y:.2f} kW<extra>Load</extra>",
         }),
+        ...(thermalOverlayPlot.length > 0 ? [trace({
+            type: "scatter",
+            mode: "lines",
+            name: "Thermal overlay (scaled)",
+            x: plot.power.time,
+            y: thermalOverlayPlot,
+            customdata: thermalOverlayRaw.length > 0
+                ? thermalOverlayRaw.map((overlay, i) => [overlay, thermalLmp[i] ?? null])
+                : thermalLmp.map((lmp) => [null, lmp]),
+            xaxis: "x",
+            yaxis: "y2",
+            legend: "legend2",
+            line: { shape: "hv", color: "rgba(96,96,96,0.75)", width: 1.5 },
+            hovertemplate:
+                "%{customdata[0]:.1f} $/MWh_th overlay (LMP %{customdata[1]:.1f})<extra>Thermal overlay</extra>",
+        })] : []),
         trace({
             type: "scatter",
             mode: "lines",
@@ -93,22 +167,10 @@ export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean 
             xaxis: "x",
             yaxis: "y2",
             legend: "legend2",
-            line: { shape: "hv", color: "rgba(128,128,128,0.6)", width: 1.5 },
+            visible: "legendonly",
+            line: { shape: "hv", color: "rgba(128,128,128,0.6)", width: 1.5, dash: "dash" },
             hovertemplate: "%{y:.1f} $/MWh_th<extra>Thermal price</extra>",
         }),
-        ...(thermalLmpNormalized.length > 0 ? [trace({
-            type: "scatter",
-            mode: "lines",
-            name: "Thermal LMP (normalized)",
-            x: plot.power.time,
-            y: thermalLmpNormalized,
-            customdata: thermalLmp,
-            xaxis: "x",
-            yaxis: "y2",
-            legend: "legend2",
-            line: { shape: "hv", color: "rgba(128,128,128,0.6)", width: 1.5, dash: "dot" },
-            hovertemplate: "%{customdata:.1f} $/MWh_th<extra>Thermal LMP</extra>",
-        })] : []),
         trace({
             type: "scatter",
             mode: "lines",
@@ -169,7 +231,7 @@ export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean 
 
     const layout = {
         ...base,
-        height: 820,
+        height: FLO_SUMMARY_HEIGHT,
         margin: FLO_SUMMARY_MARGINS,
         barmode: "overlay",
         title: {
@@ -277,10 +339,15 @@ export default function FloPlot(props: { plot: FloPlotData; isDarkMode: boolean 
             bgcolor: "rgba(0,0,0,0)",
             font: { size: 10 },
         },
+        shapes: shapesForHighElecPrice(
+            plot.power.time,
+            plot.power.priceUsdMwh,
+            isDarkMode,
+        ),
     } as Partial<Layout>;
 
     return (
-        <div className="plot-div" style={{ width: "100%", height: 820 }}>
+        <div className="plot-div" style={{ width: "100%", height: FLO_SUMMARY_HEIGHT }}>
             <Plot
                 data={data}
                 layout={layout}

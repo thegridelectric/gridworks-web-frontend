@@ -39,6 +39,9 @@ export default function VisualizerPage() {
     const [floHourShift, setFloHourShift] = useState<-1 | 1 | null>(null);
     const [floPlot, setFloPlot] = useState<FloDownload | null>(null);
     const [floNotice, setFloNotice] = useState<string | null>(null);
+    const [floPrefetchHours, setFloPrefetchHours] = useState('24');
+    const [isFloPrefetching, setIsFloPrefetching] = useState(false);
+    const [floPrefetchStatus, setFloPrefetchStatus] = useState<string | null>(null);
     const [plotError, setPlotError] = useState<string | null>(null);
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -270,11 +273,92 @@ export default function VisualizerPage() {
     }
 
     function onFloHourShift(hours: number) {
-        if (isLoading || isFloLoading) {
+        if (isLoading || isFloLoading || isFloPrefetching) {
             return;
         }
         void runFloQuery(shiftEndWall(endDateTime, hours), hours < 0 ? -1 : 1);
     }
+
+    async function onFloPrefetchClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+        event.preventDefault();
+        if (isLoading || isFloLoading || isFloPrefetching) {
+            return;
+        }
+
+        if (!installationGNode) {
+            setPlotError('Select an installation first.');
+            return;
+        }
+
+        const hours = Math.min(48, Math.max(1, parseInt(floPrefetchHours, 10) || 1));
+        setFloPrefetchHours(String(hours));
+
+        const endDate = wallDateTimeToUtc(endDateTime);
+        if (!canViewDataFromDate(session, [installationGNode], endDate)) {
+            window.alert('Access restricted: the end date must be more than 10 days in the past. Please choose an earlier end date and try again.');
+            return;
+        }
+
+        setPlotError(null);
+        setFloPrefetchStatus(null);
+        setIsFloPrefetching(true);
+        try {
+            const response = await GridWorksApi.post<{ ready: number }>(
+                `/api/v2/installations/${installationGNode}/flo.prefetch`,
+                null,
+                {
+                    timeout: hours * 150_000 + 60_000,
+                    params: {
+                        time: endDate.toISO(),
+                        hours,
+                    },
+                },
+            );
+            setFloPrefetchStatus(
+                `Cached ${response.data.ready} FLO plot${response.data.ready === 1 ? '' : 's'} for the last ${hours} hour${hours === 1 ? '' : 's'}.`,
+            );
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setPlotError(message);
+        } finally {
+            setIsFloPrefetching(false);
+        }
+    }
+
+    const floHourButtonsVisible = floPlot !== null || floNotice !== null;
+
+    useEffect(() => {
+        if (!floHourButtonsVisible) {
+            return;
+        }
+
+        function isTypingTarget(target: EventTarget | null): boolean {
+            if (!(target instanceof HTMLElement)) {
+                return false;
+            }
+            const tag = target.tagName;
+            if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+                return true;
+            }
+            return target.isContentEditable;
+        }
+
+        function onKeyDown(event: KeyboardEvent) {
+            if (isLoading || isFloLoading || isFloPrefetching || isTypingTarget(event.target)) {
+                return;
+            }
+            if (event.key === "ArrowLeft") {
+                event.preventDefault();
+                onFloHourShift(-1);
+            } else if (event.key === "ArrowRight") {
+                event.preventDefault();
+                onFloHourShift(1);
+            }
+        }
+
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, [floHourButtonsVisible, isLoading, isFloLoading, isFloPrefetching, endDateTime]);
 
     function onFullscreenToggle() {
         setIsFullscreen((was) => {
@@ -391,7 +475,7 @@ export default function VisualizerPage() {
                     </tbody>
                 </table>
 
-                <fieldset className="d-flex gap-2 align-items-center" disabled={isLoading || isFloLoading} style={{ opacity: (isLoading || isFloLoading) ? 0.5 : 1 }}>
+                <fieldset className="d-flex gap-2 align-items-center" disabled={isLoading || isFloLoading || isFloPrefetching} style={{ opacity: (isLoading || isFloLoading || isFloPrefetching) ? 0.5 : 1 }}>
                     <button className="btn btn-sm btn-outline-secondary" type="button" onClick={onPlotClick}>Plot</button>
                     <button className="btn btn-sm btn-outline-secondary" type="button" onClick={onNowClick}>8pm-Now</button>
                     <button className="btn btn-sm btn-outline-secondary" type="button" id="flo-btn" onClick={onFloClick} aria-busy={isFloLoading}>FLO</button>
@@ -412,13 +496,42 @@ export default function VisualizerPage() {
 
             {(floPlot || floNotice) &&
                 <div className="plot-container border-top">
-                    <div className="d-flex justify-content-center align-items-center gap-2 pt-3">
+                    <div className="d-flex flex-column align-items-center gap-2 pt-3">
+                        <div className="d-flex justify-content-center align-items-center gap-2 flo-prefetch-row">
+                            <span className="text-muted small">Last</span>
+                            <input
+                                type="number"
+                                className="form-control form-control-sm text-light flo-prefetch-hours"
+                                min={1}
+                                max={48}
+                                value={floPrefetchHours}
+                                disabled={isLoading || isFloLoading || isFloPrefetching}
+                                aria-label="Hours of FLO plots to prefetch"
+                                onChange={(evt) => setFloPrefetchHours(evt.currentTarget.value)}
+                            />
+                            <span className="text-muted small">hours</span>
+                            <button
+                                className={`btn btn-sm btn-outline-secondary${isFloPrefetching ? ' is-loading' : ''}`}
+                                type="button"
+                                aria-busy={isFloPrefetching}
+                                disabled={isLoading || isFloLoading || isFloPrefetching}
+                                onClick={onFloPrefetchClick}
+                            >
+                                {isFloPrefetching
+                                    ? <div className="loader" aria-hidden />
+                                    : 'OK'}
+                            </button>
+                        </div>
+                        {floPrefetchStatus &&
+                            <div className="text-muted small" role="status">{floPrefetchStatus}</div>
+                        }
+                        <div className="d-flex justify-content-center align-items-center gap-2">
                         <button
                             className={`btn btn-sm btn-outline-secondary flo-hour-btn${floHourShift === -1 ? ' is-loading' : ''}`}
                             type="button"
                             aria-label="One hour earlier"
                             aria-busy={floHourShift === -1}
-                            disabled={isLoading || isFloLoading}
+                            disabled={isLoading || isFloLoading || isFloPrefetching}
                             onClick={() => onFloHourShift(-1)}
                         >
                             {floHourShift === -1
@@ -430,13 +543,14 @@ export default function VisualizerPage() {
                             type="button"
                             aria-label="One hour later"
                             aria-busy={floHourShift === 1}
-                            disabled={isLoading || isFloLoading}
+                            disabled={isLoading || isFloLoading || isFloPrefetching}
                             onClick={() => onFloHourShift(1)}
                         >
                             {floHourShift === 1
                                 ? <div className="loader" aria-hidden />
                                 : <i className="bi bi-chevron-right" aria-hidden />}
                         </button>
+                        </div>
                     </div>
                     {floNotice &&
                         <div className="alert alert-secondary mt-3 mb-0 mx-3" role="status">{floNotice}</div>
