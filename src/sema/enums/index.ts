@@ -3,6 +3,8 @@ export * from './CommitStanding';
 export * from './DashboardRole';
 export * from './DispatchRefusalReason';
 export * from './EmissionMethod';
+export * from './MarketPriceUnit';
+export * from './MarketQuantityUnit';
 export * from './Quantity';
 export * from './RelayClosedOrOpen';
 export * from './SeasonalStorageMode';
