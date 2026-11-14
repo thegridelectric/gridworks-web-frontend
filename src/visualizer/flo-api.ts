@@ -2,7 +2,7 @@ import { isAxiosError } from "axios";
 import type { DateTime } from "luxon";
 import GridWorksApi from "../_util/GridWorksApi";
 import { AnyFloRecommendation } from "../sema/types/AnyFloRecommendation";
-import { FloParams } from "../sema/types/FloParams";
+import { AnyFloParams } from "../sema/types/AnyFloParams";
 
 /** The recommendation the FLO service published for the house's market
  *  slot that `time` falls in, at the version the journal holds, or null
@@ -20,9 +20,9 @@ export async function fetchRecommendation(params: {
 export async function fetchParams(params: {
     installationGNode: string;
     time: DateTime;
-}): Promise<FloParams | null> {
+}): Promise<AnyFloParams | null> {
     const word = await fetchSlotWord(params, "flo.params");
-    return word === null ? null : FloParams.parse(word);
+    return word === null ? null : AnyFloParams.parse(word);
 }
 
 async function fetchSlotWord(
