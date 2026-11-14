@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import './VisualizerPage.css';
 import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
-import SessionContext, { canViewDataFromDate } from "../_util/SessionContext";
+import SessionContext, { canViewDataFromDate, installationRoleForGNode } from "../_util/SessionContext";
 import {
     NEW_YORK_TIME_ZONE,
     formatDate,
@@ -24,6 +24,7 @@ import VisualizerPlot from "./VisualizerPlot";
 import FloPlot from "./FloPlot";
 import { fetchParams, fetchRecommendation } from "./flo-api";
 import { defaultPairIndex } from "./flo-path-view";
+import { tariffForHouse, type TouTariff } from "./tou-tariff";
 import type { VisualizerParams } from "./VisualizerParams";
 
 export default function VisualizerPage() {
@@ -37,6 +38,7 @@ export default function VisualizerPage() {
     const [floHourShift, setFloHourShift] = useState<-1 | 1 | null>(null);
     const [floRecommendation, setFloRecommendation] = useState<AnyFloRecommendation | null>(null);
     const [floParams, setFloParams] = useState<FloParams | null>(null);
+    const [floTariff, setFloTariff] = useState<TouTariff | null>(null);
     const [floPairIndex, setFloPairIndex] = useState(0);
     const [floNotice, setFloNotice] = useState<string | null>(null);
     const [plotError, setPlotError] = useState<string | null>(null);
@@ -246,9 +248,10 @@ export default function VisualizerPage() {
         setFloHourShift(hourShift);
         setIsFloLoading(true);
         try {
-            const [recommendation, params] = await Promise.all([
+            const [recommendation, params, tariff] = await Promise.all([
                 fetchRecommendation({ installationGNode, time: endDate }),
                 fetchParams({ installationGNode, time: endDate }),
+                tariffForHouse(installationRoleForGNode(session?.installations, installationGNode)),
             ]);
             setReadingsBundleData(null);
             setPlottedParams(null);
@@ -261,6 +264,7 @@ export default function VisualizerPage() {
                 setFloPairIndex(defaultPairIndex(recommendation));
                 setFloRecommendation(recommendation);
                 setFloParams(params);
+                setFloTariff(tariff);
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
@@ -433,7 +437,7 @@ export default function VisualizerPage() {
                     }
                     {floRecommendation &&
                         <div className="visualizer-server-plots-root">
-                            <FloPlot recommendation={floRecommendation} params={floParams} pairIndex={floPairIndex} isDarkMode={getIsDarkMode()} />
+                            <FloPlot recommendation={floRecommendation} params={floParams} tariff={floTariff} pairIndex={floPairIndex} isDarkMode={getIsDarkMode()} />
                         </div>
                     }
                 </div>

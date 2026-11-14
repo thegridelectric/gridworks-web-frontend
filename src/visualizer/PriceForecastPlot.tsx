@@ -1,25 +1,12 @@
 import Plot, { type PlotParams } from "react-plotly.js";
-import type { Shape } from "plotly.js";
 import { fetchPriceForecast, PriceSeriesNames, type PriceSeries } from "./pricing-api";
-import { fetchTouTariff, onPeakSpans, type TouTariff } from "./tou-tariff";
-import React, { useEffect, useState } from "react";
+import { onPeakShapes, tariffForHouse, type TouTariff } from "./tou-tariff";
+import React, { useContext, useEffect, useState } from "react";
+import SessionContext, { installationRoleForGNode } from "../_util/SessionContext";
 import { formatForDisplay, formatHourStartSForDisplay, type PlotConfig } from "./plot-configs";
 import { PlotlyWrapper } from "./PlotlyWrapper";
 import { generateDefaultPlotInfo } from "./DefaultVisualizerPlot";
 import type { DateTime } from "luxon";
-
-/** The tariff's on-peak hours, shaded light pink behind the trace. */
-const ON_PEAK_SHAPE: Partial<Shape> = {
-    type: 'rect',
-    xref: 'x',
-    yref: 'paper',
-    y0: 0,
-    y1: 1,
-    fillcolor: 'lightpink',
-    opacity: 0.35,
-    layer: 'below',
-    line: { width: 0 }
-};
 
 export interface PriceForecastPlotParams {
     installationGNode: string,
@@ -34,6 +21,8 @@ export interface PriceForecastPlotParams {
 export default function PriceForecastPlot(props: PriceForecastPlotParams) {
 
     const { installationGNode, startDate, endDate } = props
+    const session = useContext(SessionContext);
+    const summary = installationRoleForGNode(session?.installations, installationGNode);
     const [priceData, setPriceData] = useState<PriceSeries | null>(null);
     const [tariff, setTariff] = useState<TouTariff | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +36,7 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
             try {
                 const [prices, touTariff] = await Promise.all([
                     fetchPriceForecast({ installationGNode, startDate, endDate }),
-                    fetchTouTariff(),
+                    tariffForHouse(summary),
                 ]);
                 setPriceData(prices);
                 setTariff(touTariff);
@@ -60,7 +49,7 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
         }
         fetchDataAsync();
         
-    }, [installationGNode, startDate, endDate])
+    }, [installationGNode, startDate, endDate, summary])
 
     let content: React.ReactNode;
     if (priceData && priceData.HourStartS.length === 0) {
@@ -86,11 +75,7 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
             formattedEndDate: formatForDisplay(endDate)
         });
         if (tariff) {
-            plotlyLayout.shapes = onPeakSpans(tariff, startDate, endDate).map(([spanStart, spanEnd]): Partial<Shape> => ({
-                ...ON_PEAK_SHAPE,
-                x0: formatForDisplay(spanStart),
-                x1: formatForDisplay(spanEnd),
-            }));
+            plotlyLayout.shapes = onPeakShapes(tariff, startDate, endDate);
         }
         content = <Plot data={plotlyData} layout={plotlyLayout} {...props.plotParams} />
 
