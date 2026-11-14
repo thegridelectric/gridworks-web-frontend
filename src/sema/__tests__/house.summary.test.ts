@@ -5,6 +5,7 @@ import { AnyHouseSummary, scadaCommit, scadaCommitStanding } from '../types/AnyH
 import { HouseSummary } from '../types/HouseSummary';
 import { HouseSummary000 } from '../types/old_versions/HouseSummary000';
 import { HouseSummary001 } from '../types/old_versions/HouseSummary001';
+import { HouseSummary002 } from '../types/old_versions/HouseSummary002';
 
 /** The registry's gw.house.operating.status examples. */
 const spruceStatus = {
@@ -32,16 +33,16 @@ const beechStandby = {
     LtnDispatching: false,
 };
 
-/** The registry's first gw.house.summary 002 example. */
+/** The registry's first gw.house.summary 003 example. */
 const minimalSummary = {
     Role: 'Viewer',
     TaGNodeId: '5d3e8f14-7a2b-4c6e-9f10-2b8d4e6a1c3f',
     GNodeAlias: 'hw1.isone.me.versant.keene.beech',
     SendTimeMs: 1792014000000,
     TypeName: 'gw.house.summary',
-    Version: '002',
+    Version: '003',
 };
-/** The registry's second 002 example: a scada on main's head. */
+/** The registry's second 003 example: a scada on main's head. */
 const beechWithCommit = {
     ...minimalSummary,
     Role: 'Admin',
@@ -49,6 +50,7 @@ const beechWithCommit = {
     ScadaCommit: 'e55faa2d3b1c4f6a8d9e0f1a2b3c4d5e6f7a8b9c',
     ScadaCommitStanding: 'OnMainHead',
 };
+const beechWithCommit002 = { ...beechWithCommit, Version: '002' };
 const minimalSummary001 = { ...minimalSummary, Version: '001' };
 const beechWithCommit001 = { ...minimalSummary001, Role: 'Admin', DisplayName: 'Beech', ScadaCommit: beechWithCommit.ScadaCommit };
 const minimalSummary000 = { ...minimalSummary, Version: '000' };
@@ -84,7 +86,7 @@ describe('gw.house.operating.status 000', () => {
     });
 });
 
-describe('gw.house.summary 002', () => {
+describe('gw.house.summary 003', () => {
     it('parses both registry examples', () => {
         expect(HouseSummary.parse(minimalSummary)).toEqual(minimalSummary);
         expect(HouseSummary.parse(beechWithCommit)).toEqual(beechWithCommit);
@@ -133,7 +135,7 @@ describe('gw.house.summary 002', () => {
     });
 
     it('takes a commit with no standing', () => {
-        expect(HouseSummary.parse({ ...beechWithCommit001, Version: '002' }).ScadaCommitStanding).toBeUndefined();
+        expect(HouseSummary.parse({ ...beechWithCommit001, Version: '003' }).ScadaCommitStanding).toBeUndefined();
     });
 
     it('decodes a standing a later enum version appended to Unknown', () => {
@@ -142,12 +144,14 @@ describe('gw.house.summary 002', () => {
 });
 
 describe('any gw.house.summary', () => {
-    it('reads 000 and 001 through their own words and 002 as the whole word', () => {
+    it('reads 000, 001 and 002 through their own words and 003 as the whole word', () => {
         expect(HouseSummary000.parse(minimalSummary000)).toEqual(minimalSummary000);
         expect(HouseSummary001.parse(beechWithCommit001)).toEqual(beechWithCommit001);
+        expect(HouseSummary002.parse(beechWithCommit002)).toEqual(beechWithCommit002);
         expect(AnyHouseSummary.parse(minimalSummary000).Version).toBe('000');
         expect(AnyHouseSummary.parse(minimalSummary001).Version).toBe('001');
-        expect(AnyHouseSummary.parse(beechWithCommit).Version).toBe('002');
+        expect(AnyHouseSummary.parse(beechWithCommit002).Version).toBe('002');
+        expect(AnyHouseSummary.parse(beechWithCommit).Version).toBe('003');
     });
 
     it('states the scada commit only where the word has one', () => {
@@ -157,8 +161,9 @@ describe('any gw.house.summary', () => {
         expect(scadaCommit(AnyHouseSummary.parse(minimalSummary000))).toBeUndefined();
     });
 
-    it('states the standing only from 002', () => {
+    it('states the standing only from 002 on', () => {
         expect(scadaCommitStanding(AnyHouseSummary.parse(beechWithCommit))).toBe('OnMainHead');
+        expect(scadaCommitStanding(AnyHouseSummary.parse(beechWithCommit002))).toBe('OnMainHead');
         expect(scadaCommitStanding(AnyHouseSummary.parse(beechWithCommit001))).toBeUndefined();
         expect(scadaCommitStanding(AnyHouseSummary.parse(minimalSummary))).toBeUndefined();
     });

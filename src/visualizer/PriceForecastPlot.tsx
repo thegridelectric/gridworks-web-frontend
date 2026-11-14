@@ -33,7 +33,7 @@ export interface PriceForecastPlotParams {
 
 export default function PriceForecastPlot(props: PriceForecastPlotParams) {
 
-    const { startDate, endDate } = props
+    const { installationGNode, startDate, endDate } = props
     const [priceData, setPriceData] = useState<PriceSeries | null>(null);
     const [tariff, setTariff] = useState<TouTariff | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +46,7 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
             setPriceData(null);
             try {
                 const [prices, touTariff] = await Promise.all([
-                    fetchPriceForecast({ startDate, endDate }),
+                    fetchPriceForecast({ installationGNode, startDate, endDate }),
                     fetchTouTariff(),
                 ]);
                 setPriceData(prices);
@@ -60,7 +60,7 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
         }
         fetchDataAsync();
         
-    }, [startDate, endDate])
+    }, [installationGNode, startDate, endDate])
 
     let content: React.ReactNode;
     if (priceData && priceData.HourStartS.length === 0) {

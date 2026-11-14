@@ -32,7 +32,7 @@ export default function InformationPage() {
   const hasSelectedHouse = selectedHouseDisplay.length > 0;
   const layout = installation?.Layout ?? null;
   /** The deployment fields `layout.lite` 013 retires, read from the earlier versions. */
-  const legacy = layout && layout.Version !== '013' ? layout : null;
+  const legacy = layout && layout.Version !== '013' && layout.Version !== '014' ? layout : null;
   const status = installation?.OperatingStatus ?? null;
 
   const statusRows: [string, string | undefined][] = [
@@ -49,7 +49,7 @@ export default function InformationPage() {
   const hardwareRows: [string, string | undefined][] = layout
     ? [
         ['Layout', `${layout.TypeName} ${layout.Version}`],
-        ['Hardware layout', layout.Version === '013' ? layout.HardwareLayoutTypeName : undefined],
+        ['Hardware layout', layout.Version === '013' || layout.Version === '014' ? layout.HardwareLayoutTypeName : undefined],
         ['Strategy', legacy?.Strategy],
         ['Seasonal storage mode', legacy?.SeasonalStorageMode],
         ['Store tanks', legacy ? String(legacy.TotalStoreTanks) : undefined],

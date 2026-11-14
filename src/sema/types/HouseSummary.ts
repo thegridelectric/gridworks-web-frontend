@@ -5,7 +5,7 @@ import { GitCommit, LeftRightDot, SpaceheatName, UtcIso8601Seconds, UtcMilliseco
 import { AnyLayoutLite } from './AnyLayoutLite';
 import { HouseOperatingStatus } from './HouseOperatingStatus';
 
-/** Sema: https://schemas.electricity.works/types/gw.house.summary/002 */
+/** Sema: https://schemas.electricity.works/types/gw.house.summary/003 */
 export const HouseSummary = z
     .strictObject({
         Role: DashboardRole,
@@ -21,7 +21,7 @@ export const HouseSummary = z
         ScadaCommitStanding: CommitStanding.optional(),
         SendTimeMs: UtcMilliseconds,
         TypeName: z.literal('gw.house.summary'),
-        Version: z.literal('002'),
+        Version: z.literal('003'),
     })
     .refine(checkAxiom1, {
         message: 'Axiom 1 (ZonePairTogether) failed: LongestRunningZoneName and LongestRunningZoneStartTime are present together or absent together',
