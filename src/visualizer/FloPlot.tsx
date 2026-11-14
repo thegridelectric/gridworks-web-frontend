@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import Plot from "react-plotly.js";
 import type { Data, Layout } from "plotly.js";
 import type { AnyFloRecommendation } from "../sema/types/AnyFloRecommendation";
-import type { FloParams } from "../sema/types/FloParams";
+import type { AnyFloParams } from "../sema/types/AnyFloParams";
 import { getDefaultPlotLayout } from "./plot-configs";
 import { paramsView, pathView, plotTitle, temperatureColor, temperatureTextColor } from "./flo-path-view";
 import { onPeakShapes, type TouTariff } from "./tou-tariff";
@@ -26,7 +26,7 @@ const TERMINAL_COLOR = "rgba(44,160,44,0.7)";
  *  bands over the path's horizon. */
 export default function FloPlot(props: {
     recommendation: AnyFloRecommendation;
-    params: FloParams | null;
+    params: AnyFloParams | null;
     tariff: TouTariff | null;
     pairIndex: number;
     isDarkMode: boolean;

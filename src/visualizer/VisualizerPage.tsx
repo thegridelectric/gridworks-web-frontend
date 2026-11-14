@@ -14,7 +14,7 @@ import { useRouteInfo } from "../_util/useRouteInfo";
 import GridWorksApi from '../_util/GridWorksApi';
 import { SyncedReadingsBundle } from "../sema/types/SyncedReadingsBundle";
 import type { AnyFloRecommendation } from "../sema/types/AnyFloRecommendation";
-import type { FloParams } from "../sema/types/FloParams";
+import type { AnyFloParams } from "../sema/types/AnyFloParams";
 import { VisualizerOptionsPanel } from "./VisualizerControls";
 import { CLIENT_ONLY_VISUALIZER_CHANNEL_IDS } from "./visualizerChannels";
 import { useVisualizerControls } from "./useVisualizerControls";
@@ -37,7 +37,7 @@ export default function VisualizerPage() {
     const [isFloLoading, setIsFloLoading] = useState(false);
     const [floHourShift, setFloHourShift] = useState<-1 | 1 | null>(null);
     const [floRecommendation, setFloRecommendation] = useState<AnyFloRecommendation | null>(null);
-    const [floParams, setFloParams] = useState<FloParams | null>(null);
+    const [floParams, setFloParams] = useState<AnyFloParams | null>(null);
     const [floTariff, setFloTariff] = useState<TouTariff | null>(null);
     const [floPairIndex, setFloPairIndex] = useState(0);
     const [floNotice, setFloNotice] = useState<string | null>(null);

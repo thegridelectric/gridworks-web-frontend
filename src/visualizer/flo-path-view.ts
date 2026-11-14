@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 import type { AnyFloRecommendation } from "../sema/types/AnyFloRecommendation";
-import type { FloParams } from "../sema/types/FloParams";
+import { type AnyFloParams, priceUsdMwhList } from "../sema/types/AnyFloParams";
 import { formatForDisplay } from "./plot-configs";
 
 /** One of the store's three temperature bands across the path's steps,
@@ -125,7 +125,7 @@ export function pathView(recommendation: AnyFloRecommendation, pairIndex: number
 
 /** What the FLO view draws from the slot's request, on the request's
  *  step grid: the forecast load in kW, the electricity price the
- *  optimizer saw (LMP plus distribution, USD per MWh), and that price per
+ *  optimizer saw (USD per MWh), and that price per
  *  MWh of heat at each step's COP.
  *
  *  The thermal price applies the COP rule flo.params spells out (the
@@ -141,18 +141,18 @@ export type FloParamsView = {
 };
 
 /** The heat pump's COP at an outside air temperature, as bruce models it. */
-export function cop(params: FloParams, oatF: number): number {
+export function cop(params: AnyFloParams, oatF: number): number {
     return oatF < params.CopMinOatF ? params.CopMin : params.CopIntercept + params.CopOatCoeff * oatF;
 }
 
-export function paramsView(params: FloParams): FloParamsView {
+export function paramsView(params: AnyFloParams): FloParamsView {
     const stepStartS: number[] = [];
     let t = params.StartUnixS;
     for (const minutes of params.StepDurationMinutes) {
         stepStartS.push(t);
         t += minutes * 60;
     }
-    const priceUsdMwh = params.LmpUsdMwhList.map((lmp, i) => lmp + params.DistUsdMwhList[i]);
+    const priceUsdMwh = priceUsdMwhList(params);
     const cops = params.OatFList.map((oat) => cop(params, oat));
     const copBar = cops.reduce((a, b) => a + b, 0) / cops.length;
     return {

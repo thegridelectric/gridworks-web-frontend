@@ -3,7 +3,7 @@ import orange1Recommendation001 from '../../sema/__tests__/fixtures/orange1-flo.
 import exampleRecommendation000 from '../../sema/__tests__/fixtures/registry-example-flo.recommendation-000.json';
 import { AnyFloRecommendation } from '../../sema/types/AnyFloRecommendation';
 import orange1Params001 from '../../sema/__tests__/fixtures/orange1-flo.params-001.json';
-import { FloParams } from '../../sema/types/FloParams';
+import { FloParams001 } from '../../sema/types/old_versions/FloParams001';
 import { cop, defaultPairIndex, paramsView, pathView, plotTitle, slotTitle, temperatureColor } from '../flo-path-view';
 
 const orange1 = AnyFloRecommendation.parse(orange1Recommendation001);
@@ -96,10 +96,10 @@ describe('the FLO path view', () => {
 });
 
 describe('the FLO params view', () => {
-    const params = FloParams.parse(orange1Params001);
+    const params = FloParams001.parse(orange1Params001);
     const view = paramsView(params);
 
-    it('lays the request out on its step grid with price as LMP plus distribution and load in kW', () => {
+    it('lays a 001 request out on its step grid with price as LMP plus distribution and load in kW', () => {
         expect(view.stepStart).toHaveLength(48);
         expect(view.stepStart[0]).toBe('2026-11-09T14:00:00');
         expect(view.priceUsdMwh[0]).toBeCloseTo(params.LmpUsdMwhList[0] + params.DistUsdMwhList[0]);
