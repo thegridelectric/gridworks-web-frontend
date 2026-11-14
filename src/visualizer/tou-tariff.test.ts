@@ -1,6 +1,8 @@
 import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
-import { onPeakSpans, TouTariff } from "./tou-tariff";
+import elm013 from "../sema/__tests__/fixtures/elm-layout.lite-013.json";
+import { AnyHouseSummary } from "../sema/types/AnyHouseSummary";
+import { layoutTariff, onPeakShapes, onPeakSpans, TouTariff } from "./tou-tariff";
 
 const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] as const;
 
@@ -49,5 +51,40 @@ describe("onPeakSpans", () => {
         expect(spans).toHaveLength(1);
         expect(spans[0][0].toMillis()).toBe(start.toMillis());
         expect(spans[0][1].toMillis()).toBe(end.toMillis());
+    });
+});
+
+/** The registry's first gw.house.summary 003 example, with a layout. */
+const summaryWith = (layout: object) => AnyHouseSummary.parse({
+    Role: "Viewer",
+    TaGNodeId: "5d3e8f14-7a2b-4c6e-9f10-2b8d4e6a1c3f",
+    GNodeAlias: "hw1.isone.me.versant.keene.elm",
+    Layout: layout,
+    SendTimeMs: 1792014000000,
+    TypeName: "gw.house.summary",
+    Version: "003",
+});
+
+describe("layoutTariff", () => {
+    it("is the layout's Tariff when the layout is 014", () => {
+        const summary = summaryWith({ ...elm013, Tariff: tariff, Version: "014" });
+        expect(layoutTariff(summary)).toEqual(tariff);
+    });
+
+    it("is null for a 013 layout, a summary with no layout, and no summary", () => {
+        expect(layoutTariff(summaryWith(elm013))).toBeNull();
+        expect(layoutTariff(summaryWith(undefined as unknown as object))).toBeNull();
+        expect(layoutTariff(undefined)).toBeNull();
+    });
+});
+
+describe("onPeakShapes", () => {
+    it("lays one full-height rectangle per span on the first time axis", () => {
+        const shapes = onPeakShapes(tariff, et("2026-11-11T00:00"), et("2026-11-12T00:00"));
+        expect(shapes.map((s) => [s.x0, s.x1])).toEqual([
+            ["2026-11-11T07:00:00", "2026-11-11T12:00:00"],
+            ["2026-11-11T16:00:00", "2026-11-11T20:00:00"],
+        ]);
+        expect(shapes.every((s) => s.xref === "x" && s.yref === "paper" && s.y0 === 0 && s.y1 === 1)).toBe(true);
     });
 });

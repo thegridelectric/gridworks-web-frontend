@@ -376,15 +376,15 @@ const PRICING_CONFIG: PlotConfig = {
     title: 'Price Forecast',
     plotType: 'PriceForecast',
     yAxis1: {
-        titleText: 'LMP [$/MWh]'
+        titleText: 'Price [$/MWh]'
     },
     traces: [{
-        dataSeriesName: 'LmpList',
+        dataSeriesName: 'ForecastList',
         dataSource: 'prices',
         color: 'theme-line-muted',
         lineShape: 'hv',
         opacity: 0.8,
-        legendText: 'LMP'
+        legendText: 'Day-ahead forecast'
     }]
 };
 

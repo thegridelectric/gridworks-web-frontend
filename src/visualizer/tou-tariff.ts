@@ -1,7 +1,10 @@
 import { DateTime } from "luxon";
+import type { Shape } from "plotly.js";
 import GridWorksApi from "../_util/GridWorksApi";
+import type { AnyHouseSummary } from "../sema/types/AnyHouseSummary";
 import { TouTariff } from "../sema/types/TouTariff";
 import type { TouWindow } from "../sema/types/TouWindow";
+import { formatForDisplay } from "./plot-configs";
 
 export { TouTariff };
 
@@ -9,6 +12,21 @@ export { TouTariff };
 export async function fetchTouTariff(): Promise<TouTariff> {
     const res = await GridWorksApi.get<unknown>("/api/v2/tou-tariff/current");
     return TouTariff.parse(res.data);
+}
+
+/** The tariff the house's layout states, when the layout is `layout.lite`
+ *  014; null for an older layout, which states no tariff. */
+export function layoutTariff(summary: AnyHouseSummary | undefined): TouTariff | null {
+    const layout = summary?.Layout;
+    return layout?.Version === "014" ? layout.Tariff : null;
+}
+
+/** The tariff the house is billed on: its layout's, else the fleet's one
+ *  tariff. The fleet fallback stands in for a house whose latest layout is
+ *  older than 014 and retires when every house's layout states its
+ *  `Tariff`. */
+export async function tariffForHouse(summary: AnyHouseSummary | undefined): Promise<TouTariff> {
+    return layoutTariff(summary) ?? await fetchTouTariff();
 }
 
 /** The on-peak spans inside [start, end], as the tariff's windows recur on
@@ -28,6 +46,24 @@ export function onPeakSpans(tariff: TouTariff, start: DateTime, end: DateTime): 
         day = day.plus({ days: 1 });
     }
     return spans;
+}
+
+/** The tariff's on-peak hours as light pink blocks behind a plot's
+ *  traces, over the full height of the plot, on its first time axis. */
+export function onPeakShapes(tariff: TouTariff, start: DateTime, end: DateTime): Partial<Shape>[] {
+    return onPeakSpans(tariff, start, end).map(([spanStart, spanEnd]) => ({
+        type: "rect",
+        xref: "x",
+        yref: "paper",
+        x0: formatForDisplay(spanStart),
+        x1: formatForDisplay(spanEnd),
+        y0: 0,
+        y1: 1,
+        fillcolor: "lightpink",
+        opacity: 0.35,
+        layer: "below",
+        line: { width: 0 },
+    }));
 }
 
 function atWallClock(day: DateTime, hhmm: string): DateTime {

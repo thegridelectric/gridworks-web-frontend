@@ -5,6 +5,7 @@ import { AnyLayoutLite } from '../types/AnyLayoutLite';
 import { DataChannelGt } from '../types/DataChannelGt';
 import { DerivedChannelGt } from '../types/DerivedChannelGt';
 import { LayoutLite } from '../types/LayoutLite';
+import { LayoutLite013 } from '../types/old_versions/LayoutLite013';
 import { SpaceheatNodeGt } from '../types/SpaceheatNodeGt';
 
 function firstIssue(result: { success: false; error: { issues: { path: PropertyKey[]; message: string }[] } }) {
@@ -12,17 +13,58 @@ function firstIssue(result: { success: false; error: { issues: { path: PropertyK
     return { path: issue.path.join('.'), message: issue.message };
 }
 
+/** The registry's layout.lite 014 example Tariff, on elm's 013 layout. */
+const elm014 = {
+    ...elm013,
+    Tariff: {
+        Alias: 'versant.a1.home.eco.bonus',
+        DisplayName: 'Home Eco Rate with Bonus Meter',
+        TimezoneStr: 'America/New_York',
+        OnPeakWindows: [
+            { Start: '07:00', End: '12:00', Days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], TypeName: 'gw.tou.window', Version: '000' },
+            { Start: '16:00', End: '20:00', Days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'], TypeName: 'gw.tou.window', Version: '000' },
+        ],
+        TypeName: 'gw.tou.tariff',
+        Version: '000',
+    },
+    Version: '014',
+};
+
+describe('layout.lite 014', () => {
+    it('parses elm with the registry example tariff and round-trips it', () => {
+        const parsed = LayoutLite.parse(elm014);
+        expect(parsed.Tariff.OnPeakWindows.length).toBe(2);
+        expect(LayoutLite.parse(JSON.parse(JSON.stringify(parsed)))).toEqual(elm014);
+    });
+
+    it('requires the tariff', () => {
+        expect(LayoutLite.safeParse({ ...elm013, Version: '014' }).success).toBe(false);
+    });
+
+    it('resolves through AnyLayoutLite as the 014 word', () => {
+        expect(AnyLayoutLite.parse(elm014).Version).toBe('014');
+    });
+
+    it('fails axiom 3 when a critical zone is not a zone', () => {
+        const result = LayoutLite.safeParse({ ...elm014, CriticalZoneList: ['attic'] });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(firstIssue(result).message).toMatch(/^Axiom 3 \(CriticalZoneSubset\) failed/);
+        }
+    });
+});
+
 describe('layout.lite 013', () => {
     it('parses elm, pulled from gridworks.layouts 2026-10-28', () => {
-        const parsed = LayoutLite.parse(elm013);
+        const parsed = LayoutLite013.parse(elm013);
         expect(parsed.DataChannels.length).toBe(elm013.DataChannels.length);
         expect(parsed.DerivedChannels.length).toBe(elm013.DerivedChannels.length);
         expect(parsed.StateMachines.length).toBe(elm013.StateMachines.length);
     });
 
     it('round-trips elm unchanged', () => {
-        const once = LayoutLite.parse(elm013);
-        expect(LayoutLite.parse(JSON.parse(JSON.stringify(once)))).toEqual(elm013);
+        const once = LayoutLite013.parse(elm013);
+        expect(LayoutLite013.parse(JSON.parse(JSON.stringify(once)))).toEqual(elm013);
     });
 
     it('resolves through AnyLayoutLite as the 013 word', () => {
@@ -34,7 +76,7 @@ describe('layout.lite 013', () => {
         const nodes = elm013.ShNodes.map((n) =>
             n.Name === elm013.DataChannels[0].CapturedByNodeName ? { ...n, ActorClass: 'NoActor', ActorHierarchyName: undefined } : n,
         );
-        const result = LayoutLite.safeParse({ ...elm013, ShNodes: nodes });
+        const result = LayoutLite013.safeParse({ ...elm013, ShNodes: nodes });
         expect(result.success).toBe(false);
         if (!result.success) {
             expect(firstIssue(result).message).toMatch(/^Axiom 1 \(DcNodeConsistency\) failed/);
@@ -42,7 +84,7 @@ describe('layout.lite 013', () => {
     });
 
     it('fails axiom 3 when a critical zone is not a zone', () => {
-        const result = LayoutLite.safeParse({ ...elm013, CriticalZoneList: ['attic'] });
+        const result = LayoutLite013.safeParse({ ...elm013, CriticalZoneList: ['attic'] });
         expect(result.success).toBe(false);
         if (!result.success) {
             expect(firstIssue(result)).toEqual({
@@ -54,7 +96,7 @@ describe('layout.lite 013', () => {
 
     it('fails axiom 5 when two state machines share a node', () => {
         const machines = [...elm013.StateMachines, elm013.StateMachines[0]];
-        const result = LayoutLite.safeParse({ ...elm013, StateMachines: machines });
+        const result = LayoutLite013.safeParse({ ...elm013, StateMachines: machines });
         expect(result.success).toBe(false);
         if (!result.success) {
             expect(firstIssue(result).message).toMatch(/^Axiom 5 \(StateMachineNodeConsistency\) failed/);

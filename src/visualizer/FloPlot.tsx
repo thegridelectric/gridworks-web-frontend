@@ -1,9 +1,11 @@
+import { DateTime } from "luxon";
 import Plot from "react-plotly.js";
 import type { Data, Layout } from "plotly.js";
 import type { AnyFloRecommendation } from "../sema/types/AnyFloRecommendation";
 import type { FloParams } from "../sema/types/FloParams";
 import { getDefaultPlotLayout } from "./plot-configs";
 import { paramsView, pathView, plotTitle, temperatureColor, temperatureTextColor } from "./flo-path-view";
+import { onPeakShapes, type TouTariff } from "./tou-tariff";
 
 const trace = (value: object): Data => value as Data;
 
@@ -20,15 +22,19 @@ const TERMINAL_COLOR = "rgba(44,160,44,0.7)";
  *  where the slot's request is known, the forecast load and the thermal
  *  price; the store's layers by temperature with its state of charge;
  *  and the optimizer's penalties with the terminal cost, where the word
- *  states them. */
+ *  states them. The tariff's on-peak hours are shaded behind all three
+ *  bands over the path's horizon. */
 export default function FloPlot(props: {
     recommendation: AnyFloRecommendation;
     params: FloParams | null;
+    tariff: TouTariff | null;
     pairIndex: number;
     isDarkMode: boolean;
 }) {
-    const { recommendation, params, pairIndex, isDarkMode } = props;
+    const { recommendation, params, tariff, pairIndex, isDarkMode } = props;
     const view = pathView(recommendation, pairIndex);
+    const horizonStart = DateTime.fromSeconds(recommendation.OptimalPathList[pairIndex].StartUnixS);
+    const horizonEnd = horizonStart.plus({ milliseconds: view.stepWidthMs.reduce((a, b) => a + b, 0) });
     const request = params === null ? null : paramsView(params);
     const base = getDefaultPlotLayout(isDarkMode);
     const socColor = isDarkMode ? "rgba(240,240,240,0.75)" : "rgba(0,0,0,0.4)";
@@ -169,6 +175,7 @@ export default function FloPlot(props: {
         height,
         margin: { t: 64, b: 68, l: 70, r: 78 },
         barmode: "overlay",
+        shapes: tariff === null ? [] : onPeakShapes(tariff, horizonStart, horizonEnd),
         title: { ...base.title, text: plotTitle(recommendation, view), x: 0.5, xanchor: "center", font: { ...base.title?.font, size: 12 } },
         xaxis: { ...timeAxis, anchor: "y" },
         xaxis2: { ...timeAxis, anchor: "y3", matches: "x" },
