@@ -6,6 +6,7 @@ export * from './EmissionMethod';
 export * from './MarketPriceUnit';
 export * from './MarketProductName';
 export * from './MarketQuantityUnit';
+export * from './PriceComponentName';
 export * from './Quantity';
 export * from './RelayClosedOrOpen';
 export * from './SeasonalStorageMode';
