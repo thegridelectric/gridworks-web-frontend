@@ -22,8 +22,10 @@ import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 import { PLOT_CONFIGS } from "./plot-configs";
 import VisualizerPlot from "./VisualizerPlot";
 import FloPlot from "./FloPlot";
-import { fetchParams, fetchRecommendation } from "./flo-api";
+import FloRerunPanel from "./FloRerunPanel";
+import { fetchParams, fetchRecommendation, probeRerun, rerun } from "./flo-api";
 import { defaultPairIndex } from "./flo-path-view";
+import { penaltyTuning, withPenaltyTuning, type PenaltyTuning } from "./flo-rerun-tuning";
 import { tariffForHouse, type TouTariff } from "./tou-tariff";
 import type { VisualizerParams } from "./VisualizerParams";
 
@@ -41,6 +43,9 @@ export default function VisualizerPage() {
     const [floTariff, setFloTariff] = useState<TouTariff | null>(null);
     const [floPairIndex, setFloPairIndex] = useState(0);
     const [floNotice, setFloNotice] = useState<string | null>(null);
+    const [rerunAvailable, setRerunAvailable] = useState(false);
+    const [rerunRecommendation, setRerunRecommendation] = useState<AnyFloRecommendation | null>(null);
+    const [isRerunning, setIsRerunning] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -74,6 +79,25 @@ export default function VisualizerPage() {
     useEffect(() => {
         setReadingsBundleData(null);
         setPlotError(null);
+    }, [installationGNode]);
+
+    // Only a backend with the optimizer beside it (a laptop) answers
+    // re-runs; the panel shows only where the probe says the route exists.
+    useEffect(() => {
+        setRerunAvailable(false);
+        setRerunRecommendation(null);
+        if (!installationGNode) {
+            return;
+        }
+        let current = true;
+        void probeRerun(installationGNode).then((available) => {
+            if (current) {
+                setRerunAvailable(available);
+            }
+        });
+        return () => {
+            current = false;
+        };
     }, [installationGNode]);
 
     if (!session) {
@@ -255,6 +279,7 @@ export default function VisualizerPage() {
             ]);
             setReadingsBundleData(null);
             setPlottedParams(null);
+            setRerunRecommendation(null);
             if (recommendation === null) {
                 setFloRecommendation(null);
                 const slotStart = endDate.setZone(NEW_YORK_TIME_ZONE).startOf('hour');
@@ -278,6 +303,21 @@ export default function VisualizerPage() {
     async function onFloClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         event.preventDefault();
         await runFloQuery(endDateTime);
+    }
+
+    async function onRerun(tuning: PenaltyTuning) {
+        if (!floParams || isLoading || isFloLoading || isRerunning) {
+            return;
+        }
+        setPlotError(null);
+        setIsRerunning(true);
+        try {
+            setRerunRecommendation(await rerun(withPenaltyTuning(floParams, tuning)));
+        } catch (error) {
+            setPlotError(error instanceof Error ? error.message : 'Unknown error');
+        } finally {
+            setIsRerunning(false);
+        }
     }
 
     function onFloHourShift(hours: number) {
@@ -435,9 +475,28 @@ export default function VisualizerPage() {
                     {floNotice &&
                         <div className="alert alert-secondary mt-3 mb-0 mx-3" role="status">{floNotice}</div>
                     }
+                    {rerunAvailable && floRecommendation && floParams && penaltyTuning(floParams) !== null &&
+                        <FloRerunPanel
+                            key={`${installationGNode}-${floRecommendation.OptimalPathList[0].StartUnixS}`}
+                            tuning={penaltyTuning(floParams)!}
+                            isBusy={isLoading || isFloLoading || isRerunning}
+                            hasRerun={rerunRecommendation !== null}
+                            onRerun={(tuning) => void onRerun(tuning)}
+                            onReset={() => setRerunRecommendation(null)}
+                        />
+                    }
+                    {rerunRecommendation &&
+                        <div className="flo-rerun-label text-center mt-3" role="status">Re-run with the tuning above; Reset or the hour arrows bring the journaled plot back</div>
+                    }
                     {floRecommendation &&
                         <div className="visualizer-server-plots-root">
-                            <FloPlot recommendation={floRecommendation} params={floParams} tariff={floTariff} pairIndex={floPairIndex} isDarkMode={getIsDarkMode()} />
+                            <FloPlot
+                                recommendation={rerunRecommendation ?? floRecommendation}
+                                params={floParams}
+                                tariff={floTariff}
+                                pairIndex={rerunRecommendation ? defaultPairIndex(rerunRecommendation) : floPairIndex}
+                                isDarkMode={getIsDarkMode()}
+                            />
                         </div>
                     }
                 </div>
