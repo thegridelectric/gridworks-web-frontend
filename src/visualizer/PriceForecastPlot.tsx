@@ -74,6 +74,9 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
             formattedStartDate: formatForDisplay(startDate),
             formattedEndDate: formatForDisplay(endDate)
         });
+        // A price reads against zero; autorange on a flat hour would zoom into
+        // a band a dollar wide.
+        plotlyLayout.yaxis = { ...plotlyLayout.yaxis, rangemode: 'tozero' };
         if (tariff) {
             plotlyLayout.shapes = onPeakShapes(tariff, startDate, endDate);
         }
