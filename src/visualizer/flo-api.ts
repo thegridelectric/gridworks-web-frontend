@@ -46,3 +46,39 @@ async function fetchSlotWord(
         throw new Error(`FLO request failed: ${errMsg}`);
     }
 }
+
+/** Whether this backend solves re-runs: a laptop with bruce installed
+ *  beside the API mounts the route, the web box never does. The probe is
+ *  a GET of the POST-only path: 405 means the route is mounted, 404 that
+ *  it is not, and anything else hides the panel too. */
+export async function probeRerun(installationGNode: string): Promise<boolean> {
+    try {
+        const res = await GridWorksApi.get<unknown>(
+            `/api/v2/installations/${installationGNode}/flo.rerun`,
+            { validateStatus: (status) => status === 404 || status === 405 },
+        );
+        return res.status === 405;
+    } catch {
+        return false;
+    }
+}
+
+/** bruce's recommendation for `params`, solved on the backend's machine:
+ *  the hour's journaled request with its Tuning edited, answered at the
+ *  version the backend serves so the plot draws it like the journaled
+ *  word. A solve takes a few seconds at most once the tank shape's
+ *  transition matrix is cached. */
+export async function rerun(params: AnyFloParams): Promise<AnyFloRecommendation> {
+    try {
+        const res = await GridWorksApi.post<unknown>(
+            `/api/v2/installations/${params.GNodeAlias}/flo.rerun`,
+            params,
+            { timeout: 60_000 },
+        );
+        return AnyFloRecommendation.parse(res.data);
+    } catch (error: unknown) {
+        const detail = isAxiosError(error) ? error.response?.data?.detail : undefined;
+        const errMsg = detail || (error instanceof Error ? error.message : `Unknown error type ${typeof error}`);
+        throw new Error(`FLO re-run failed: ${errMsg}`);
+    }
+}

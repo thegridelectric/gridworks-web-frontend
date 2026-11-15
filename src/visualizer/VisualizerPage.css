@@ -54,3 +54,35 @@
     opacity: 1;
     cursor: wait;
 }
+
+.visualizer-card .flo-rerun-panel h6 {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+.visualizer-card .flo-rerun-group {
+    min-width: 12rem;
+}
+
+.visualizer-card .flo-rerun-field {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.25rem;
+}
+
+.visualizer-card .flo-rerun-field input[type="number"] {
+    width: 7rem;
+    font-size: 0.8rem;
+    padding: 0.1rem 0.4rem;
+}
+
+.visualizer-card .flo-rerun-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
