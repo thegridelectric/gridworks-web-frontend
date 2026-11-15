@@ -22,6 +22,12 @@ export const LeftRightDot = z
     .min(1)
     .regex(/^[a-z][a-z0-9]*(\.[a-z0-9]+)*$/, 'Fails LeftRightDot format');
 
+/** Sema: https://schemas.electricity.works/formats/market.slot.name */
+export const MarketSlotName = z
+    .string()
+    .regex(/^[erd]\.[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.[a-z][a-z0-9]*(?:\.[a-z0-9]+)*\.[0-9]{10}$/, 'Fails MarketSlotName format')
+    .refine((s) => Number(s.slice(-10)) % 300 === 0, 'Fails MarketSlotName format: slot start off the 5-minute grid');
+
 /** Sema: https://schemas.electricity.works/formats/lowercase.token */
 export const LowercaseToken = z.string().regex(/^[a-z][a-z0-9]*$/, 'Fails LowercaseToken format');
 

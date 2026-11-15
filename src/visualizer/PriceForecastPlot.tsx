@@ -1,5 +1,5 @@
 import Plot, { type PlotParams } from "react-plotly.js";
-import { fetchPriceForecast, PriceSeriesNames, type PriceSeries } from "./pricing-api";
+import { fetchLatestPrices, fetchPriceForecast, type PriceSeries, type RealTimeSeries } from "./pricing-api";
 import { onPeakShapes, tariffForHouse, type TouTariff } from "./tou-tariff";
 import React, { useContext, useEffect, useState } from "react";
 import SessionContext, { installationRoleForGNode } from "../_util/SessionContext";
@@ -24,6 +24,7 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
     const session = useContext(SessionContext);
     const summary = installationRoleForGNode(session?.installations, installationGNode);
     const [priceData, setPriceData] = useState<PriceSeries | null>(null);
+    const [realTime, setRealTime] = useState<RealTimeSeries | null>(null);
     const [tariff, setTariff] = useState<TouTariff | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [plotError, setPlotError] = useState<string | null>(null);
@@ -33,12 +34,19 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
             setIsLoading(true);
             setPlotError(null);
             setPriceData(null);
+            setRealTime(null);
             try {
-                const [prices, touTariff] = await Promise.all([
+                const [forecast, touTariff] = await Promise.all([
                     fetchPriceForecast({ installationGNode, startDate, endDate }),
                     tariffForHouse(summary),
                 ]);
-                setPriceData(prices);
+                // The real-time trace is the market the forecast names; with
+                // no forecast the panel knows no market and draws none.
+                const cleared = forecast.market === null
+                    ? { HourStartS: [], RealTimeList: [] }
+                    : await fetchLatestPrices({ market: forecast.market, startDate, endDate });
+                setPriceData(forecast.series);
+                setRealTime(cleared);
                 setTariff(touTariff);
             } catch (error) {
                 const message = error instanceof Error ? error.message : 'Unknown error';
@@ -52,16 +60,20 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
     }, [installationGNode, startDate, endDate, summary])
 
     let content: React.ReactNode;
-    if (priceData && priceData.HourStartS.length === 0) {
+    if (priceData && realTime && priceData.HourStartS.length === 0 && realTime.HourStartS.length === 0) {
         content = <div className="alert alert-secondary mt-3 mb-0" role="status">No price forecast in this window</div>
-    } else if (priceData) {
-        const pricesTimes = priceData.HourStartS.map(formatHourStartSForDisplay);
-        const tracesWithData = PriceSeriesNames
-            .map(seriesName => ({
+    } else if (priceData && realTime) {
+        const series: { seriesName: string, xS: number[], yValues: number[] }[] = [
+            { seriesName: 'ForecastList', xS: priceData.HourStartS, yValues: priceData.ForecastList },
+            { seriesName: 'RealTimeList', xS: realTime.HourStartS, yValues: realTime.RealTimeList },
+        ];
+        const tracesWithData = series
+            .filter(x => x.xS.length > 0)
+            .map(({ seriesName, xS, yValues }) => ({
                 seriesName,
                 unit: 'DollarsPerMWh',
-                xValues: pricesTimes,
-                yValues: priceData[seriesName],
+                xValues: xS.map(formatHourStartSForDisplay),
+                yValues,
                 trace: props.plotConfig.traces?.find(t => t.dataSource === 'prices' && t.dataSeriesName === seriesName)
             }))
             .filter(x => x.trace);

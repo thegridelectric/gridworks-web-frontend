@@ -373,7 +373,7 @@ const STORAGE_CONFIG: PlotConfig = {
 };
 
 const PRICING_CONFIG: PlotConfig = {
-    title: 'Price Forecast',
+    title: 'Price',
     plotType: 'PriceForecast',
     yAxis1: {
         titleText: 'Price [$/MWh]'
@@ -385,6 +385,13 @@ const PRICING_CONFIG: PlotConfig = {
         lineShape: 'hv',
         opacity: 0.8,
         legendText: 'Day-ahead forecast'
+    }, {
+        dataSeriesName: 'RealTimeList',
+        dataSource: 'prices',
+        color: '#2a7de1',
+        lineShape: 'hv',
+        opacity: 0.9,
+        legendText: 'Real-time'
     }]
 };
 
