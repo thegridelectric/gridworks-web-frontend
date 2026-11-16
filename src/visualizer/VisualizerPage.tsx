@@ -640,11 +640,6 @@ export default function VisualizerPage() {
                     {floNotice &&
                         <div className="alert alert-secondary mt-3 mb-0 mx-3" role="status">{floNotice}</div>
                     }
-                    {floRerunRecommendation &&
-                        <div className="flo-pen-rerun-summary text-muted small text-center" role="status">
-                            Re-run with the hours and tuning above. The hour arrows bring the journaled plot back.
-                        </div>
-                    }
                     {shownFloRecommendation &&
                         <div className="visualizer-server-plots-root">
                             <FloPlot
