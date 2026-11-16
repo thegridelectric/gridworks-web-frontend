@@ -109,6 +109,32 @@ export async function fetchLatestPrices(params: {
     }
 }
 
+/** The price the house's market cleared the slot starting at `slotStart`
+ *  at, in USD/MWh; null when the house had no forecast naming its market
+ *  or the slot has not cleared. */
+export async function fetchSlotClearedPrice(params: {
+    installationGNode: string;
+    slotStart: DateTime;
+}): Promise<number | null> {
+    const { installationGNode, slotStart } = params;
+    const slotEnd = slotStart.plus({ seconds: SLOT_S });
+    const { market } = await fetchPriceForecast({ installationGNode, startDate: slotStart, endDate: slotEnd });
+    if (market === null) {
+        return null;
+    }
+    try {
+        const res = await GridWorksApi.get<unknown>(`/api/v2/markets/${market}/latest-prices`, {
+            params: { start: slotStart.toISO(), end: slotEnd.toISO() },
+        });
+        const cleared = LatestPrice.array().parse(res.data).find((p) => slotStartS(p) === slotStart.toSeconds());
+        return cleared === undefined ? null : cleared.PriceX1000 / 1000;
+    } catch (error: unknown) {
+        const detail = isAxiosError(error) ? error.response?.data?.detail : undefined;
+        const errMsg = detail || (error instanceof Error ? error.message : `Unknown error type ${typeof error}`);
+        throw new Error(`Real-time price request failed: ${errMsg}`);
+    }
+}
+
 /** The price forecast the house had at the window's first hour, from the
  *  backend, cut to the window, with the market it names; an empty series
  *  and no market when the house had none. */

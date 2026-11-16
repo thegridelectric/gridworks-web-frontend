@@ -4,7 +4,7 @@ import exampleRecommendation000 from '../../sema/__tests__/fixtures/registry-exa
 import { AnyFloRecommendation } from '../../sema/types/AnyFloRecommendation';
 import orange1Params001 from '../../sema/__tests__/fixtures/orange1-flo.params-001.json';
 import { FloParams001 } from '../../sema/types/old_versions/FloParams001';
-import { cop, defaultPairIndex, paramsView, pathView, plotTitle, slotTitle, temperatureColor } from '../flo-path-view';
+import { cop, defaultPairIndex, paramsView, pathView, penaltyBars, plotTitle, slotTitle, storeBars, storeEndTimes, storeLabelColor, storePlot, temperatureColor, thermoclineLayer } from '../flo-path-view';
 
 const orange1 = AnyFloRecommendation.parse(orange1Recommendation001);
 const example000 = AnyFloRecommendation.parse(exampleRecommendation000);
@@ -92,6 +92,69 @@ describe('the FLO path view', () => {
         expect(temperatureColor(60)).toBe('rgb(255,245,240)');
         expect(temperatureColor(180)).toBe('rgb(103,0,13)');
         expect(temperatureColor(120)).toBe('rgb(251,106,74)');
+    });
+
+    it('puts the initial store on the first hour and the recommendation states at each step end', () => {
+        const params = FloParams001.parse(orange1Params001);
+        const view = pathView(orange1, 1);
+        const store = orange1Store!;
+        const plotted = storePlot(view, params);
+        expect(thermoclineLayer(1, 3, 9)).toBe(3);
+        expect(thermoclineLayer(2, 3, 9)).toBe(6);
+        expect(plotted.time).toHaveLength(view.stepStart.length + 1);
+        expect(plotted.time[0]).toBe(view.stepStart[0]);
+        expect(plotted.time[1]).toBe(view.stepStart[1]);
+        expect(plotted.time[plotted.time.length - 1]).toBe(view.horizonEnd);
+        expect(plotted.barWidthMs).toHaveLength(plotted.time.length);
+        expect(plotted.barWidthMs[plotted.barWidthMs.length - 1]).toBe(view.barWidthMs[view.barWidthMs.length - 1]);
+        const [bottom, middle, top] = plotted.bars;
+        expect(top.temp[0]).toBe(params.InitialTopTempF);
+        expect(middle.temp[0]).toBe(params.InitialMiddleTempF);
+        expect(bottom.temp[0]).toBe(params.InitialBottomTempF);
+        expect(top.y[0]).toBe(3);
+        expect(middle.y[0]).toBe(3);
+        expect(bottom.y[0]).toBe(3);
+        expect(top.temp[1]).toBe(store.TopFList[0]);
+        expect(top.temp[top.temp.length - 1]).toBe(store.TopFList[store.TopFList.length - 1]);
+        expect(top.textColor[0]).toBe('green');
+        const last = top.temp.length - 1;
+        expect(top.textColor[last]).toBe(storeLabelColor(top.temp[last], undefined));
+        const ends = storeEndTimes(view);
+        expect(ends).toHaveLength(store.TopFList.length);
+        expect(ends[0]).toBe(view.stepStart[1]);
+        expect(ends[ends.length - 1]).toBe(view.horizonEnd);
+    });
+
+    it('draws recommendation store states at step ends when the request is unknown', () => {
+        const view = pathView(orange1, 1);
+        const plotted = storePlot(view, null);
+        expect(plotted.time).toEqual(storeEndTimes(view));
+        expect(plotted.bars[2].temp[0]).toBe(orange1Store!.TopFList[0]);
+        expect(plotted.time[0]).not.toBe(view.stepStart[0]);
+    });
+
+    it('paints the tank the way the visualizer does: bottom to top, green once a layer meets RSWT, no label on a one-layer middle', () => {
+        const view = pathView(orange1, 1);
+        const rswt = FloParams001.parse(orange1Params001).RswtFList;
+        const bars = storeBars(view, rswt);
+        expect(bars).toHaveLength(3);
+        expect(bars[0].y[0] + bars[1].y[0] + bars[2].y[0]).toBe(view.storeLayers);
+        expect(bars[1].text[0]).toBe(bars[1].y[0] > 1 ? String(Math.trunc(bars[1].temp[0])) : "");
+        const hot = bars[2].temp.findIndex((t, i) => rswt[i] <= t);
+        if (hot >= 0) expect(bars[2].textColor[hot]).toBe("green");
+        expect(storeLabelColor(90, 100)).toBe("gray");
+        expect(storeLabelColor(110, 120)).toBe("white");
+    });
+
+    it('stacks the terminal cost on the last step and leaves 30% of headroom', () => {
+        const view = pathView(orange1, 1);
+        const drawn = penaltyBars(view, { rswt: true, stability: true, shortCycle: false, terminal: true });
+        expect(drawn.series.map((s) => s.name)[0]).toBe("RSWT penalty");
+        const terminal = drawn.series[drawn.series.length - 1];
+        expect(terminal.y[terminal.y.length - 1]).toBe(view.terminalCostUsd);
+        expect(terminal.y[0]).toBe(0);
+        expect(drawn.yRange?.[0]).toBe(0);
+        expect(drawn.yRange?.[1]).toBeGreaterThan(0);
     });
 });
 
