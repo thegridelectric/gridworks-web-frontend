@@ -110,8 +110,9 @@ export default function VisualizerPage() {
         setPlotError(null);
     }, [installationGNode]);
 
-    // Only a backend with the optimizer beside it (a laptop) answers
-    // re-runs; the Re-run button solves only where the probe says the route exists.
+    // The pen is the re-run editor, and the route is mounted only when
+    // BACKEND_FLO_RERUN=in-process. The probe is a GET of that POST-only
+    // path, so the pencil stays hidden wherever the route is absent.
     useEffect(() => {
         setRerunAvailable(false);
         setFloRerunRecommendation(null);
@@ -576,18 +577,20 @@ export default function VisualizerPage() {
                                 ? <div className="loader" aria-hidden />
                                 : <i className="bi bi-chevron-right" aria-hidden />}
                         </button>
-                        <button
-                            className={`btn btn-sm btn-outline-secondary flo-hour-btn${isFloPenMode ? ' is-selected' : ''}`}
-                            type="button"
-                            aria-label="Edit"
-                            aria-pressed={isFloPenMode}
-                            disabled={isLoading || isFloLoading || !floRecommendation}
-                            onClick={() => setIsFloPenMode((on) => !on)}
-                        >
-                            <i className="bi bi-pencil" aria-hidden />
-                        </button>
+                        {rerunAvailable &&
+                            <button
+                                className={`btn btn-sm btn-outline-secondary flo-hour-btn${isFloPenMode ? ' is-selected' : ''}`}
+                                type="button"
+                                aria-label="Edit"
+                                aria-pressed={isFloPenMode}
+                                disabled={isLoading || isFloLoading || !floRecommendation}
+                                onClick={() => setIsFloPenMode((on) => !on)}
+                            >
+                                <i className="bi bi-pencil" aria-hidden />
+                            </button>
+                        }
                         </div>
-                        {isFloPenMode && floRecommendation &&
+                        {rerunAvailable && isFloPenMode && floRecommendation &&
                             <div className="flo-pen-controls">
                                 <p className="flo-pen-instructions text-muted small mb-0">
                                     Re-run the same FLO but forcing the heat pump to be on or off in some of the
@@ -609,15 +612,13 @@ export default function VisualizerPage() {
                                     className="btn btn-sm btn-outline-secondary flo-pen-rerun-btn"
                                     type="button"
                                     disabled={
-                                        !rerunAvailable
-                                        || floParams === null
+                                        floParams === null
                                         || penaltyTuning(floParams) === null
                                         || isLoading
                                         || isFloLoading
                                         || isRerunning
                                         || floPenaltyTuningFromDraft(floTuningDraft) === null
                                     }
-                                    title={rerunAvailable ? undefined : "This backend does not solve re-runs"}
                                     onClick={() => void onFloPenRerunClick()}
                                 >
                                     {isRerunning ? "Re-running…" : "Re-run"}
