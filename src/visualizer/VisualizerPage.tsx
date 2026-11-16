@@ -27,6 +27,7 @@ import {
     FloHorizonBars,
     emptyFloHorizonBarSelections,
     floHorizonSelectedPositions,
+    floHorizonSelectedSteps,
     formatFloPenForcedHoursList,
     type FloHorizonBarSelections,
 } from "./FloHorizonBars";
@@ -36,9 +37,9 @@ import {
     floPenaltyTuningFromDraft,
     type FloPenaltyTuningDraft,
 } from "./FloPenaltyTuning";
-import { fetchParams, fetchRecommendation } from "./flo-api";
+import { fetchParams, fetchRecommendation, probeRerun, rerun } from "./flo-api";
 import { bidView, defaultPairIndex, paramsView } from "./flo-path-view";
-import { penaltyTuning } from "./flo-rerun-tuning";
+import { floRerunRequest, penaltyTuning, type PenaltyTuning } from "./flo-rerun-tuning";
 import { fetchSlotClearedPrice } from "./pricing-api";
 import type { VisualizerParams } from "./VisualizerParams";
 
@@ -69,6 +70,9 @@ export default function VisualizerPage() {
         forcedOn: number[];
         forcedOff: number[];
     } | null>(null);
+    const [rerunAvailable, setRerunAvailable] = useState(false);
+    const [isRerunning, setIsRerunning] = useState(false);
+    const [floRerunRecommendation, setFloRerunRecommendation] = useState<AnyFloRecommendation | null>(null);
     const [floSummaryXAxisMetrics, setFloSummaryXAxisMetrics] = useState<FloSummaryXAxisMetrics | null>(null);
     const onFloSummaryXAxisMetrics = useCallback((next: FloSummaryXAxisMetrics | null) => {
         setFloSummaryXAxisMetrics((prev) => (floSummaryXAxisMetricsEqual(prev, next) ? prev : next));
@@ -88,6 +92,7 @@ export default function VisualizerPage() {
     const startTimeInputRef = useRef<HTMLInputElement>(null);
     const endDateInputRef = useRef<HTMLInputElement>(null);
     const endTimeInputRef = useRef<HTMLInputElement>(null);
+    const floQueryGeneration = useRef(0);
     const { installationGNode, pathRoot } = useRouteInfo();
     const session = useContext(SessionContext);
     useVisualizerAutoRefresh({
@@ -103,6 +108,25 @@ export default function VisualizerPage() {
     useEffect(() => {
         setReadingsBundleData(null);
         setPlotError(null);
+    }, [installationGNode]);
+
+    // Only a backend with the optimizer beside it (a laptop) answers
+    // re-runs; the Re-run button solves only where the probe says the route exists.
+    useEffect(() => {
+        setRerunAvailable(false);
+        setFloRerunRecommendation(null);
+        if (!installationGNode) {
+            return;
+        }
+        let current = true;
+        void probeRerun(installationGNode).then((available) => {
+            if (current) {
+                setRerunAvailable(available);
+            }
+        });
+        return () => {
+            current = false;
+        };
     }, [installationGNode]);
 
     const floHourButtonsVisible = floRecommendation !== null || floNotice !== null;
@@ -124,7 +148,7 @@ export default function VisualizerPage() {
         }
 
         function onKeyDown(event: KeyboardEvent) {
-            if (isLoading || isFloLoading || isTypingTarget(event.target)) {
+            if (isLoading || isFloLoading || isRerunning || isTypingTarget(event.target)) {
                 return;
             }
             if (event.key === "ArrowLeft") {
@@ -295,6 +319,7 @@ export default function VisualizerPage() {
     }
 
     async function runFloQuery(endDt: Date, hourShift: -1 | 1 | null = null) {
+        floQueryGeneration.current += 1;
         setPlotError(null);
 
         if (!installationGNode) {
@@ -336,6 +361,7 @@ export default function VisualizerPage() {
                 ));
                 setFloTuningDraft(floPenaltyTuningDraft((params && penaltyTuning(params)) ?? {}));
                 setFloPenRerunSummary(null);
+                setFloRerunRecommendation(null);
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
@@ -352,20 +378,41 @@ export default function VisualizerPage() {
     }
 
     function onFloHourShift(hours: number) {
-        if (isLoading || isFloLoading) {
+        if (isLoading || isFloLoading || isRerunning) {
             return;
         }
         setIsFloPenMode(false);
         void runFloQuery(shiftEndWall(endDateTime, hours), hours < 0 ? -1 : 1);
     }
 
-    // The re-run is not wired to the solver yet: it states the hours picked
-    // in the bars and goes no further.
-    function onFloPenRerunClick() {
+    async function onFloPenRerunClick() {
+        const base = floParams === null ? null : penaltyTuning(floParams);
+        const values = floPenaltyTuningFromDraft(floTuningDraft);
+        if (!floParams || base === null || values === null || isLoading || isFloLoading || isRerunning) {
+            return;
+        }
         const forcedOn = floHorizonSelectedPositions(floHorizonBarSelections.top);
         const forcedOff = floHorizonSelectedPositions(floHorizonBarSelections.bottom);
-        console.log("FLO re-run: hours forced on", forcedOn, "hours forced off", forcedOff);
-        setFloPenRerunSummary({ forcedOn, forcedOff });
+        const generation = floQueryGeneration.current;
+        setPlotError(null);
+        setIsRerunning(true);
+        try {
+            const answer = await rerun(floRerunRequest(
+                floParams,
+                { ...base, ...values } as PenaltyTuning,
+                floHorizonSelectedSteps(floHorizonBarSelections.top),
+                floHorizonSelectedSteps(floHorizonBarSelections.bottom),
+            ));
+            if (generation !== floQueryGeneration.current) {
+                return;
+            }
+            setFloRerunRecommendation(answer);
+            setFloPenRerunSummary({ forcedOn, forcedOff });
+        } catch (error) {
+            setPlotError(error instanceof Error ? error.message : "Unknown error");
+        } finally {
+            setIsRerunning(false);
+        }
     }
 
     const floRequestView = floParams === null ? null : paramsView(floParams);
@@ -376,7 +423,13 @@ export default function VisualizerPage() {
             floRequestView.priceUsdMwh,
             floRequestView.stepStart.length,
         );
-    const floBid = floRecommendation && floParams ? bidView(floRecommendation, floParams, floRealPriceMwh) : null;
+    const shownFloRecommendation = floRerunRecommendation ?? floRecommendation;
+    const shownFloPairIndex = floRerunRecommendation === null
+        ? floPairIndex
+        : defaultPairIndex(floRerunRecommendation);
+    const floBid = shownFloRecommendation && floParams
+        ? bidView(shownFloRecommendation, floParams, floRealPriceMwh)
+        : null;
 
     function onFullscreenToggle() {
         setIsFullscreen((was) => {
@@ -395,7 +448,7 @@ export default function VisualizerPage() {
             <div className="card-header d-flex justify-content-between align-items-center">
                 <h5 className="card-title">Visualizer</h5>
                 <div className="status-badges">
-                    {(isLoading || isFloLoading) && <div className="loader" aria-label="Loading visualizer data" />}
+                    {(isLoading || isFloLoading || isRerunning) && <div className="loader" aria-label="Loading visualizer data" />}
                     <div className="form-check form-check-inline me-3 d-flex align-items-center">
                         <input
                             className="form-check-input auto-refresh-checkbox"
@@ -504,7 +557,7 @@ export default function VisualizerPage() {
                             type="button"
                             aria-label="One hour earlier"
                             aria-busy={floHourShift === -1}
-                            disabled={isLoading || isFloLoading}
+                            disabled={isLoading || isFloLoading || isRerunning}
                             onClick={() => onFloHourShift(-1)}
                         >
                             {floHourShift === -1
@@ -516,7 +569,7 @@ export default function VisualizerPage() {
                             type="button"
                             aria-label="One hour later"
                             aria-busy={floHourShift === 1}
-                            disabled={isLoading || isFloLoading}
+                            disabled={isLoading || isFloLoading || isRerunning}
                             onClick={() => onFloHourShift(1)}
                         >
                             {floHourShift === 1
@@ -550,15 +603,24 @@ export default function VisualizerPage() {
                                 <FloPenaltyTuning
                                     draft={floTuningDraft}
                                     onDraftChange={setFloTuningDraft}
-                                    disabled={isLoading || isFloLoading}
+                                    disabled={isLoading || isFloLoading || isRerunning}
                                 />
                                 <button
                                     className="btn btn-sm btn-outline-secondary flo-pen-rerun-btn"
                                     type="button"
-                                    disabled={isLoading || isFloLoading || floPenaltyTuningFromDraft(floTuningDraft) === null}
-                                    onClick={onFloPenRerunClick}
+                                    disabled={
+                                        !rerunAvailable
+                                        || floParams === null
+                                        || penaltyTuning(floParams) === null
+                                        || isLoading
+                                        || isFloLoading
+                                        || isRerunning
+                                        || floPenaltyTuningFromDraft(floTuningDraft) === null
+                                    }
+                                    title={rerunAvailable ? undefined : "This backend does not solve re-runs"}
+                                    onClick={() => void onFloPenRerunClick()}
                                 >
-                                    Re-run
+                                    {isRerunning ? "Re-running…" : "Re-run"}
                                 </button>
                                 {floPenRerunSummary &&
                                     <div className="flo-pen-rerun-summary text-muted small">
@@ -578,12 +640,17 @@ export default function VisualizerPage() {
                     {floNotice &&
                         <div className="alert alert-secondary mt-3 mb-0 mx-3" role="status">{floNotice}</div>
                     }
-                    {floRecommendation &&
+                    {floRerunRecommendation &&
+                        <div className="flo-pen-rerun-summary text-muted small text-center" role="status">
+                            Re-run with the hours and tuning above. The hour arrows bring the journaled plot back.
+                        </div>
+                    }
+                    {shownFloRecommendation &&
                         <div className="visualizer-server-plots-root">
                             <FloPlot
-                                recommendation={floRecommendation}
+                                recommendation={shownFloRecommendation}
                                 params={floParams}
-                                pairIndex={floPairIndex}
+                                pairIndex={shownFloPairIndex}
                                 isDarkMode={getIsDarkMode()}
                                 onXAxisMetrics={isFloPenMode ? onFloSummaryXAxisMetrics : undefined}
                             />

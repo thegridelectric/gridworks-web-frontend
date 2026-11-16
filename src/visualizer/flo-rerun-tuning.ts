@@ -1,4 +1,5 @@
 import { AnyFloParams } from "../sema/types/AnyFloParams";
+import { FloRerunRequest } from "../sema/types/FloRerunRequest";
 import type { FloTuningBruce } from "../sema/types/FloTuningBruce";
 
 /** The penalty fields of `flo.tuning.bruce` a re-run may change, grouped
@@ -42,4 +43,23 @@ export function withPenaltyTuning(params: AnyFloParams, tuning: PenaltyTuning): 
         throw new Error(`A re-run edits flo.tuning.bruce; this request's Tuning is ${params.Tuning.TypeName}`);
     }
     return AnyFloParams.parse({ ...params, Tuning: { ...params.Tuning, ...tuning } });
+}
+
+/** The hour's request, with its bruce penalty tuning replaced, wrapped as
+ *  the `flo.rerun.request` the re-run route solves. `hpForcedOnSteps` and
+ *  `hpForcedOffSteps` are 0-based step ordinals. Validated here so an edit
+ *  that breaks the word is refused before it is sent. */
+export function floRerunRequest(
+    params: AnyFloParams,
+    tuning: PenaltyTuning,
+    hpForcedOnSteps: number[],
+    hpForcedOffSteps: number[],
+): FloRerunRequest {
+    return FloRerunRequest.parse({
+        Params: withPenaltyTuning(params, tuning),
+        HpForcedOnSteps: hpForcedOnSteps,
+        HpForcedOffSteps: hpForcedOffSteps,
+        TypeName: "flo.rerun.request",
+        Version: "000",
+    });
 }

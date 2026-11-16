@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import orange1Params001 from "../../sema/__tests__/fixtures/orange1-flo.params-001.json";
 import exampleParams002 from "../../sema/__tests__/fixtures/registry-example-flo.params-002.json";
 import { AnyFloParams } from "../../sema/types/AnyFloParams";
-import { PENALTY_FIELDS, penaltyTuning, withPenaltyTuning } from "../flo-rerun-tuning";
+import { PENALTY_FIELDS, floRerunRequest, penaltyTuning, withPenaltyTuning } from "../flo-rerun-tuning";
 
 const orange1 = AnyFloParams.parse(orange1Params001);
 const example002 = AnyFloParams.parse(exampleParams002);
@@ -35,5 +35,26 @@ describe("the re-run's penalty tuning", () => {
 
     it("refuses an edit that breaks the word", () => {
         expect(() => withPenaltyTuning(orange1, { ...penaltyTuning(orange1)!, StabilityPenaltyHorizonHours: -1 })).toThrow();
+    });
+
+    it("sends the edited params and the forced steps as flo.rerun.request", () => {
+        const request = floRerunRequest(
+            example002,
+            { ...penaltyTuning(example002)!, RswtPenaltyWeight: 2.5 },
+            [0],
+            [1],
+        );
+        expect(request.TypeName).toBe("flo.rerun.request");
+        expect(request.Version).toBe("000");
+        expect(request.HpForcedOnSteps).toEqual([0]);
+        expect(request.HpForcedOffSteps).toEqual([1]);
+        expect(request.Params.Tuning).toMatchObject({ TypeName: "flo.tuning.bruce", RswtPenaltyWeight: 2.5 });
+    });
+
+    it("refuses a step outside the horizon, or one forced both on and off", () => {
+        const tuning = penaltyTuning(example002)!;
+        const horizon = example002.StepDurationMinutes.length;
+        expect(() => floRerunRequest(example002, tuning, [horizon], [])).toThrow();
+        expect(() => floRerunRequest(example002, tuning, [0], [0])).toThrow();
     });
 });

@@ -4,6 +4,7 @@ import GridWorksApi from "../../_util/GridWorksApi";
 import orange1Params001 from "../../sema/__tests__/fixtures/orange1-flo.params-001.json";
 import orange1Recommendation001 from "../../sema/__tests__/fixtures/orange1-flo.recommendation-001.json";
 import { AnyFloParams } from "../../sema/types/AnyFloParams";
+import { FloRerunRequest } from "../../sema/types/FloRerunRequest";
 import { fetchRecommendation, probeRerun, rerun } from "../flo-api";
 
 const slot = { installationGNode: "d1.isone.ct.newhaven.orange1", time: DateTime.fromISO("2026-11-10T12:19:00Z") };
@@ -47,19 +48,26 @@ describe("probeRerun", () => {
 
 describe("rerun", () => {
     const params = AnyFloParams.parse(orange1Params001);
+    const request = FloRerunRequest.parse({
+        Params: params,
+        HpForcedOnSteps: [1],
+        HpForcedOffSteps: [0],
+        TypeName: "flo.rerun.request",
+        Version: "000",
+    });
 
     it("posts the word to the house in its GNodeAlias and parses the recommendation", async () => {
         const post = vi.spyOn(GridWorksApi, "post").mockResolvedValue({ status: 200, data: orange1Recommendation001 });
-        const answer = await rerun(params);
+        const answer = await rerun(request);
         expect(answer.OptimalPathList.length).toBeGreaterThan(0);
         expect(post.mock.calls[0][0]).toBe(`/api/v2/installations/${params.GNodeAlias}/flo.rerun`);
-        expect(post.mock.calls[0][1]).toBe(params);
+        expect(post.mock.calls[0][1]).toBe(request);
         post.mockRestore();
     });
 
     it("reports the backend's detail when bruce could not solve", async () => {
         const post = vi.spyOn(GridWorksApi, "post").mockRejectedValue(new Error("bruce reads flo.params 002 and this is 001"));
-        await expect(rerun(params)).rejects.toThrow("FLO re-run failed: bruce reads flo.params 002 and this is 001");
+        await expect(rerun(request)).rejects.toThrow("FLO re-run failed: bruce reads flo.params 002 and this is 001");
         post.mockRestore();
     });
 });

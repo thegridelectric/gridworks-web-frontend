@@ -3,6 +3,7 @@ import type { DateTime } from "luxon";
 import GridWorksApi from "../_util/GridWorksApi";
 import { AnyFloRecommendation } from "../sema/types/AnyFloRecommendation";
 import { AnyFloParams } from "../sema/types/AnyFloParams";
+import type { FloRerunRequest } from "../sema/types/FloRerunRequest";
 
 /** The recommendation the FLO service published for the house's market
  *  slot that `time` falls in, at the version the journal holds, or null
@@ -63,16 +64,16 @@ export async function probeRerun(installationGNode: string): Promise<boolean> {
     }
 }
 
-/** bruce's recommendation for `params`, solved on the backend's machine:
- *  the hour's journaled request with its Tuning edited, answered at the
- *  version the backend serves so the plot draws it like the journaled
- *  word. A solve takes a few seconds at most once the tank shape's
- *  transition matrix is cached. */
-export async function rerun(params: AnyFloParams): Promise<AnyFloRecommendation> {
+/** bruce's recommendation for `request`, solved on the backend's machine:
+ *  the hour's journaled `flo.params` (its Tuning possibly edited) plus the
+ *  heat-pump steps to force on or off, answered at the version the backend
+ *  serves so the plot draws it like the journaled word. A solve takes a
+ *  few seconds at most once the tank shape's transition matrix is cached. */
+export async function rerun(request: FloRerunRequest): Promise<AnyFloRecommendation> {
     try {
         const res = await GridWorksApi.post<unknown>(
-            `/api/v2/installations/${params.GNodeAlias}/flo.rerun`,
-            params,
+            `/api/v2/installations/${request.Params.GNodeAlias}/flo.rerun`,
+            request,
             { timeout: 60_000 },
         );
         return AnyFloRecommendation.parse(res.data);

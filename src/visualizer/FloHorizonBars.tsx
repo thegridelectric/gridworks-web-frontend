@@ -20,6 +20,18 @@ export function floHorizonSelectedPositions(selected: boolean[]): number[] {
     return positions;
 }
 
+/** The same selection as step ordinals for `flo.rerun.request`: 0 is the
+ *  first horizon step. The panel shows those steps counted from 1. */
+export function floHorizonSelectedSteps(selected: boolean[]): number[] {
+    const steps: number[] = [];
+    for (let i = 0; i < selected.length; i++) {
+        if (selected[i]) {
+            steps.push(i);
+        }
+    }
+    return steps;
+}
+
 export function formatFloPenForcedHoursList(positions: number[]): string {
     if (positions.length === 0) {
         return "[]";
