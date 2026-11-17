@@ -30,8 +30,9 @@ function layoutHasDataChannel(layout: DeclaresChannels | null | undefined, name:
 const SIEG_SEND_FLOWING_GPM = 0.5;
 
 export function hasPrimaryLoopFlow(readings: DisplayReadings, siegLoop: boolean): boolean {
-    if (siegLoop) {
-        return (readings[SIEG_SEND_CHANNEL]?.display ?? 0) >= SIEG_SEND_FLOWING_GPM;
+    const siegSend = readings[SIEG_SEND_CHANNEL];
+    if (siegLoop && siegSend !== undefined) {
+        return (siegSend.display ?? 0) >= SIEG_SEND_FLOWING_GPM;
     }
     return (readings[PRIMARY_FLOW_CHANNEL]?.display ?? 0) > 0;
 }

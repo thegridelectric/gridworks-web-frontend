@@ -59,6 +59,7 @@ describe('the plant loops', () => {
         const siegSend = AnyLayoutLite.parse({ ...beech011, DataChannels: [...beech011.DataChannels, { ...beech011.DataChannels[0], Name: 'sieg-send', TelemetryName: 'GpmTimes100' }] });
         expect(hasPrimaryLoopFlow(displayReadings(siegSend, { 'sieg-send': 49 }), true)).toBe(false);
         expect(hasPrimaryLoopFlow(displayReadings(siegSend, { 'sieg-send': 50 }), true)).toBe(true);
+        expect(hasPrimaryLoopFlow(displayReadings(beech, { 'primary-flow': 1 }), true)).toBe(true);
         expect(hasPrimaryLoopFlow(displayReadings(elm, { 'primary-flow': 1 }), false)).toBe(true);
         expect(hasPrimaryLoopFlow(displayReadings(elm, { 'primary-flow': 0 }), false)).toBe(false);
     });
