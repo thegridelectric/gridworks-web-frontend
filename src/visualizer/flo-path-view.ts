@@ -34,7 +34,12 @@ export type FloPathView = {
     quantityKw: number;
     slotStart: string;
     stepStart: string[];
+    /** Where the last step ends, as a display time. */
+    horizonEnd: string;
     stepWidthMs: number[];
+    barWidthMs: number[];
+    /** Middle of each step, where the penalty bars are centered. */
+    penaltyTime: string[];
     hpKw: number[];
     storeKwh: number[];
     storeLayers: number | null;
@@ -106,7 +111,10 @@ export function pathView(recommendation: AnyFloRecommendation, pairIndex: number
         quantityKw: (pair.QuantityX1000 * toKw) / 1000,
         slotStart: formatForDisplay(DateTime.fromSeconds(path.StartUnixS)),
         stepStart: stepStartS.map((s) => formatForDisplay(DateTime.fromSeconds(s))),
+        horizonEnd: formatForDisplay(DateTime.fromSeconds(t)),
         stepWidthMs: path.StepDurationMinutes.map((m) => m * 60_000),
+        barWidthMs: path.StepDurationMinutes.map((m) => m * 0.9 * 60_000),
+        penaltyTime: stepStartS.map((s, i) => formatForDisplay(DateTime.fromSeconds(s + path.StepDurationMinutes[i] * 30))),
         hpKw: path.HpAvgWList.map((w) => w / 1000),
         storeKwh: path.StoreWhList.map((wh) => wh / 1000),
         storeLayers: store ? store.StoreLayers : null,
@@ -132,12 +140,21 @@ export function pathView(recommendation: AnyFloRecommendation, pairIndex: number
  *  coefficients, the floor and the outside air). */
 export type FloParamsView = {
     stepStart: string[];
+    /** Where the last step ends, as a display time. */
+    horizonEnd: string;
     priceUsdMwh: number[];
     loadKw: number[];
     thermalPriceUsdMwh: number[];
     /** The electricity price over the horizon's mean COP: the price on
      *  the thermal axis, for comparison with the thermal price. */
     priceNormalizedUsdMwh: number[];
+    /** The LMP per MWh of heat at each step's COP; null at 002, which
+     *  states the price as one list. */
+    thermalLmpUsdMwh: number[] | null;
+    /** The thermal LMP plus the distribution price over the horizon's mean
+     *  COP: what the price per MWh of heat moves with once delivery is
+     *  flattened; null at 002. */
+    thermalOverlayUsdMwh: number[] | null;
 };
 
 /** The heat pump's COP at an outside air temperature, as bruce models it. */
@@ -155,13 +172,32 @@ export function paramsView(params: AnyFloParams): FloParamsView {
     const priceUsdMwh = priceUsdMwhList(params);
     const cops = params.OatFList.map((oat) => cop(params, oat));
     const copBar = cops.reduce((a, b) => a + b, 0) / cops.length;
+    const lmp = params.Version === '001' ? params.LmpUsdMwhList : null;
+    const dist = params.Version === '001' ? params.DistUsdMwhList : null;
     return {
         stepStart: stepStartS.map((s) => formatForDisplay(DateTime.fromSeconds(s))),
+        horizonEnd: formatForDisplay(DateTime.fromSeconds(t)),
         priceUsdMwh,
         loadKw: params.LoadKwhList.map((kwh, i) => kwh / (params.StepDurationMinutes[i] / 60)),
         thermalPriceUsdMwh: priceUsdMwh.map((p, i) => p / cops[i]),
         priceNormalizedUsdMwh: priceUsdMwh.map((p) => p / copBar),
+        thermalLmpUsdMwh: lmp && lmp.map((l, i) => l / cops[i]),
+        thermalOverlayUsdMwh: lmp && dist && lmp.map((l, i) => l / cops[i] + dist[i] / cops[i] - dist[i] / copBar),
     };
+}
+
+/** `overlay` stretched onto the min to max of `thermal`, so the two share
+ *  the thermal axis; a flat overlay sits at the middle of the range. */
+export function overlayScaledToThermalRange(thermal: number[], overlay: number[]): number[] {
+    if (overlay.length === 0 || overlay.length !== thermal.length) return [];
+    const tMin = Math.min(...thermal);
+    const tMax = Math.max(...thermal);
+    const oMin = Math.min(...overlay);
+    const oMax = Math.max(...overlay);
+    if (oMax <= oMin) {
+        return overlay.map(() => (tMin + tMax) / 2);
+    }
+    return overlay.map((x) => tMin + ((x - oMin) / (oMax - oMin)) * (tMax - tMin));
 }
 
 /** The slot start as the plot's title, in the display zone. */
@@ -193,7 +229,282 @@ export function temperatureColor(tempF: number): string {
     return `rgb(${rgb.join(",")})`;
 }
 
+/** The same red, at the 0.7 alpha bruce's visualizer paints the tank with. */
+export function temperatureFill(tempF: number): string {
+    return temperatureColor(tempF).replace(/^rgb\((.*)\)$/, "rgba($1,0.7)");
+}
+
+/** Label color on a tank block: green once the layer meets that step's required
+ *  supply temperature, gray below 100 F, white otherwise. */
+export function storeLabelColor(tempF: number, rswtF: number | undefined): string {
+    if (rswtF !== undefined && rswtF <= tempF) return "green";
+    if (tempF < 100) return "gray";
+    return "white";
+}
+
+/** One tank band as bruce's visualizer hands it to the plot: fill, the
+ *  temperature printed inside, and whether that step's block is tall enough
+ *  to print it. */
+export type StoreBar = {
+    y: number[];
+    base: number[];
+    color: string[];
+    text: string[];
+    textColor: string[];
+    temp: number[];
+};
+
+export function thermoclineLayer(sensorPosition: number, sensors: number, numLayers: number): number {
+    return Math.max(1, Math.round((sensorPosition * numLayers) / sensors));
+}
+
+function prependInitialStore(view: FloPathView, params: AnyFloParams): FloPathView {
+    const n = view.storeLayers;
+    if (n === null) return view;
+    const sensors = params.TanksModeled * params.TempSensorsPerTank;
+    const t1 = thermoclineLayer(params.InitialThermocline1, sensors, n);
+    const t2 = thermoclineLayer(params.InitialThermocline2, sensors, n);
+    const head: Record<BandView["name"], { base: number; layers: number; tempF: number }> = {
+        Top: { base: n - t1, layers: t1, tempF: params.InitialTopTempF },
+        Middle: { base: n - t2, layers: t2 - t1, tempF: params.InitialMiddleTempF },
+        Bottom: { base: 0, layers: n - t2, tempF: params.InitialBottomTempF },
+    };
+    return {
+        ...view,
+        bands: view.bands.map((band) => {
+            const first = head[band.name];
+            return {
+                ...band,
+                base: [first.base, ...band.base],
+                layers: [first.layers, ...band.layers],
+                tempF: [first.tempF, ...band.tempF],
+            };
+        }),
+    };
+}
+
+export function storeSampleTimes(view: FloPathView, includeInitial: boolean): string[] {
+    if (view.stepStart.length === 0) return [];
+    const ends = [...view.stepStart.slice(1), view.horizonEnd];
+    return includeInitial ? [view.stepStart[0], ...ends] : ends;
+}
+
+export function storeSampleWidths(view: FloPathView, includeInitial: boolean): number[] {
+    const widths = view.barWidthMs;
+    const n = widths.length;
+    if (n === 0) return [];
+    const last = widths[n - 1];
+    if (includeInitial) return [...widths, last];
+    return widths.map((_, i) => widths[Math.min(i + 1, n - 1)]);
+}
+
+export function storeEndTimes(view: FloPathView): string[] {
+    return storeSampleTimes(view, false);
+}
+
+export type StorePlot = {
+    time: string[];
+    barWidthMs: number[];
+    bars: StoreBar[];
+};
+
+export function storePlot(view: FloPathView, params: AnyFloParams | null): StorePlot {
+    const includeInitial = params !== null && view.storeLayers !== null && view.bands.length > 0 && view.stepStart.length > 0;
+    const painted = storeBars(includeInitial ? prependInitialStore(view, params) : view, params?.RswtFList ?? null);
+    return {
+        time: storeSampleTimes(view, includeInitial),
+        barWidthMs: storeSampleWidths(view, includeInitial),
+        bars: painted,
+    };
+}
+
+/** Bottom, middle, then top. A bottom block that fills the tank and a middle
+ *  block one layer tall carry no label, matching the visualizer. */
+export function storeBars(view: FloPathView, rswtF: number[] | null): StoreBar[] {
+    const band = (name: BandView["name"]) => view.bands.find((b) => b.name === name);
+    const bottom = band("Bottom");
+    const middle = band("Middle");
+    const top = band("Top");
+    const n = view.storeLayers;
+    if (!bottom || !middle || !top || n === null) return [];
+    const paint = (source: BandView, show: (height: number) => boolean): StoreBar => ({
+        y: source.layers,
+        base: source.base,
+        color: source.tempF.map((t) => temperatureFill(t)),
+        text: source.tempF.map((t, i) => (show(source.layers[i]) ? String(Math.trunc(t)) : "")),
+        textColor: source.tempF.map((t, i) => storeLabelColor(t, rswtF !== null && i < rswtF.length ? rswtF[i] : undefined)),
+        temp: source.tempF,
+    });
+    return [
+        paint(bottom, (height) => n - height !== n),
+        paint(middle, (height) => height > 1),
+        paint(top, () => true),
+    ];
+}
+
+/** One stacked penalty series, already given its color and its base. */
+export type PenaltyBar = {
+    name: string;
+    color: string;
+    y: number[];
+    base: number[];
+};
+
+const PENALTY_FILL = {
+    rswt: "rgba(255,127,14,0.7)",
+    stability: "rgba(148,103,189,0.7)",
+    shortCycle: "rgba(23,190,207,0.7)",
+    terminal: "rgba(44,160,44,0.7)",
+} as const;
+
+/** Which penalty series the tuning drew. A request with no bruce tuning
+ *  draws every series the recommendation states. */
+export type PenaltySeriesEnabled = {
+    rswt: boolean;
+    stability: boolean;
+    shortCycle: boolean;
+    terminal: boolean;
+};
+
+/** The penalty panel as bruce's visualizer stacks it: each enabled series
+ *  on the one below, the terminal cost on the last step only, and a y range
+ *  30% above the tallest stack. */
+export function penaltyBars(
+    view: FloPathView,
+    enabled: PenaltySeriesEnabled,
+): { series: PenaltyBar[]; yRange: [number, number] | null } {
+    const byName = new Map(view.penalties.map((p) => [p.name, p.usd]));
+    const zeros = view.stepStart.map(() => 0);
+    const last = zeros.length - 1;
+    const chosen: { name: string; color: string; y: number[] }[] = [];
+    if (enabled.rswt && byName.has("RSWT penalty")) {
+        chosen.push({ name: "RSWT penalty", color: PENALTY_FILL.rswt, y: byName.get("RSWT penalty")! });
+    }
+    if (enabled.stability && byName.has("Stability penalty")) {
+        chosen.push({ name: "Stability penalty", color: PENALTY_FILL.stability, y: byName.get("Stability penalty")! });
+    }
+    if (enabled.shortCycle && byName.has("Short-cycle penalty")) {
+        chosen.push({ name: "Short-cycle penalty", color: PENALTY_FILL.shortCycle, y: byName.get("Short-cycle penalty")! });
+    }
+    if (enabled.terminal && view.terminalCostUsd !== null && last >= 0) {
+        const y = [...zeros];
+        y[last] = view.terminalCostUsd;
+        const pct = view.terminalCostPct === null ? null : view.terminalCostPct.toFixed(0);
+        chosen.push({
+            name: pct === null ? "Terminal cost" : `Terminal cost (${pct}% of max)`,
+            color: PENALTY_FILL.terminal,
+            y,
+        });
+    }
+    const stack = [...zeros];
+    const series = chosen.map((item) => {
+        const bar = { name: item.name, color: item.color, y: item.y, base: [...stack] };
+        item.y.forEach((v, i) => { stack[i] += v; });
+        return bar;
+    });
+    const maxStack = stack.reduce((m, v) => Math.max(m, v), 0);
+    const maxSeries = series.reduce((m, s) => Math.max(m, ...s.y), 0);
+    const maxPenalty = Math.max(maxStack, maxSeries);
+    return { series, yRange: maxPenalty > 0 ? [0, maxPenalty * 1.3] : null };
+}
+
 /** Dark text on the light end of the scale, light text on the dark end. */
 export function temperatureTextColor(tempF: number): string {
     return tempF >= (STORE_SCALE_MIN_F + STORE_SCALE_MAX_F) / 2 ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.7)";
+}
+
+export type FloBidSupply = {
+    priceMwh: number;
+    intersection: [number, number];
+};
+
+export type FloBidView = {
+    pairs: { quantityKwh: number[]; priceMwh: number[] };
+    step: { quantityKwh: number[]; priceMwh: number[] };
+    forecast: FloBidSupply;
+    real: FloBidSupply | null;
+    xRange: [number, number];
+    xTickQuantitiesKwh: number[];
+    yRange: [number, number];
+    yTicks: number[];
+};
+
+export function bidView(
+    recommendation: AnyFloRecommendation,
+    params: AnyFloParams,
+    realPriceMwh: number | null,
+): FloBidView | null {
+    if (recommendation.PqPairs.length === 0) {
+        return null;
+    }
+    const stepHours = params.StepDurationMinutes[0] / 60;
+    const toKw = recommendation.QuantityUnit === "AvgMW" ? 1000 : 1;
+    const pairs = [...recommendation.PqPairs].sort((a, b) => b.PriceX1000 - a.PriceX1000);
+    const pricesMwh = pairs.map((p) => p.PriceX1000 / 1000);
+    const quantities = pairs.map((p) => (p.QuantityX1000 / 1000) * toKw * stepHours);
+    const forecastPriceMwh = priceUsdMwhList(params)[0];
+    const bidMinPriceMwh = params.PriceMinUsdMwh;
+    const hpMaxQuantityKwh = params.HpMaxKwEl * stepHours;
+    const maxQuantityKwh = hpMaxQuantityKwh * 1.1;
+
+    function quantityAtPriceMwh(priceMwh: number): number {
+        if (priceMwh > pricesMwh[0]) return quantities[0];
+        for (let i = 0; i < pairs.length; i++) {
+            const floor = i + 1 < pairs.length ? pricesMwh[i + 1] : bidMinPriceMwh;
+            const inRange = i + 1 < pairs.length
+                ? floor < priceMwh && priceMwh <= pricesMwh[i]
+                : floor <= priceMwh && priceMwh <= pricesMwh[i];
+            if (inRange) return quantities[i];
+        }
+        return quantities[quantities.length - 1];
+    }
+
+    const stepQ: number[] = [];
+    const stepP: number[] = [];
+    for (let i = 0; i < pairs.length; i++) {
+        const pBottom = i + 1 < pricesMwh.length ? pricesMwh[i + 1] : bidMinPriceMwh;
+        if (i === 0) {
+            stepP.push(pricesMwh[i]);
+            stepQ.push(quantities[i]);
+        }
+        stepP.push(pBottom);
+        stepQ.push(quantities[i]);
+        if (i + 1 < pairs.length) {
+            stepP.push(pBottom);
+            stepQ.push(quantities[i + 1]);
+        }
+    }
+
+    const ceiling = pricesMwh[0];
+    const floor = bidMinPriceMwh;
+    const supplies = realPriceMwh === null ? [forecastPriceMwh] : [forecastPriceMwh, realPriceMwh];
+    const belowCeiling = [...pricesMwh.slice(1), ...supplies].filter((p) => p < ceiling - 0.01);
+    const aboveFloor = [pricesMwh[pricesMwh.length - 1], ...supplies].filter((p) => p > floor + 0.01);
+    const topFeature = belowCeiling.length > 0 ? Math.max(...belowCeiling) : null;
+    const bottomFeature = aboveFloor.length > 0 ? Math.min(...aboveFloor) : null;
+    const span = Math.max((topFeature ?? ceiling) - (bottomFeature ?? floor), 1);
+    const margin = Math.max(0.45 * span, 60);
+    const pad = 0.04 * span;
+    const yTop = topFeature !== null && ceiling > topFeature + margin ? topFeature + margin : ceiling + pad;
+    const yBottom = bottomFeature !== null && floor < bottomFeature - margin ? bottomFeature - margin : floor - pad;
+    const yTicks = [...pricesMwh];
+    if (yTicks.every((p) => Math.abs(p - bidMinPriceMwh) > 0.01)) yTicks.push(bidMinPriceMwh);
+
+    const xTicks = [...quantities];
+    if (!xTicks.some((q) => Math.abs(q - hpMaxQuantityKwh) < 0.001)) xTicks.push(hpMaxQuantityKwh);
+
+    const supply = (priceMwh: number): FloBidSupply => ({
+        priceMwh,
+        intersection: [quantityAtPriceMwh(priceMwh), priceMwh],
+    });
+    return {
+        pairs: { quantityKwh: quantities, priceMwh: pricesMwh },
+        step: { quantityKwh: stepQ, priceMwh: stepP },
+        forecast: supply(forecastPriceMwh),
+        real: realPriceMwh === null ? null : supply(realPriceMwh),
+        xRange: [Math.min(...quantities) - 1, maxQuantityKwh],
+        xTickQuantitiesKwh: xTicks.sort((a, b) => a - b),
+        yRange: [yBottom, yTop],
+        yTicks: yTicks.filter((p) => yBottom <= p && p <= yTop).sort((a, b) => b - a),
+    };
 }

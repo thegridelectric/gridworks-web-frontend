@@ -533,6 +533,9 @@ export function formatHourStartSForDisplay(hourStartS: number): string {
 
 const VISUALIZER_PLOT_HEIGHT = 400;
 
+/** Margins for the FLO summary and bid plots, so their plot areas line up. */
+export const FLO_PLOT_MARGINS = { t: 64, b: 68, l: 70, r: 78 };
+
 export function getDefaultPlotLayout(isDarkMode: boolean): Partial<Layout> {
 
     const theme = {
