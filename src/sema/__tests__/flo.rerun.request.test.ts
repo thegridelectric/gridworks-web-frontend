@@ -10,14 +10,12 @@ describe('flo.rerun.request', () => {
     });
 
     it('rejects a forced step outside the horizon (axiom 1)', () => {
-        const broken = structuredClone(example);
-        broken.HpForcedOnSteps = [99];
+        const broken = { ...structuredClone(example), HpForcedOnSteps: [99] };
         expect(FloRerunRequest.safeParse(broken).success).toBe(false);
     });
 
     it('rejects the same step forced on and off (axiom 2)', () => {
-        const broken = structuredClone(example);
-        broken.HpForcedOnSteps = [1];
+        const broken = { ...structuredClone(example), HpForcedOnSteps: [1] };
         expect(FloRerunRequest.safeParse(broken).success).toBe(false);
     });
 });
