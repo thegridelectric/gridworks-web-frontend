@@ -9,6 +9,21 @@ export interface SnapshotPayload {
     LatestStateList?: SnapshotState[];
 }
 
+export type StoreFlowRelayState = 'ChargingStore' | 'DischargingStore';
+
+/** Charge/discharge relay from snapshot.spaceheat (`store.flow.relay` in LatestStateList). */
+export function storeFlowRelayFromSnapshot(snapshot: SnapshotPayload): StoreFlowRelayState | null {
+    for (const entry of snapshot.LatestStateList ?? []) {
+        if (entry.StateEnum !== 'store.flow.relay') {
+            continue;
+        }
+        if (entry.State === 'ChargingStore' || entry.State === 'DischargingStore') {
+            return entry.State;
+        }
+    }
+    return null;
+}
+
 export function isLastHeardFresh(snapshotTimeUnixMs: number | null, nowMs: number): boolean {
     if (snapshotTimeUnixMs == null) {
         return false;

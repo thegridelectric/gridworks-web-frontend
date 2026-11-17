@@ -3,18 +3,15 @@ import { resolveActiveComponentFills, resolveActiveComponentFlags } from "./real
 import type { DisplayReadings } from "../sema/displayReadings";
 import { formatReading } from "../sema/displayReadings";
 import { hasPrimaryLoopFlow } from "../sema/plantLoops";
-
-interface RelayStatus {
-    state: string,
-    display_name: string
-}
+import type { StoreFlowRelayState } from "./snapshotState";
 
 interface RealTimeStatusSystemDiagramProps {
     readings: DisplayReadings,
-    relays: Record<string, RelayStatus>,
     isSpruce: boolean,
     /** Extra vertical between HP→buffer top and bottom horizontals, just east of the heat pump. */
     siegLoop?: boolean,
+    /** Charge/discharge relay from snapshot.spaceheat (`store.flow.relay`). */
+    storeFlowRelay?: StoreFlowRelayState | null,
 }
 
 /** Sieg vertical: between HP-buffer horizontals (y=90 … y=215); x nudged right of the HP run. */
@@ -22,7 +19,12 @@ const SIEG_LOOP_PIPE_Y = 90;
 const SIEG_LOOP_PIPE_W = 15;
 const SIEG_LOOP_PIPE_H = 125;
 
-export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce, siegLoop = false }: RealTimeStatusSystemDiagramProps) {
+export default function RealTimeStatusSystemDiagram({
+    readings,
+    isSpruce,
+    siegLoop = false,
+    storeFlowRelay = null,
+}: RealTimeStatusSystemDiagramProps) {
     /** When Sieg loop is shown, shift the heat pump graphic left; HP–buffer horizontals extend to match (`RealTimeStatusSystemDiagramPipes`). */
     const siegHpShiftX = siegLoop ? -28 : 0;
     /** HP supply/return labels & Spruce HEX column follow this (matches shifted HP when `siegLoop`). */
@@ -64,7 +66,11 @@ export default function RealTimeStatusSystemDiagram({ relays, readings, isSpruce
         })
         : [];
 
-    const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow, storeCharge } = getCurrentState(relays, readings, siegLoop);
+    const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow, storeCharge } = getCurrentState(
+        readings,
+        siegLoop,
+        storeFlowRelay,
+    );
     const animateSpruceFloorLoop = isSpruce ? shouldAnimateSpruceFloorLoop(readings) : false;
     const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
 
@@ -601,9 +607,9 @@ function formatTemp(readings: DisplayReadings, channelName: string) {
 }
 
 function getCurrentState(
-    relays: Record<string, RelayStatus>,
     readings: DisplayReadings,
     siegLoop: boolean,
+    storeFlowRelay: StoreFlowRelayState | null,
 ) {
 
     const hasDistFlow = (readings['dist-flow']?.display ?? 0) > 0;
@@ -615,28 +621,14 @@ function getCurrentState(
     const totalHpKw = (readings['hp-idu-pwr']?.display ?? 0) + (readings['hp-odu-pwr']?.display ?? 0);
     const hasHpPower = totalHpKw > 0.5;
 
-    // Check relay states to determine system state
-    const relay5 = relays['relay5'];
-    const relay6 = relays['relay6'];
-    const relay3 = relays['relay3'];
-    const relay9 = relays['relay9'];
-
     let currentState = null;
     let storeCharge = false;
 
-    if (relay5 && relay6 && relay3 && relay9) {
-        const relay3State = relay3.state;
-
-        let hpOn = false;
-        // if (relay5State === 'energized' && relay6State === 'deenergized' && hasHpPower) {
-        if (hasHpPower) {
-            hpOn = true;
-        }
-
+    if (storeFlowRelay !== null) {
+        const hpOn = hasHpPower;
         let storeDischarge = false;
-        if (relay3State === 'energized' && hasPrimFlow) {
+        if (storeFlowRelay === 'ChargingStore' && hasPrimFlow) {
             storeCharge = true;
-            // } else if (relay3State === 'deenergized' && relay9State === 'energized' && hasStoreFlow) {
         } else if (hasStoreFlow) {
             storeDischarge = true;
         }

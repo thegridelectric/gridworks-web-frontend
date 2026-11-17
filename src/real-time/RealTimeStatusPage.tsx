@@ -13,57 +13,17 @@ import { layoutHasSecondaryLoop, layoutHasSiegLoop } from '../sema/plantLoops';
 import type { AnyLayoutLite } from '../sema/types/AnyLayoutLite';
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketBaseUrl } from "../_util/visualizerApi";
-import { controlFromSnapshot, type SnapshotPayload } from "./snapshotState";
-
-interface RelayInfo {
-    name: string;
-    channel_name: string;
-    display_name: string;
-    state: string;
-    last_update: number;
-}
-
-/** Map SCADA names like `hp-failsafe-relay5` to diagram keys `relay5` (see `LatestReadingList`). */
-function relayKeyFromScadaChannelName(channelName: string): string | null {
-    const withSuffix = channelName.match(/-relay(\d+)$/i);
-    if (withSuffix) {
-        return `relay${withSuffix[1]}`;
-    }
-    const plain = channelName.match(/^relay(\d+)$/i);
-    if (plain) {
-        return `relay${plain[1]}`;
-    }
-    return null;
-}
-
-function scadaValueToRelayState(value: number): string {
-    return value !== 0 ? 'energized' : 'deenergized';
-}
-
-function relayMapFromScadaReadings(readings: Record<string, number>): Record<string, RelayInfo> {
-    const out: Record<string, RelayInfo> = {};
-    const now = Date.now();
-    for (const [channelName, value] of Object.entries(readings)) {
-        const key = relayKeyFromScadaChannelName(channelName);
-        if (!key) {
-            continue;
-        }
-        out[key] = {
-            name: key,
-            channel_name: channelName,
-            display_name: channelName,
-            state: scadaValueToRelayState(value),
-            last_update: now,
-        };
-    }
-    return out;
-}
+import {
+    controlFromSnapshot,
+    storeFlowRelayFromSnapshot,
+    type SnapshotPayload,
+    type StoreFlowRelayState,
+} from "./snapshotState";
 
 interface DashboardStatusMessage {
     type: 'status';
     target_gnode?: string;
     thermostat_names?: string[];
-    relays?: Record<string, RelayInfo>;
 }
 
 interface DashboardMqttMessage {
@@ -160,7 +120,7 @@ function RealTimeStatusConnection({
 
     const [targetGNode, setTargetGNode] = useState('');
     const [thermostatNames, setThermostatNames] = useState<string[] | null>(null);
-    const [relays, setRelays] = useState<Record<string, RelayInfo>>({});
+    const [storeFlowRelay, setStoreFlowRelay] = useState<StoreFlowRelayState | null>(null);
     const [updateTime, setUpdateTime] = useState<Date | null>(null);
     const [latestReadings, setLatestReadings] = useState<Record<string, number> | null>(null);
     const [control, setControl] = useState<string | null>(null);
@@ -241,6 +201,7 @@ function RealTimeStatusConnection({
                     }
                     setUpdateTime(new Date(snapshot.SnapshotTimeUnixMs));
                     setControl(controlFromSnapshot(snapshot));
+                    setStoreFlowRelay(storeFlowRelayFromSnapshot(snapshot));
                     setLatestReadings((previous) => {
                         const next = Object.fromEntries(
                             (snapshot.LatestReadingList || []).map((r) => [r.ChannelName, r.Value]),
@@ -255,7 +216,6 @@ function RealTimeStatusConnection({
                                 }
                             }
                         }
-                        setRelays(relayMapFromScadaReadings(next));
                         return next;
                     });
                 }
@@ -445,10 +405,10 @@ function RealTimeStatusConnection({
                     />
                 }
                 <RealTimeStatusSystemDiagram
-                    relays={relays}
                     readings={shown}
                     isSpruce={isSpruce}
                     siegLoop={siegLoopEnabled}
+                    storeFlowRelay={storeFlowRelay}
                 />
                 {latestReadings ?
                     <>

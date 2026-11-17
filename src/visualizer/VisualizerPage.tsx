@@ -202,6 +202,31 @@ export default function VisualizerPage() {
         }
     }
 
+    function clearReadingsDisplay() {
+        setReadingsBundleData(null);
+        setPlottedParams(null);
+    }
+
+    function clearFloDisplay() {
+        setFloRecommendation(null);
+        setFloParams(null);
+        setFloRealPriceMwh(null);
+        setFloNotice(null);
+        setFloPairIndex(0);
+        setFloRerunRecommendation(null);
+        setFloPenRerunSummary(null);
+        setFloHorizonBarSelections({ top: [], bottom: [] });
+        setFloTuningDraft({});
+        setIsFloPenMode(false);
+        setFloSummaryXAxisMetrics(null);
+    }
+
+    function clearVisualizerContent() {
+        clearReadingsDisplay();
+        clearFloDisplay();
+        setPlotError(null);
+    }
+
     async function runPlotQuery(startDt: Date, endDt: Date) {
         setPlotError(null);
 
@@ -229,9 +254,9 @@ export default function VisualizerPage() {
             selectedChannels.push('show-points');
         }
 
+        const generation = ++floQueryGeneration.current;
         setIsLoading(true);
         setPlotError(null);
-        setReadingsBundleData(null);
         try {
             const apiResult = await GridWorksApi.get<unknown>(
                 `/api/v2/installations/${installationGNode}/synced.readings.bundle`,
@@ -244,12 +269,17 @@ export default function VisualizerPage() {
                     }
                 }
             );
+            if (generation !== floQueryGeneration.current) {
+                return;
+            }
+            const readings = SyncedReadingsBundle.parse(apiResult.data);
+            clearVisualizerContent();
             setPlottedParams({
                 startDate: startDate,
                 endDate: endDate,
                 installationGNode
             })
-            setReadingsBundleData(SyncedReadingsBundle.parse(apiResult.data));
+            setReadingsBundleData(readings);
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
@@ -271,8 +301,8 @@ export default function VisualizerPage() {
 
     function onClearClick(event: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
         event.preventDefault();
-        setReadingsBundleData(null);
-        setPlotError(null);
+        floQueryGeneration.current += 1;
+        clearVisualizerContent();
         resetControls();
         setDateWindow(getDefaultDate(true), getDefaultDate(false));
     }
@@ -320,7 +350,6 @@ export default function VisualizerPage() {
     }
 
     async function runFloQuery(endDt: Date, hourShift: -1 | 1 | null = null) {
-        floQueryGeneration.current += 1;
         setPlotError(null);
 
         if (!installationGNode) {
@@ -334,6 +363,7 @@ export default function VisualizerPage() {
             return;
         }
 
+        const generation = ++floQueryGeneration.current;
         setEndDateWindow(endDt);
         setFloHourShift(hourShift);
         setIsFloLoading(true);
@@ -345,8 +375,10 @@ export default function VisualizerPage() {
                 // The bid plot draws the actual supply line only once the slot has cleared.
                 fetchSlotClearedPrice({ installationGNode, slotStart }).catch(() => null),
             ]);
-            setReadingsBundleData(null);
-            setPlottedParams(null);
+            if (generation !== floQueryGeneration.current) {
+                return;
+            }
+            clearVisualizerContent();
             if (recommendation === null) {
                 setFloRecommendation(null);
                 setFloNotice(`No FLO was run for the slot starting ${slotStart.toFormat('yyyy-LL-dd HH:mm')} ET`);
@@ -550,7 +582,7 @@ export default function VisualizerPage() {
             />
 
             {(floRecommendation || floNotice) &&
-                <div className="plot-container border-top">
+                <div className={`plot-container${isShowingOptions ? '' : ' plot-container--border-top'}`}>
                     <div className="d-flex flex-column align-items-center gap-2 pt-3">
                         <div className="d-flex justify-content-center align-items-center gap-2">
                         <button
@@ -657,7 +689,7 @@ export default function VisualizerPage() {
             }
 
             {readingsBundleData && plottedParams &&
-                <div className="plot-container border-top">
+                <div className={`plot-container${isShowingOptions ? '' : ' plot-container--border-top'}`}>
                     <div className="visualizer-server-plots-root">
 
                         {PLOT_CONFIGS.map((c, i) => (
