@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import beech011 from './fixtures/beech-layout.lite-011.json';
 import elm013 from './fixtures/elm-layout.lite-013.json';
 import { displayReadings, formatReading, RAW_MARKER } from '../displayReadings';
-import { hasPrimaryLoopFlow, layoutHasSecondaryLoop, layoutHasSiegLoop } from '../plantLoops';
+import { hasPrimaryLoopFlow, layoutHasSecondaryLoop, layoutHasSiegLoop, layoutReadsSiegSend } from '../plantLoops';
 import { AnyLayoutLite } from '../types/AnyLayoutLite';
 
 const elm = AnyLayoutLite.parse(elm013);
@@ -55,12 +55,15 @@ describe('the plant loops', () => {
         expect(layoutHasSiegLoop(elm)).toBe(false);
     });
 
-    it('decides primary loop flow in GPM', () => {
+    it('decides primary loop flow by the sieg send reading where the layout reads one, else by primary flow', () => {
         const siegSend = AnyLayoutLite.parse({ ...beech011, DataChannels: [...beech011.DataChannels, { ...beech011.DataChannels[0], Name: 'sieg-send', TelemetryName: 'GpmTimes100' }] });
-        expect(hasPrimaryLoopFlow(displayReadings(siegSend, { 'sieg-send': 49 }), true)).toBe(false);
-        expect(hasPrimaryLoopFlow(displayReadings(siegSend, { 'sieg-send': 50 }), true)).toBe(true);
-        expect(hasPrimaryLoopFlow(displayReadings(beech, { 'primary-flow': 1 }), true)).toBe(true);
-        expect(hasPrimaryLoopFlow(displayReadings(elm, { 'primary-flow': 1 }), false)).toBe(true);
-        expect(hasPrimaryLoopFlow(displayReadings(elm, { 'primary-flow': 0 }), false)).toBe(false);
+        expect(layoutReadsSiegSend(siegSend)).toBe(true);
+        expect(layoutReadsSiegSend(beech)).toBe(false);
+        expect(hasPrimaryLoopFlow(displayReadings(siegSend, { 'sieg-send': 49 }), layoutReadsSiegSend(siegSend))).toBe(false);
+        expect(hasPrimaryLoopFlow(displayReadings(siegSend, { 'sieg-send': 50 }), layoutReadsSiegSend(siegSend))).toBe(true);
+        expect(hasPrimaryLoopFlow(displayReadings(siegSend, { 'primary-flow': 1 }), layoutReadsSiegSend(siegSend))).toBe(false);
+        expect(hasPrimaryLoopFlow(displayReadings(beech, { 'primary-flow': 1 }), layoutReadsSiegSend(beech))).toBe(true);
+        expect(hasPrimaryLoopFlow(displayReadings(elm, { 'primary-flow': 1 }), layoutReadsSiegSend(elm))).toBe(true);
+        expect(hasPrimaryLoopFlow(displayReadings(elm, { 'primary-flow': 0 }), layoutReadsSiegSend(elm))).toBe(false);
     });
 });

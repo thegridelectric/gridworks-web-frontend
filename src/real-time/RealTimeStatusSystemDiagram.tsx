@@ -10,6 +10,8 @@ interface RealTimeStatusSystemDiagramProps {
     isSpruce: boolean,
     /** Extra vertical between HP→buffer top and bottom horizontals, just east of the heat pump. */
     siegLoop?: boolean,
+    /** The layout reads the sieg send flow, which then decides the primary loop's flow. */
+    siegSendRead?: boolean,
     /** Charge/discharge relay from snapshot.spaceheat (`store.flow.relay`). */
     storeFlowRelay?: StoreFlowRelayState | null,
 }
@@ -23,6 +25,7 @@ export default function RealTimeStatusSystemDiagram({
     readings,
     isSpruce,
     siegLoop = false,
+    siegSendRead = false,
     storeFlowRelay = null,
 }: RealTimeStatusSystemDiagramProps) {
     /** When Sieg loop is shown, shift the heat pump graphic left; HP–buffer horizontals extend to match (`RealTimeStatusSystemDiagramPipes`). */
@@ -68,12 +71,14 @@ export default function RealTimeStatusSystemDiagram({
 
     const { currentState, hasDistFlow, hasPrimFlow, hasHpPower, hasStoreFlow, storeCharge } = getCurrentState(
         readings,
-        siegLoop,
+        siegSendRead,
         storeFlowRelay,
     );
     const animateSpruceFloorLoop = isSpruce ? shouldAnimateSpruceFloorLoop(readings) : false;
     const animateSpruceUpstairsLoop = isSpruce ? shouldAnimateSpruceUpstairsLoop(readings) : false;
 
+    // Channel-name matches: the sieg loop's flow and the secondary loop's flow.
+    // The layout fact that replaces them is a loop role on the channel in layout.lite.
     const hasSiegFlow =
         siegLoop && (readings['sieg-flow']?.display ?? 0) > 0.5;
     const hasSecondaryFlow =
@@ -608,13 +613,17 @@ function formatTemp(readings: DisplayReadings, channelName: string) {
 
 function getCurrentState(
     readings: DisplayReadings,
-    siegLoop: boolean,
+    siegSendRead: boolean,
     storeFlowRelay: StoreFlowRelayState | null,
 ) {
-
+    // Channel-name matches. The facts: the distribution loop's flow, the store
+    // loop's flow, and the heat pump's indoor plus outdoor power. The layout fact
+    // that replaces the flows is a loop role on the channel in layout.lite; the
+    // one that replaces the power sum is the heat pump's power channels named on
+    // its component. No version states either yet.
     const hasDistFlow = (readings['dist-flow']?.display ?? 0) > 0;
 
-    const hasPrimFlow = hasPrimaryLoopFlow(readings, siegLoop);
+    const hasPrimFlow = hasPrimaryLoopFlow(readings, siegSendRead);
 
     const hasStoreFlow = (readings['store-flow']?.display ?? 0) > 0;
 
@@ -738,6 +747,8 @@ function renderStaticHeatPump() {
 
 function renderBufferTank(readings: DisplayReadings, isSpruce: boolean) {
     const BUFFER_ELEMENT_ACTIVE_POWER_W = 3000;
+    // Channel-name matches: the buffer's two element powers. The layout fact that
+    // replaces them is the element's power channel named on the tank's component.
     const bufferTopElementOn = (readings['elt-buffer-top-pwr']?.raw ?? 0) > BUFFER_ELEMENT_ACTIVE_POWER_W;
     const bufferBottomElementOn = (readings['elt-buffer-bottom-pwr']?.raw ?? 0) > BUFFER_ELEMENT_ACTIVE_POWER_W;
 
@@ -824,6 +835,7 @@ function renderStorageTank1(readings: DisplayReadings, tankX: number, textX: num
     const rightX = tankX + 120;
 
     const STORE_ELEMENT_ACTIVE_POWER_W = 3000;
+    // Channel-name matches: the store's two element powers; same replacement as the buffer's.
     const storeTopElementOn = (readings['elt-store-top-pwr']?.raw ?? 0) > STORE_ELEMENT_ACTIVE_POWER_W;
     const storeBottomElementOn = (readings['elt-store-bottom-pwr']?.raw ?? 0) > STORE_ELEMENT_ACTIVE_POWER_W;
 
