@@ -28,7 +28,7 @@ import {
     emptyFloHorizonBarSelections,
     floHorizonSelectedPositions,
     floHorizonSelectedSteps,
-    formatFloPenForcedHoursList,
+    formatFloPenForcedStepsList,
     type FloHorizonBarSelections,
 } from "./FloHorizonBars";
 import {
@@ -284,7 +284,9 @@ export default function VisualizerPage() {
             const message = error instanceof Error ? error.message : 'Unknown error';
             setPlotError(message);
         } finally {
-            setIsLoading(false);
+            if (generation === floQueryGeneration.current) {
+                setIsLoading(false);
+            }
         }
     }
 
@@ -658,12 +660,12 @@ export default function VisualizerPage() {
                                 {floPenRerunSummary &&
                                     <div className="flo-pen-rerun-summary text-muted small">
                                         <p className="mb-0">
-                                            Hours forced on:{" "}
-                                            {formatFloPenForcedHoursList(floPenRerunSummary.forcedOn)}
+                                            Steps forced on:{" "}
+                                            {formatFloPenForcedStepsList(floPenRerunSummary.forcedOn)}
                                         </p>
                                         <p className="mb-0">
-                                            Hours forced off:{" "}
-                                            {formatFloPenForcedHoursList(floPenRerunSummary.forcedOff)}
+                                            Steps forced off:{" "}
+                                            {formatFloPenForcedStepsList(floPenRerunSummary.forcedOff)}
                                         </p>
                                     </div>
                                 }

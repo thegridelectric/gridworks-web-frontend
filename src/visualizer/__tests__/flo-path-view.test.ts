@@ -4,7 +4,7 @@ import exampleRecommendation000 from '../../sema/__tests__/fixtures/registry-exa
 import { AnyFloRecommendation } from '../../sema/types/AnyFloRecommendation';
 import orange1Params001 from '../../sema/__tests__/fixtures/orange1-flo.params-001.json';
 import { FloParams001 } from '../../sema/types/old_versions/FloParams001';
-import { cop, defaultPairIndex, paramsView, pathView, penaltyBars, plotTitle, slotTitle, storeBars, storeEndTimes, storeLabelColor, storePlot, temperatureColor, thermoclineLayer } from '../flo-path-view';
+import { defaultPairIndex, paramsView, pathView, penaltyBars, plotTitle, slotTitle, storeBars, storeEndTimes, storeLabelColor, storePlot, temperatureColor, thermoclineLayer } from '../flo-path-view';
 
 const orange1 = AnyFloRecommendation.parse(orange1Recommendation001);
 const example000 = AnyFloRecommendation.parse(exampleRecommendation000);
@@ -27,7 +27,6 @@ describe('the FLO path view', () => {
         expect(view.stepStart).toHaveLength(48);
         expect(view.stepStart[0]).toBe('2026-11-09T14:00:00');
         expect(view.stepStart[1]).toBe('2026-11-09T15:00:00');
-        expect(view.stepWidthMs[0]).toBe(3_600_000);
         expect(view.hpKw[0]).toBe(8.026);
         expect(view.quantityKw).toBe(8.026);
         expect(view.priceUsdMwh).toBe(101);
@@ -50,12 +49,15 @@ describe('the FLO path view', () => {
     });
 
     it('stacks the unmet-load penalty between RSWT and stability when the recommendation states it', () => {
-        const word = structuredClone(orange1Recommendation001);
-        word.Version = '002';
-        for (const penalties of word.PathPenaltiesList) {
-            penalties.Version = '001';
-            penalties.UnmetLoadPenaltyUsdList = penalties.RswtPenaltyUsdList.map(() => 1.25);
-        }
+        const word = {
+            ...orange1Recommendation001,
+            Version: '002',
+            PathPenaltiesList: orange1Recommendation001.PathPenaltiesList.map((penalties) => ({
+                ...penalties,
+                Version: '001',
+                UnmetLoadPenaltyUsdList: penalties.RswtPenaltyUsdList.map(() => 1.25),
+            })),
+        };
         const view = pathView(AnyFloRecommendation.parse(word), 1);
         expect(view.penalties.map((p) => p.name)).toEqual([
             'RSWT penalty',
@@ -185,11 +187,5 @@ describe('the FLO params view', () => {
         expect(view.stepStart[0]).toBe('2026-11-09T14:00:00');
         expect(view.priceUsdMwh[0]).toBeCloseTo(params.LmpUsdMwhList[0] + params.DistUsdMwhList[0]);
         expect(view.loadKw[5]).toBeCloseTo(params.LoadKwhList[5] / (params.StepDurationMinutes[5] / 60));
-    });
-
-    it('prices heat at each step by the COP bruce models from outside air', () => {
-        expect(cop(params, params.CopMinOatF - 1)).toBe(params.CopMin);
-        expect(cop(params, 40)).toBeCloseTo(params.CopIntercept + params.CopOatCoeff * 40);
-        expect(view.thermalPriceUsdMwh[0]).toBeCloseTo(view.priceUsdMwh[0] / cop(params, params.OatFList[0]));
     });
 });

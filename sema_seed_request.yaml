@@ -10,7 +10,7 @@ initial_targets:
     # The LTN's request the recommendation answers: the FLO view's price
     # and load panels.
     flo.params: {}
-    # POST …/flo.rerun body once the panel sends the vendored word.
+    # The re-run panel's POST …/flo.rerun body.
     flo.rerun.request:
       versions: ["000"]
     gw.house.operating.status: {}

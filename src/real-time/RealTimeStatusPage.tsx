@@ -9,7 +9,7 @@ import RealTimeStatusSystemDiagram from "./RealTimeStatusSystemDiagram";
 import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
 import SessionContext, { canConnectRealTimeData, installationRoleForGNode } from "../_util/SessionContext";
 import { displayReadings, formatReading, type DisplayReading } from '../sema/displayReadings';
-import { layoutHasSecondaryLoop, layoutHasSiegLoop } from '../sema/plantLoops';
+import { layoutHasSecondaryLoop, layoutHasSiegLoop, layoutReadsSiegSend } from '../sema/plantLoops';
 import type { AnyLayoutLite } from '../sema/types/AnyLayoutLite';
 import { useRouteInfo } from "../_util/useRouteInfo";
 import { getDashboardWebSocketBaseUrl } from "../_util/visualizerApi";
@@ -98,6 +98,7 @@ function RealTimeStatusConnection({
     isSpruce,
     layout,
     defaultSiegLoop,
+    siegSendRead,
     secondaryLoop,
 }: {
     currentInstallationId: string | undefined;
@@ -105,6 +106,7 @@ function RealTimeStatusConnection({
     isSpruce: boolean;
     layout: AnyLayoutLite | undefined;
     defaultSiegLoop: boolean;
+    siegSendRead: boolean;
     secondaryLoop: boolean;
 }) {
     function getSpruceResistiveElements(readings: Record<string, DisplayReading>) {
@@ -408,6 +410,7 @@ function RealTimeStatusConnection({
                     readings={shown}
                     isSpruce={isSpruce}
                     siegLoop={siegLoopEnabled}
+                    siegSendRead={siegSendRead}
                     storeFlowRelay={storeFlowRelay}
                 />
                 {latestReadings ?
@@ -542,6 +545,7 @@ export default function RealTimeStatusPage() {
 
     const layout = installation?.Layout;
     const defaultSiegLoop = layoutHasSiegLoop(layout);
+    const siegSendRead = layoutReadsSiegSend(layout);
     const secondaryLoop = layoutHasSecondaryLoop(layout);
 
     if (!showConnectedContent) {
@@ -642,6 +646,7 @@ export default function RealTimeStatusPage() {
             isSpruce={isSpruce}
             layout={layout}
             defaultSiegLoop={defaultSiegLoop}
+            siegSendRead={siegSendRead}
             secondaryLoop={secondaryLoop}
         />
     );

@@ -36,7 +36,6 @@ export type FloPathView = {
     stepStart: string[];
     /** Where the last step ends, as a display time. */
     horizonEnd: string;
-    stepWidthMs: number[];
     barWidthMs: number[];
     /** Middle of each step, where the penalty bars are centered. */
     penaltyTime: string[];
@@ -115,7 +114,6 @@ export function pathView(recommendation: AnyFloRecommendation, pairIndex: number
         slotStart: formatForDisplay(DateTime.fromSeconds(path.StartUnixS)),
         stepStart: stepStartS.map((s) => formatForDisplay(DateTime.fromSeconds(s))),
         horizonEnd: formatForDisplay(DateTime.fromSeconds(t)),
-        stepWidthMs: path.StepDurationMinutes.map((m) => m * 60_000),
         barWidthMs: path.StepDurationMinutes.map((m) => m * 0.9 * 60_000),
         penaltyTime: stepStartS.map((s, i) => formatForDisplay(DateTime.fromSeconds(s + path.StepDurationMinutes[i] * 30))),
         hpKw: path.HpAvgWList.map((w) => w / 1000),
@@ -135,35 +133,15 @@ export function pathView(recommendation: AnyFloRecommendation, pairIndex: number
 }
 
 /** What the FLO view draws from the slot's request, on the request's
- *  step grid: the forecast load in kW, the electricity price the
- *  optimizer saw (USD per MWh), and that price per
- *  MWh of heat at each step's COP.
- *
- *  The thermal price applies the COP rule flo.params spells out (the
- *  coefficients, the floor and the outside air). */
+ *  step grid: the forecast load in kW and the electricity price the
+ *  optimizer saw, in USD per MWh. */
 export type FloParamsView = {
     stepStart: string[];
     /** Where the last step ends, as a display time. */
     horizonEnd: string;
     priceUsdMwh: number[];
     loadKw: number[];
-    thermalPriceUsdMwh: number[];
-    /** The electricity price over the horizon's mean COP: the price on
-     *  the thermal axis, for comparison with the thermal price. */
-    priceNormalizedUsdMwh: number[];
-    /** The LMP per MWh of heat at each step's COP; null at 002, which
-     *  states the price as one list. */
-    thermalLmpUsdMwh: number[] | null;
-    /** The thermal LMP plus the distribution price over the horizon's mean
-     *  COP: what the price per MWh of heat moves with once delivery is
-     *  flattened; null at 002. */
-    thermalOverlayUsdMwh: number[] | null;
 };
-
-/** The heat pump's COP at an outside air temperature, as bruce models it. */
-export function cop(params: AnyFloParams, oatF: number): number {
-    return oatF < params.CopMinOatF ? params.CopMin : params.CopIntercept + params.CopOatCoeff * oatF;
-}
 
 export function paramsView(params: AnyFloParams): FloParamsView {
     const stepStartS: number[] = [];
@@ -172,35 +150,12 @@ export function paramsView(params: AnyFloParams): FloParamsView {
         stepStartS.push(t);
         t += minutes * 60;
     }
-    const priceUsdMwh = priceUsdMwhList(params);
-    const cops = params.OatFList.map((oat) => cop(params, oat));
-    const copBar = cops.reduce((a, b) => a + b, 0) / cops.length;
-    const lmp = params.Version === '001' ? params.LmpUsdMwhList : null;
-    const dist = params.Version === '001' ? params.DistUsdMwhList : null;
     return {
         stepStart: stepStartS.map((s) => formatForDisplay(DateTime.fromSeconds(s))),
         horizonEnd: formatForDisplay(DateTime.fromSeconds(t)),
-        priceUsdMwh,
+        priceUsdMwh: priceUsdMwhList(params),
         loadKw: params.LoadKwhList.map((kwh, i) => kwh / (params.StepDurationMinutes[i] / 60)),
-        thermalPriceUsdMwh: priceUsdMwh.map((p, i) => p / cops[i]),
-        priceNormalizedUsdMwh: priceUsdMwh.map((p) => p / copBar),
-        thermalLmpUsdMwh: lmp && lmp.map((l, i) => l / cops[i]),
-        thermalOverlayUsdMwh: lmp && dist && lmp.map((l, i) => l / cops[i] + dist[i] / cops[i] - dist[i] / copBar),
     };
-}
-
-/** `overlay` stretched onto the min to max of `thermal`, so the two share
- *  the thermal axis; a flat overlay sits at the middle of the range. */
-export function overlayScaledToThermalRange(thermal: number[], overlay: number[]): number[] {
-    if (overlay.length === 0 || overlay.length !== thermal.length) return [];
-    const tMin = Math.min(...thermal);
-    const tMax = Math.max(...thermal);
-    const oMin = Math.min(...overlay);
-    const oMax = Math.max(...overlay);
-    if (oMax <= oMin) {
-        return overlay.map(() => (tMin + tMax) / 2);
-    }
-    return overlay.map((x) => tMin + ((x - oMin) / (oMax - oMin)) * (tMax - tMin));
 }
 
 /** The slot start as the plot's title, in the display zone. */
@@ -321,8 +276,8 @@ export function storePlot(view: FloPathView, params: AnyFloParams | null): Store
     };
 }
 
-/** Bottom, middle, then top. A bottom block that fills the tank and a middle
- *  block one layer tall carry no label, matching the visualizer. */
+/** Bottom, middle, then top. As in bruce's own plot, a bottom band with no
+ *  layers and a middle band one layer tall print no label. */
 export function storeBars(view: FloPathView, rswtF: number[] | null): StoreBar[] {
     const band = (name: BandView["name"]) => view.bands.find((b) => b.name === name);
     const bottom = band("Bottom");
@@ -339,7 +294,7 @@ export function storeBars(view: FloPathView, rswtF: number[] | null): StoreBar[]
         temp: source.tempF,
     });
     return [
-        paint(bottom, (height) => n - height !== n),
+        paint(bottom, (height) => height !== 0),
         paint(middle, (height) => height > 1),
         paint(top, () => true),
     ];
@@ -414,11 +369,6 @@ export function penaltyBars(
     const maxSeries = series.reduce((m, s) => Math.max(m, ...s.y), 0);
     const maxPenalty = Math.max(maxStack, maxSeries);
     return { series, yRange: maxPenalty > 0 ? [0, maxPenalty * 1.3] : null };
-}
-
-/** Dark text on the light end of the scale, light text on the dark end. */
-export function temperatureTextColor(tempF: number): string {
-    return tempF >= (STORE_SCALE_MIN_F + STORE_SCALE_MAX_F) / 2 ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.7)";
 }
 
 export type FloBidSupply = {

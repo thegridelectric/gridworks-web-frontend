@@ -1,17 +1,18 @@
 import type { ReactNode } from "react";
+import type { PenaltyKey } from "./flo-rerun-tuning";
 
-export type FloPenaltyTuningValues = Record<string, boolean | number>;
-export type FloPenaltyTuningDraft = Record<string, boolean | string>;
+export type FloPenaltyTuningValues = Partial<Record<PenaltyKey, boolean | number>>;
+export type FloPenaltyTuningDraft = Partial<Record<PenaltyKey, boolean | string>>;
 
 type FloPenaltyField = {
-    key: string;
+    key: PenaltyKey;
     label: string;
     integer?: boolean;
 };
 
 type FloPenalty = {
     title: string;
-    enabledKey: string;
+    enabledKey: PenaltyKey;
     fields: FloPenaltyField[];
 };
 
@@ -53,11 +54,11 @@ const FLO_PENALTIES: FloPenalty[] = [
     },
 ];
 
-const INTEGER_KEYS = new Set(
+const INTEGER_KEYS = new Set<PenaltyKey>(
     FLO_PENALTIES.flatMap((p) => p.fields.filter((f) => f.integer).map((f) => f.key)),
 );
 
-export function parseFloPenaltyFieldValue(key: string, raw: string): number | null {
+export function parseFloPenaltyFieldValue(key: PenaltyKey, raw: string): number | null {
     if (raw.trim() === "") {
         return null;
     }
@@ -70,15 +71,22 @@ export function parseFloPenaltyFieldValue(key: string, raw: string): number | nu
 
 export function floPenaltyTuningDraft(values: FloPenaltyTuningValues): FloPenaltyTuningDraft {
     const draft: FloPenaltyTuningDraft = {};
-    for (const [key, value] of Object.entries(values)) {
-        draft[key] = typeof value === "boolean" ? value : String(value);
+    for (const key of Object.keys(values) as PenaltyKey[]) {
+        const value = values[key];
+        if (value !== undefined) {
+            draft[key] = typeof value === "boolean" ? value : String(value);
+        }
     }
     return draft;
 }
 
 export function floPenaltyTuningFromDraft(draft: FloPenaltyTuningDraft): FloPenaltyTuningValues | null {
     const values: FloPenaltyTuningValues = {};
-    for (const [key, raw] of Object.entries(draft)) {
+    for (const key of Object.keys(draft) as PenaltyKey[]) {
+        const raw = draft[key];
+        if (raw === undefined) {
+            continue;
+        }
         if (typeof raw === "boolean") {
             values[key] = raw;
             continue;
@@ -92,7 +100,7 @@ export function floPenaltyTuningFromDraft(draft: FloPenaltyTuningDraft): FloPena
     return values;
 }
 
-const FLO_PENALTY_FORMULAS: Record<string, ReactNode> = {
+const FLO_PENALTY_FORMULAS: Partial<Record<PenaltyKey, ReactNode>> = {
     RswtPenaltyEnabled: (
         <>
             ω · p<sub>med</sub> · λ<sup>H − min(t, H)</sup> · Σ<sub>i</sub> V<sub>i</sub> · max(0, e<sup>k·(RSWT<sub>t</sub> − T<sub>i</sub>)</sup> − 1)
@@ -126,7 +134,7 @@ export function FloPenaltyTuning(props: {
         return null;
     }
 
-    function setValue(key: string, value: boolean | string) {
+    function setValue(key: PenaltyKey, value: boolean | string) {
         onDraftChange({ ...draft, [key]: value });
     }
 
