@@ -110,8 +110,8 @@ export default function RealTimeStatusThermostatTable({ thermostatNames, reading
         zoneElements = zones.map(zone => {
             const tempReading = readings[`${zone.key}-temp`];
             const setPointReading = readings[`${zone.key}-set`];
-            const stateReading = readings[`${zone.key}-state`];
-            
+            const stateReading =
+                readings[`${zone.key}-heat-call`] ?? readings[`${zone.key}-state`];
             const state = (stateReading?.raw ?? 0) > 0 ? 'heating' : 'idle';
 
             return <tr key={zone.key}>
