@@ -32,7 +32,7 @@ export function floHorizonSelectedSteps(selected: boolean[]): number[] {
     return steps;
 }
 
-export function formatFloPenForcedHoursList(positions: number[]): string {
+export function formatFloPenForcedStepsList(positions: number[]): string {
     if (positions.length === 0) {
         return "[]";
     }

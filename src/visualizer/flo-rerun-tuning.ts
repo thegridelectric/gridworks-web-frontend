@@ -25,7 +25,6 @@ export const PENALTY_FIELDS = [
 
 export type PenaltyKey = (typeof PENALTY_FIELDS)[number]["key"];
 export type PenaltyTuning = Pick<FloTuningBruce, PenaltyKey>;
-export const PENALTY_GROUPS = [...new Set(PENALTY_FIELDS.map((f) => f.group))];
 
 const UNMET_LOAD_OFF: Pick<FloTuningBruce, "UnmetLoadPenaltyEnabled" | "UnmetLoadPenaltyWeight"> = {
     UnmetLoadPenaltyEnabled: false,
