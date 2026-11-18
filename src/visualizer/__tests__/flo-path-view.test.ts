@@ -49,12 +49,15 @@ describe('the FLO path view', () => {
     });
 
     it('stacks the unmet-load penalty between RSWT and stability when the recommendation states it', () => {
-        const word = structuredClone(orange1Recommendation001);
-        word.Version = '002';
-        for (const penalties of word.PathPenaltiesList) {
-            penalties.Version = '001';
-            penalties.UnmetLoadPenaltyUsdList = penalties.RswtPenaltyUsdList.map(() => 1.25);
-        }
+        const word = {
+            ...orange1Recommendation001,
+            Version: '002',
+            PathPenaltiesList: orange1Recommendation001.PathPenaltiesList.map((penalties) => ({
+                ...penalties,
+                Version: '001',
+                UnmetLoadPenaltyUsdList: penalties.RswtPenaltyUsdList.map(() => 1.25),
+            })),
+        };
         const view = pathView(AnyFloRecommendation.parse(word), 1);
         expect(view.penalties.map((p) => p.name)).toEqual([
             'RSWT penalty',
