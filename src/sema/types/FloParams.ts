@@ -6,7 +6,7 @@ import { FloTuningAlice } from './FloTuningAlice';
 import { FloTuningBruce } from './FloTuningBruce';
 import { SHARED_PARAMS_AXIOMS, sameLength } from './floParamsAxioms';
 
-/** Sema: https://schemas.electricity.works/types/flo.params/002 */
+/** Sema: https://schemas.electricity.works/types/flo.params/003 */
 export const FloParams = SHARED_PARAMS_AXIOMS.reduce(
     (schema, [check, message, path]) => schema.refine(check, { message, path: [path] }),
     z
@@ -45,7 +45,7 @@ export const FloParams = SHARED_PARAMS_AXIOMS.reduce(
             PreviousEstimateElecUsdMwhNow: z.number().optional(),
             Tuning: z.discriminatedUnion('TypeName', [FloTuningAlice, FloTuningBruce]),
             TypeName: z.literal('flo.params'),
-            Version: z.literal('002'),
+            Version: z.literal('003'),
         })
         .refine((p) => sameLength(p.StepDurationMinutes, [p.PriceUsdMwhList, p.OatFList, p.LoadKwhList, p.RswtFList]), {
             message: 'Axiom 1 (StepListLengths) failed: the five step lists are empty or differ in length',

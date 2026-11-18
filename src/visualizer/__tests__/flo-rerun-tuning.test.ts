@@ -8,9 +8,11 @@ const orange1 = AnyFloParams.parse(orange1Params001);
 const example002 = AnyFloParams.parse(exampleParams002);
 
 describe("the re-run's penalty tuning", () => {
-    it("names the thirteen penalty fields of flo.tuning.bruce", () => {
-        expect(PENALTY_FIELDS).toHaveLength(13);
-        expect(new Set(PENALTY_FIELDS.map((f) => f.group))).toEqual(new Set(["RSWT penalty", "Short-cycle penalty", "Stability penalty"]));
+    it("names the fifteen penalty fields of flo.tuning.bruce", () => {
+        expect(PENALTY_FIELDS).toHaveLength(15);
+        expect(new Set(PENALTY_FIELDS.map((f) => f.group))).toEqual(
+            new Set(["RSWT penalty", "Unmet load penalty", "Short-cycle penalty", "Stability penalty"]),
+        );
     });
 
     it("reads the hour's penalty tuning from a bruce request at either version", () => {
@@ -19,6 +21,8 @@ describe("the re-run's penalty tuning", () => {
             expect(tuning).not.toBeNull();
             expect(Object.keys(tuning!).sort()).toEqual(PENALTY_FIELDS.map((f) => f.key).sort());
             expect(tuning!.StabilityPenaltyEnabled).toBe(params.Tuning.TypeName === "flo.tuning.bruce" && params.Tuning.StabilityPenaltyEnabled);
+            expect(tuning!.UnmetLoadPenaltyEnabled).toBe(false);
+            expect(tuning!.UnmetLoadPenaltyWeight).toBe(10);
         }
     });
 
@@ -45,10 +49,17 @@ describe("the re-run's penalty tuning", () => {
             [1],
         );
         expect(request.TypeName).toBe("flo.rerun.request");
-        expect(request.Version).toBe("000");
+        expect(request.Version).toBe("001");
         expect(request.HpForcedOnSteps).toEqual([0]);
         expect(request.HpForcedOffSteps).toEqual([1]);
-        expect(request.Params.Tuning).toMatchObject({ TypeName: "flo.tuning.bruce", RswtPenaltyWeight: 2.5 });
+        expect(request.Params.Version).toBe("003");
+        expect(request.Params.Tuning).toMatchObject({
+            TypeName: "flo.tuning.bruce",
+            Version: "002",
+            RswtPenaltyWeight: 2.5,
+            UnmetLoadPenaltyEnabled: false,
+            UnmetLoadPenaltyWeight: 10,
+        });
     });
 
     it("refuses a step outside the horizon, or one forced both on and off", () => {

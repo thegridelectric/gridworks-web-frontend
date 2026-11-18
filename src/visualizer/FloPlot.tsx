@@ -154,10 +154,11 @@ function stepThrough(times: string[], end: string, values: number[]): { x: strin
 function penaltyEnabled(params: AnyFloParams | null): PenaltySeriesEnabled {
     const tuning = params?.Tuning;
     if (!tuning || tuning.TypeName !== "flo.tuning.bruce") {
-        return { rswt: true, stability: true, shortCycle: true, terminal: true };
+        return { rswt: true, unmet: true, stability: true, shortCycle: true, terminal: true };
     }
     return {
         rswt: tuning.RswtPenaltyEnabled,
+        unmet: tuning.Version === "002" ? tuning.UnmetLoadPenaltyEnabled : true,
         stability: tuning.StabilityPenaltyEnabled,
         shortCycle: tuning.ShortCyclePenaltyEnabled,
         terminal: tuning.TerminalCostEnabled,

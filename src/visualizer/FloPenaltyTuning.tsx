@@ -27,6 +27,13 @@ const FLO_PENALTIES: FloPenalty[] = [
         ],
     },
     {
+        title: "Unmet load penalty",
+        enabledKey: "UnmetLoadPenaltyEnabled",
+        fields: [
+            { key: "UnmetLoadPenaltyWeight", label: "Weight (ω)" },
+        ],
+    },
+    {
         title: "Stability penalty",
         enabledKey: "StabilityPenaltyEnabled",
         fields: [
@@ -94,6 +101,11 @@ const FLO_PENALTY_FORMULAS: Record<string, ReactNode> = {
     StabilityPenaltyEnabled: (
         <>
             ω · p<sub>med</sub> · λ<sup>t</sup> · |e<sub>t</sub> − ê<sub>t</sub>|
+        </>
+    ),
+    UnmetLoadPenaltyEnabled: (
+        <>
+            ω · max(p / COP) · max(0, E(s<sub>t+1</sub>) − (E(s<sub>t</sub>) + ΔE<sub>t</sub>) − L<sub>t</sub>)
         </>
     ),
     ShortCyclePenaltyEnabled: (

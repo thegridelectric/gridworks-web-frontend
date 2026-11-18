@@ -49,6 +49,24 @@ describe('the FLO path view', () => {
         expect(middle.base[step]).toBe(bottom.layers[step]);
     });
 
+    it('stacks the unmet-load penalty between RSWT and stability when the recommendation states it', () => {
+        const word = structuredClone(orange1Recommendation001);
+        word.Version = '002';
+        for (const penalties of word.PathPenaltiesList) {
+            penalties.Version = '001';
+            penalties.UnmetLoadPenaltyUsdList = penalties.RswtPenaltyUsdList.map(() => 1.25);
+        }
+        const view = pathView(AnyFloRecommendation.parse(word), 1);
+        expect(view.penalties.map((p) => p.name)).toEqual([
+            'RSWT penalty',
+            'Unmet load penalty',
+            'Stability penalty',
+            'Short-cycle penalty',
+        ]);
+        expect(view.penalties[1].usd[0]).toBe(1.25);
+        expect(view.penalties[2].base[0]).toBe(view.penalties[0].usd[0] + 1.25);
+    });
+
     it('stacks the three penalty series', () => {
         const view = pathView(orange1, 1);
         expect(view.penalties.map((p) => p.name)).toEqual(['RSWT penalty', 'Stability penalty', 'Short-cycle penalty']);
@@ -148,7 +166,7 @@ describe('the FLO path view', () => {
 
     it('stacks the terminal cost on the last step and leaves 30% of headroom', () => {
         const view = pathView(orange1, 1);
-        const drawn = penaltyBars(view, { rswt: true, stability: true, shortCycle: false, terminal: true });
+        const drawn = penaltyBars(view, { rswt: true, unmet: false, stability: true, shortCycle: false, terminal: true });
         expect(drawn.series.map((s) => s.name)[0]).toBe("RSWT penalty");
         const terminal = drawn.series[drawn.series.length - 1];
         expect(terminal.y[terminal.y.length - 1]).toBe(view.terminalCostUsd);

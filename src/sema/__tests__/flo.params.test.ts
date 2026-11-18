@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import orange1Params001 from './fixtures/orange1-flo.params-001.json';
 import exampleParams002 from './fixtures/registry-example-flo.params-002.json';
 import { AnyFloParams, priceUsdMwhList } from '../types/AnyFloParams';
-import { FloParams } from '../types/FloParams';
+import { FloParams002 } from '../types/old_versions/FloParams002';
 import { FloParams001 } from '../types/old_versions/FloParams001';
 
 describe('flo.params', () => {
     it('round-trips the registry example at 002, with one price list and the forecast it was read from', () => {
-        const parsed = FloParams.parse(exampleParams002);
+        const parsed = FloParams002.parse(exampleParams002);
         expect(parsed).toEqual(exampleParams002);
         expect(parsed.PriceUsdMwhList).toHaveLength(parsed.StepDurationMinutes.length);
         expect(parsed.PriceForecastId).toBe(exampleParams002.PriceForecastId);
@@ -30,7 +30,7 @@ describe('flo.params', () => {
     it('rejects a price list shorter than the step grid (axiom 1), at either version', () => {
         const broken002 = structuredClone(exampleParams002);
         broken002.PriceUsdMwhList.pop();
-        expect(FloParams.safeParse(broken002).success).toBe(false);
+        expect(FloParams002.safeParse(broken002).success).toBe(false);
         const broken001 = structuredClone(orange1Params001);
         broken001.LmpUsdMwhList.pop();
         expect(FloParams001.safeParse(broken001).success).toBe(false);
@@ -38,7 +38,7 @@ describe('flo.params', () => {
 
     it('rejects a previous estimate without the previous path (axiom 5)', () => {
         const broken = { ...structuredClone(exampleParams002), PreviousEstimateElecUsdMwhNow: 80 };
-        expect(FloParams.safeParse(broken).success).toBe(false);
+        expect(FloParams002.safeParse(broken).success).toBe(false);
     });
 
     it('rejects a tuning whose RWT lines do not match its buckets (bruce axiom 1)', () => {
