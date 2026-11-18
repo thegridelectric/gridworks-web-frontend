@@ -57,7 +57,7 @@ export type FloPathView = {
  *  the lowest-priced pair, the one that holds when the price clears at
  *  or below every pair. */
 export function defaultPairIndex(recommendation: AnyFloRecommendation): number {
-    const penalties = recommendation.Version === "001" ? recommendation.PathPenaltiesList : undefined;
+    const penalties = recommendation.Version === "000" ? undefined : recommendation.PathPenaltiesList;
     if (!penalties || penalties.length === 0) return recommendation.PqPairs.length - 1;
     let cheapest = 0;
     penalties.forEach((p, i) => {
@@ -76,7 +76,7 @@ export function pathView(recommendation: AnyFloRecommendation, pairIndex: number
         stepStartS.push(t);
         t += minutes * 60;
     }
-    const store = recommendation.Version === "001" ? recommendation.StoreStateList?.[pairIndex] : undefined;
+    const store = recommendation.Version === "000" ? undefined : recommendation.StoreStateList?.[pairIndex];
     const bands: BandView[] = [];
     if (store) {
         const n = store.StoreLayers;
@@ -91,14 +91,17 @@ export function pathView(recommendation: AnyFloRecommendation, pairIndex: number
             { name: "Bottom", base: store.Thermocline2List.map(() => 0), layers: store.Thermocline2List.map((t2) => n - t2), tempF: store.BottomFList },
         );
     }
-    const bruce = recommendation.Version === "001" ? recommendation.PathPenaltiesList?.[pairIndex] : undefined;
+    const bruce = recommendation.Version === "000" ? undefined : recommendation.PathPenaltiesList?.[pairIndex];
     const penalties: PenaltyView[] = [];
     if (bruce) {
-        const series: [string, number[]][] = [
-            ["RSWT penalty", bruce.RswtPenaltyUsdList],
+        const series: [string, number[]][] = [["RSWT penalty", bruce.RswtPenaltyUsdList]];
+        if ("UnmetLoadPenaltyUsdList" in bruce) {
+            series.push(["Unmet load penalty", bruce.UnmetLoadPenaltyUsdList]);
+        }
+        series.push(
             ["Stability penalty", bruce.StabilityPenaltyUsdList],
             ["Short-cycle penalty", bruce.ShortCyclePenaltyUsdList],
-        ];
+        );
         const base = bruce.RswtPenaltyUsdList.map(() => 0);
         for (const [name, usd] of series) {
             penalties.push({ name, usd, base: [...base] });
@@ -352,6 +355,7 @@ export type PenaltyBar = {
 
 const PENALTY_FILL = {
     rswt: "rgba(255,127,14,0.7)",
+    unmet: "rgba(214,39,40,0.7)",
     stability: "rgba(148,103,189,0.7)",
     shortCycle: "rgba(23,190,207,0.7)",
     terminal: "rgba(44,160,44,0.7)",
@@ -361,6 +365,7 @@ const PENALTY_FILL = {
  *  draws every series the recommendation states. */
 export type PenaltySeriesEnabled = {
     rswt: boolean;
+    unmet: boolean;
     stability: boolean;
     shortCycle: boolean;
     terminal: boolean;
@@ -379,6 +384,9 @@ export function penaltyBars(
     const chosen: { name: string; color: string; y: number[] }[] = [];
     if (enabled.rswt && byName.has("RSWT penalty")) {
         chosen.push({ name: "RSWT penalty", color: PENALTY_FILL.rswt, y: byName.get("RSWT penalty")! });
+    }
+    if (enabled.unmet && byName.has("Unmet load penalty")) {
+        chosen.push({ name: "Unmet load penalty", color: PENALTY_FILL.unmet, y: byName.get("Unmet load penalty")! });
     }
     if (enabled.stability && byName.has("Stability penalty")) {
         chosen.push({ name: "Stability penalty", color: PENALTY_FILL.stability, y: byName.get("Stability penalty")! });

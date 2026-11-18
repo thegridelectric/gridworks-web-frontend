@@ -8,7 +8,7 @@ import { FloTankStorePath } from './FloTankStorePath';
 import { PriceQuantityUnitless } from './PriceQuantityUnitless';
 import { RECOMMENDATION_AXIOMS, annotatesEveryPath } from './floRecommendationAxioms';
 
-/** Sema: https://schemas.electricity.works/types/flo.recommendation/001 */
+/** Sema: https://schemas.electricity.works/types/flo.recommendation/002 */
 export const FloRecommendation = RECOMMENDATION_AXIOMS.reduce(
     (schema, [check, message, path]) => schema.refine(check, { message, path: [path] }),
     z.strictObject({
@@ -24,7 +24,7 @@ export const FloRecommendation = RECOMMENDATION_AXIOMS.reduce(
         FloGitCommit: GitCommit,
         CreatedMs: UtcMilliseconds,
         TypeName: z.literal('flo.recommendation'),
-        Version: z.literal('001'),
+        Version: z.literal('002'),
     }),
 )
     .refine(checkAxiom6, {
@@ -51,6 +51,6 @@ function checkAxiom6(r: Shape): boolean {
 
 function checkAxiom7(r: Shape): boolean {
     return annotatesEveryPath(r.PathPenaltiesList, r.OptimalPathList, [
-        'RswtPenaltyUsdList', 'StabilityPenaltyUsdList', 'ShortCyclePenaltyUsdList',
+        'RswtPenaltyUsdList', 'UnmetLoadPenaltyUsdList', 'StabilityPenaltyUsdList', 'ShortCyclePenaltyUsdList',
     ]);
 }

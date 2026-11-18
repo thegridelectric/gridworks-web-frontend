@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { NonNegativeInt, PositiveInt } from '../formats';
 
-/** Sema: https://schemas.electricity.works/types/flo.tuning.bruce/001 */
+/** Sema: https://schemas.electricity.works/types/flo.tuning.bruce/002 */
 export const FloTuningBruce = z
     .strictObject({
         NumLayers: PositiveInt,
@@ -19,6 +19,8 @@ export const FloTuningBruce = z
         RswtPenaltyDecay: z.number(),
         RswtPenaltyExponentRate: z.number(),
         RswtPenaltyDecayMaxHour: NonNegativeInt,
+        UnmetLoadPenaltyEnabled: z.boolean(),
+        UnmetLoadPenaltyWeight: z.number(),
         ShortCyclePenaltyEnabled: z.boolean(),
         ShortCyclePenaltyWeight: z.number(),
         StabilityPenaltyEnabled: z.boolean(),
@@ -30,7 +32,7 @@ export const FloTuningBruce = z
         TerminalCostEnabled: z.boolean(),
         TerminalCostEndWindowHours: NonNegativeInt,
         TypeName: z.literal('flo.tuning.bruce'),
-        Version: z.literal('001'),
+        Version: z.literal('002'),
     })
     .refine(checkAxiom1, {
         message: 'Axiom 1 (OneLinePerBucket) failed: the RWT lines do not number one more than the load buckets',

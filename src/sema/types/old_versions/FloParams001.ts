@@ -3,7 +3,7 @@ import { LeftRightDot, PositiveInt, UtcMilliseconds, UtcSeconds, Uuid4Str } from
 import { SeasonalStorageMode } from '../../enums/SeasonalStorageMode';
 import { FloOptimalPath } from '../FloOptimalPath';
 import { FloTuningAlice } from '../FloTuningAlice';
-import { FloTuningBruce } from '../FloTuningBruce';
+import { FloTuningBruce001 } from './FloTuningBruce001';
 import { SHARED_PARAMS_AXIOMS, sameLength } from '../floParamsAxioms';
 
 /** Sema: https://schemas.electricity.works/types/flo.params/001 */
@@ -43,7 +43,7 @@ export const FloParams001 = SHARED_PARAMS_AXIOMS.reduce(
             PriceMinUsdMwh: z.number(),
             PreviousOptimalPath: FloOptimalPath.optional(),
             PreviousEstimateElecUsdMwhNow: z.number().optional(),
-            Tuning: z.discriminatedUnion('TypeName', [FloTuningAlice, FloTuningBruce]),
+            Tuning: z.discriminatedUnion('TypeName', [FloTuningAlice, FloTuningBruce001]),
             TypeName: z.literal('flo.params'),
             Version: z.literal('001'),
         })
