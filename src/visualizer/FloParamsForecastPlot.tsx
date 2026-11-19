@@ -77,6 +77,11 @@ export default function FloParamsForecastPlot(props: {
     const actualLegendName = rmseKw === null
         ? "Actual"
         : `Actual (RMSE: ${rmseKw.toFixed(2)} kW)`;
+    const loadPlotMax = Math.max(
+        0,
+        ...request.loadKw,
+        ...(scaledActual?.filter((value): value is number => value !== null) ?? []),
+    );
 
     const data: Data[] = [
         ...(actual === null ? [] : [trace({
@@ -146,6 +151,7 @@ export default function FloParamsForecastPlot(props: {
             domain: LOAD_DOMAIN,
             title: { text: "Heating load [kW]", standoff: 8 },
             showgrid: false,
+            range: [0, loadPlotMax > 0 ? loadPlotMax * 1.1 : 1],
         },
         yaxis2: {
             ...base.yaxis,
