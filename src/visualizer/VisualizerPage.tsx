@@ -727,19 +727,12 @@ export default function VisualizerPage() {
                             />
                             {floBid && <FloBidPlot bid={floBid} isDarkMode={getIsDarkMode()} />}
                             {floRequestView && (
-                                <>
-                                    <FloParamsForecastPlot
-                                        kind="load"
-                                        request={floRequestView}
-                                        isDarkMode={getIsDarkMode()}
-                                        actualKw={floActualLoadKw}
-                                    />
-                                    <FloParamsForecastPlot
-                                        kind="rswt"
-                                        request={floRequestView}
-                                        isDarkMode={getIsDarkMode()}
-                                    />
-                                </>
+                                <FloParamsForecastPlot
+                                    request={floRequestView}
+                                    isDarkMode={getIsDarkMode()}
+                                    actualKw={floActualLoadKw}
+                                    summaryTimeAxis={floSummaryXAxisMetrics}
+                                />
                             )}
                         </div>
                     }

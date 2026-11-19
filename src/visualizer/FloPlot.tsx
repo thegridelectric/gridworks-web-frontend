@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef } from "react";
 import Plot from "react-plotly.js";
 import type { Figure } from "react-plotly.js";
-import type { Data, Layout, Shape } from "plotly.js";
+import type { Data, Datum, Layout, Shape } from "plotly.js";
 import type { AnyFloRecommendation } from "../sema/types/AnyFloRecommendation";
 import type { AnyFloParams } from "../sema/types/AnyFloParams";
 import { DateTime } from "luxon";
-import { FLO_PLOT_MARGINS, getDefaultPlotLayout } from "./plot-configs";
+import { FLO_PLOT_MARGINS, floHorizonTimeAxis, getDefaultPlotLayout } from "./plot-configs";
 import { flatDeliveryPrices, onPeakShapes, type TouTariff } from "./tou-tariff";
 import {
     paramsView,
@@ -22,12 +22,16 @@ export interface FloSummaryXAxisMetrics {
     offsetPx: number;
     lengthPx: number;
     stepCount: number;
+    /** Tick positions from the summary plot's time axis (for matching downstream plots). */
+    timeTickvals?: Datum[];
+    timeRange?: [Datum, Datum];
 }
 
 type PlotlyAxisLayout = {
     _offset?: number;
     _length?: number;
-    range?: [string | number, string | number];
+    range?: [Datum, Datum];
+    tickvals?: Datum[];
     d2p?: (value: string | number) => number;
 };
 
@@ -38,6 +42,21 @@ type PlotlyGraphDiv = HTMLDivElement & {
 };
 
 const METRICS_EPSILON_PX = 0.05;
+
+function datumArraysEqual(a: Datum[] | undefined, b: Datum[] | undefined): boolean {
+    if (a === b) return true;
+    if (!a || !b || a.length !== b.length) return false;
+    return a.every((value, i) => value === b[i]);
+}
+
+function timeRangesEqual(
+    a: [Datum, Datum] | undefined,
+    b: [Datum, Datum] | undefined,
+): boolean {
+    if (a === b) return true;
+    if (!a || !b) return !a && !b;
+    return a[0] === b[0] && a[1] === b[1];
+}
 
 export function floSummaryXAxisMetricsEqual(
     a: FloSummaryXAxisMetrics | null,
@@ -53,6 +72,8 @@ export function floSummaryXAxisMetricsEqual(
         a.stepCount === b.stepCount
         && Math.abs(a.offsetPx - b.offsetPx) <= METRICS_EPSILON_PX
         && Math.abs(a.lengthPx - b.lengthPx) <= METRICS_EPSILON_PX
+        && datumArraysEqual(a.timeTickvals, b.timeTickvals)
+        && timeRangesEqual(a.timeRange, b.timeRange)
     );
 }
 
@@ -113,10 +134,17 @@ export function readFloSummaryXAxisMetrics(
         return null;
     }
 
+    const range = axis.range?.length === 2
+        ? [axis.range[0], axis.range[1]] as [Datum, Datum]
+        : undefined;
+    const timeTickvals = axis.tickvals?.length ? [...axis.tickvals] : undefined;
+
     return {
         offsetPx: graphLeftInShellContent(plotShell, graphDiv) + axis._offset + startPx,
         lengthPx: endPx - startPx,
         stepCount,
+        timeTickvals,
+        timeRange: range,
     };
 }
 
@@ -329,13 +357,7 @@ export default function FloPlot(props: {
         })),
     ];
 
-    const timeAxis = {
-        ...base.xaxis,
-        showgrid: false,
-        showticklabels: true,
-        tickformat: "%H:%M",
-        tickfont: { size: 10 },
-    };
+    const timeAxis = floHorizonTimeAxis(base);
     const height = hasPenalties ? FLO_SUMMARY_HEIGHT : FLO_SUMMARY_HEIGHT_NO_PENALTIES;
     const storeDomain = hasPenalties ? [0.36, 0.64] : [0, 0.48];
     const powerDomain = hasPenalties ? [0.72, 1] : [0.56, 1];
@@ -351,10 +373,9 @@ export default function FloPlot(props: {
         xaxis: { ...timeAxis, anchor: "y" },
         xaxis2: { ...timeAxis, anchor: "y3", matches: "x" },
         xaxis3: {
-            ...timeAxis,
+            ...floHorizonTimeAxis(base, { showTitle: true }),
             anchor: "y5",
             matches: "x",
-            title: { text: "Time (America/New_York)", font: { size: 11 }, standoff: 8 },
         },
         yaxis: {
             ...base.yaxis,

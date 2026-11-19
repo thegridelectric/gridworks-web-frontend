@@ -1,96 +1,98 @@
 import Plot from "react-plotly.js";
 import type { Data, Layout } from "plotly.js";
-import { FLO_PLOT_MARGINS, getDefaultPlotLayout } from "./plot-configs";
+import { FLO_PLOT_MARGINS, floHorizonTimeAxis, getDefaultPlotLayout } from "./plot-configs";
+import type { FloSummaryXAxisMetrics } from "./FloPlot";
 import type { FloParamsView } from "./flo-path-view";
 import { stepThrough } from "./flo-path-view";
+
 /** Matches the load trace on the FLO summary plot. */
 const FORECAST_RED = "#d62728";
+const COMBINED_TITLE = "Load and RSWT forecasts";
 
 function lineColors(isDarkMode: boolean): { forecast: string; actual: string } {
     return {
         forecast: FORECAST_RED,
-        actual: isDarkMode ? "#8a8a8a" : "#b3b3b3",
+        actual: isDarkMode ? "rgba(138,138,138,0.45)" : "rgba(179,179,179,0.45)",
     };
 }
 
-const PLOT_HEIGHT = 480;
-const FLO_FORECAST_MARGINS = { ...FLO_PLOT_MARGINS, t: 40 };
+const PLOT_HEIGHT = 500;
+const FLO_FORECAST_MARGINS = { ...FLO_PLOT_MARGINS, t: 40, b: 72 };
+/** Paper gap between the load and RSWT panels. */
+const PANEL_GAP = 0.06;
+const RSWT_DOMAIN: [number, number] = [0, 0.5 - PANEL_GAP / 2];
+const LOAD_DOMAIN: [number, number] = [0.5 + PANEL_GAP / 2, 1];
 
 const trace = (value: object): Data => value as Data;
 
-export type FloParamsForecastKind = "load" | "rswt";
-
-const FORECAST_SPECS: Record<
-    FloParamsForecastKind,
-    { title: string; yTitle: string; color: string; hover: string; values: (request: FloParamsView) => number[] }
-> = {
-    load: {
-        title: "Load forecast",
-        yTitle: "Heating load [kW]",
-        color: "gray",
-        hover: "%{y:.2f} kW<extra>Load forecast</extra>",
-        values: (request) => request.loadKw,
-    },
-    rswt: {
-        title: "RSWT forecast",
-        yTitle: "RSWT [°F]",
-        color: "gray",
-        hover: "%{y:.1f} °F<extra>RSWT forecast</extra>",
-        values: (request) => request.rswtF,
-    },
-};
-
-/** Step forecast from ``flo.params`` on the request horizon; uses the
- *  same margins and time range as the FLO summary plot so the tracks
- *  line up in width with the panels above. */
+/** Load and RSWT step forecasts from ``flo.params`` on a shared time axis. */
 export default function FloParamsForecastPlot(props: {
-    kind: FloParamsForecastKind;
     request: FloParamsView;
     isDarkMode: boolean;
     /** Measured load on the request step grid; null where that hour has no samples. */
     actualKw?: (number | null)[] | null;
+    /** Time ticks from the FLO summary plot so the horizon aligns. */
+    summaryTimeAxis?: FloSummaryXAxisMetrics | null;
 }) {
-    const { kind, request, isDarkMode, actualKw } = props;
-    const spec = FORECAST_SPECS[kind];
+    const { request, isDarkMode, actualKw, summaryTimeAxis } = props;
     const base = getDefaultPlotLayout(isDarkMode);
-    const series = stepThrough(request.stepStart, request.horizonEnd, spec.values(request));
     const lines = lineColors(isDarkMode);
-    const showActual = kind === "load"
-        && actualKw != null
+    const timeAxis = floHorizonTimeAxis(base);
+    const timeAxisRangeAndTicks = {
+        ...(summaryTimeAxis?.timeRange ? { range: summaryTimeAxis.timeRange } : {}),
+        ...(summaryTimeAxis?.timeTickvals?.length
+            ? { tickmode: "array" as const, tickvals: summaryTimeAxis.timeTickvals }
+            : {}),
+    };
+
+    const loadForecast = stepThrough(request.stepStart, request.horizonEnd, request.loadKw);
+    const rswtForecast = stepThrough(request.stepStart, request.horizonEnd, request.rswtF);
+
+    const showActual = actualKw != null
         && actualKw.length === request.loadKw.length
         && actualKw.some((value) => value !== null);
     const actual = showActual
         ? stepThrough(request.stepStart, request.horizonEnd, actualKw)
         : null;
 
-    const forecastTrace = trace({
-        type: "scatter",
-        mode: "lines",
-        name: showActual ? "Forecast" : spec.title,
-        x: series.x,
-        y: series.y,
-        line: {
-            shape: "hv",
-            color: lines.forecast,
-            width: 2,
-            dash: "dash",
-        },
-        hovertemplate: spec.hover,
-    });
-    const actualTrace = actual === null ? null : trace({
-        type: "scatter",
-        mode: "lines",
-        name: "Actual",
-        x: actual.x,
-        y: actual.y,
-        connectgaps: false,
-        line: { shape: "hv", color: lines.actual, width: 2 },
-        hovertemplate: "%{y:.2f} kW<extra>Actual</extra>",
-    });
-    // Actual first so Plotly draws the forecast trace on top.
-    const data: Data[] = actualTrace === null
-        ? [forecastTrace]
-        : [actualTrace, forecastTrace];
+    const data: Data[] = [
+        ...(actual === null ? [] : [trace({
+            type: "scatter",
+            mode: "lines",
+            name: "Actual",
+            x: actual.x,
+            y: actual.y,
+            xaxis: "x",
+            yaxis: "y",
+            connectgaps: false,
+            line: { shape: "hv", color: lines.actual, width: 2 },
+            hovertemplate: "%{y:.2f} kW<extra>Actual</extra>",
+        })]),
+        trace({
+            type: "scatter",
+            mode: "lines",
+            name: "Load forecast",
+            x: loadForecast.x,
+            y: loadForecast.y,
+            xaxis: "x",
+            yaxis: "y",
+            showlegend: showActual,
+            line: { shape: "hv", color: lines.forecast, width: 2, dash: "dash" },
+            hovertemplate: "%{y:.2f} kW<extra>Load forecast</extra>",
+        }),
+        trace({
+            type: "scatter",
+            mode: "lines",
+            name: "RSWT forecast",
+            x: rswtForecast.x,
+            y: rswtForecast.y,
+            xaxis: "x2",
+            yaxis: "y2",
+            legend: "legend2",
+            line: { shape: "hv", color: lines.forecast, width: 2, dash: "dash" },
+            hovertemplate: "%{y:.1f} °F<extra>RSWT forecast</extra>",
+        }),
+    ];
 
     const layout = {
         ...base,
@@ -98,41 +100,59 @@ export default function FloParamsForecastPlot(props: {
         margin: FLO_FORECAST_MARGINS,
         title: {
             ...base.title,
-            text: spec.title,
+            text: COMBINED_TITLE,
             x: 0.5,
             xanchor: "center",
-            pad: { b: 4 },
+            pad: { b: 2 },
             font: { ...base.title?.font, size: 16 },
         },
         xaxis: {
-            ...base.xaxis,
-            type: "date",
-            range: [request.stepStart[0], request.horizonEnd],
-            tickformat: "%H:%M",
-            showgrid: false,
-            zeroline: false,
-            title: {
-                text: "Time (America/New_York)",
-                standoff: 8,
-                font: { size: 11 },
-            },
+            ...timeAxis,
+            anchor: "y",
+            showticklabels: false,
+            ...timeAxisRangeAndTicks,
+        },
+        xaxis2: {
+            ...floHorizonTimeAxis(base, { showTitle: true }),
+            anchor: "y2",
+            matches: "x",
+            ...timeAxisRangeAndTicks,
         },
         yaxis: {
             ...base.yaxis,
-            title: { text: spec.yTitle, standoff: 8 },
+            domain: LOAD_DOMAIN,
+            title: { text: "Heating load [kW]", standoff: 8 },
             showgrid: false,
         },
-        showlegend: showActual,
-        legend: showActual ? {
+        yaxis2: {
+            ...base.yaxis,
+            domain: RSWT_DOMAIN,
+            title: { text: "RSWT [°F]", standoff: 8 },
+            showgrid: false,
+        },
+        showlegend: true,
+        ...(showActual ? {
+            legend: {
+                x: 1,
+                y: 1,
+                xref: "paper",
+                yref: "paper",
+                xanchor: "right",
+                yanchor: "top",
+                bgcolor: "rgba(0,0,0,0)",
+                font: { size: 11 },
+            },
+        } : {}),
+        legend2: {
             x: 1,
-            y: 1,
+            y: RSWT_DOMAIN[1],
             xref: "paper",
             yref: "paper",
             xanchor: "right",
             yanchor: "top",
             bgcolor: "rgba(0,0,0,0)",
             font: { size: 11 },
-        } : undefined,
+        },
     } as Partial<Layout>;
 
     return (

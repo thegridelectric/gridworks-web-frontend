@@ -536,6 +536,23 @@ const VISUALIZER_PLOT_HEIGHT = 400;
 /** Margins for the FLO summary and bid plots, so their plot areas line up. */
 export const FLO_PLOT_MARGINS = { t: 64, b: 68, l: 70, r: 78 };
 
+/** Time axis styling shared by the FLO summary panels and the params forecast plots. */
+export function floHorizonTimeAxis(
+    base: Partial<Layout>,
+    options?: { showTitle?: boolean },
+): NonNullable<Partial<Layout>["xaxis"]> {
+    return {
+        ...base.xaxis,
+        showgrid: false,
+        showticklabels: true,
+        tickformat: "%H:%M",
+        tickfont: { size: 10 },
+        ...(options?.showTitle
+            ? { title: { text: "Time (America/New_York)", font: { size: 11 }, standoff: 8 } }
+            : {}),
+    };
+}
+
 export function getDefaultPlotLayout(isDarkMode: boolean): Partial<Layout> {
 
     const theme = {
