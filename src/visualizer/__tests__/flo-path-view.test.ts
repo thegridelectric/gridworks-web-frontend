@@ -187,6 +187,5 @@ describe('the FLO params view', () => {
         expect(view.stepStart[0]).toBe('2026-11-09T14:00:00');
         expect(view.priceUsdMwh[0]).toBeCloseTo(params.LmpUsdMwhList[0] + params.DistUsdMwhList[0]);
         expect(view.loadKw[5]).toBeCloseTo(params.LoadKwhList[5] / (params.StepDurationMinutes[5] / 60));
-        expect(view.rswtF[5]).toBeCloseTo(params.RswtFList[5]);
     });
 });

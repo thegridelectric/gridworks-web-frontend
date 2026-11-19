@@ -143,18 +143,7 @@ export type FloParamsView = {
     horizonEnd: string;
     priceUsdMwh: number[];
     loadKw: number[];
-    rswtF: number[];
 };
-
-/** Repeat the last value out to the horizon end, so a post-step line covers the final hour. */
-export function stepThrough(
-    times: string[],
-    end: string,
-    values: (number | null)[],
-): { x: string[]; y: (number | null)[] } {
-    if (values.length === 0) return { x: times, y: values };
-    return { x: [...times, end], y: [...values, values[values.length - 1]] };
-}
 
 export function paramsView(params: AnyFloParams): FloParamsView {
     const stepStartS: number[] = [];
@@ -169,7 +158,6 @@ export function paramsView(params: AnyFloParams): FloParamsView {
         horizonEnd: formatForDisplay(DateTime.fromSeconds(t)),
         priceUsdMwh: priceUsdMwhList(params),
         loadKw: params.LoadKwhList.map((kwh, i) => kwh / (params.StepDurationMinutes[i] / 60)),
-        rswtF: [...params.RswtFList],
     };
 }
 
