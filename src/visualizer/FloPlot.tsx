@@ -12,6 +12,7 @@ import {
     pathView,
     penaltyBars,
     plotTitle,
+    stepThrough,
     storeEndTimes,
     storePlot,
     type PenaltySeriesEnabled,
@@ -120,12 +121,6 @@ export function readFloSummaryXAxisMetrics(
 }
 
 const trace = (value: object): Data => value as Data;
-
-/** Repeat the last value out to the horizon end, so a post-step line covers the final hour. */
-function stepThrough(times: string[], end: string, values: number[]): { x: string[]; y: number[] } {
-    if (values.length === 0) return { x: times, y: values };
-    return { x: [...times, end], y: [...values, values[values.length - 1]] };
-}
 
 function penaltyEnabled(params: AnyFloParams | null): PenaltySeriesEnabled {
     const tuning = params?.Tuning;
