@@ -77,11 +77,17 @@ export function floSummaryXAxisMetricsEqual(
     );
 }
 
-function parseAxisTime(value: string | number): number {
+function parseAxisTime(value: Datum): number {
+    if (value === null || value === undefined) {
+        return Number.NaN;
+    }
     if (typeof value === "number") {
         return value;
     }
-    return Date.parse(value.replace(" ", "T"));
+    if (typeof value === "string") {
+        return Date.parse(value.replace(" ", "T"));
+    }
+    return Number.NaN;
 }
 
 function timeToAxisPx(axis: PlotlyAxisLayout, time: string): number | null {
