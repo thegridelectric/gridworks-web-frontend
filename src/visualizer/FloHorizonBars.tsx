@@ -1,4 +1,5 @@
-import { elecPriceHighlightFillColor, type FloSummaryXAxisMetrics } from "./FloPlot";
+import { type FloSummaryXAxisMetrics } from "./FloPlot";
+import { ON_PEAK_FILL } from "./tou-tariff";
 
 export type FloHorizonBarSelections = {
     top: boolean[];
@@ -72,8 +73,8 @@ function segmentBackground(
 
 function FloHorizonBar(props: {
     stepCount: number;
-    highPriceSteps: boolean[];
-    priceHighlightFill: string;
+    onPeakSteps: boolean[];
+    onPeakFill: string;
     userHighlightFill: string;
     userSelectedSteps: boolean[];
     onToggleStep: (index: number) => void;
@@ -81,8 +82,8 @@ function FloHorizonBar(props: {
 }) {
     const {
         stepCount,
-        highPriceSteps,
-        priceHighlightFill,
+        onPeakSteps,
+        onPeakFill,
         userHighlightFill,
         userSelectedSteps,
         onToggleStep,
@@ -94,9 +95,9 @@ function FloHorizonBar(props: {
                 const selected = userSelectedSteps[i] === true;
                 const backgroundColor = segmentBackground(
                     selected,
-                    highPriceSteps[i] === true,
+                    onPeakSteps[i] === true,
                     userHighlightFill,
-                    priceHighlightFill,
+                    onPeakFill,
                 );
                 return (
                     <button
@@ -116,12 +117,12 @@ function FloHorizonBar(props: {
 
 export function FloHorizonBars(props: {
     metrics: FloSummaryXAxisMetrics | null;
-    highPriceSteps: boolean[];
+    onPeakSteps: boolean[];
     isDarkMode: boolean;
     barSelectedSteps: FloHorizonBarSelections;
     onBarSelectedStepsChange: (next: FloHorizonBarSelections) => void;
 }) {
-    const { metrics, highPriceSteps, isDarkMode, barSelectedSteps, onBarSelectedStepsChange } = props;
+    const { metrics, onPeakSteps, isDarkMode, barSelectedSteps, onBarSelectedStepsChange } = props;
 
     if (!metrics || metrics.stepCount <= 0) {
         return null;
@@ -133,7 +134,7 @@ export function FloHorizonBars(props: {
         marginLeft: offsetPx,
         width: lengthPx,
     };
-    const priceHighlightFill = elecPriceHighlightFillColor(isDarkMode);
+    const onPeakFill = ON_PEAK_FILL;
     const greenFill = floHorizonUserHighlightFill("green", isDarkMode);
     const redFill = floHorizonUserHighlightFill("red", isDarkMode);
 
@@ -163,8 +164,8 @@ export function FloHorizonBars(props: {
             <div className="flo-horizon-bars-track" style={trackStyle}>
                 <FloHorizonBar
                     stepCount={stepCount}
-                    highPriceSteps={highPriceSteps}
-                    priceHighlightFill={priceHighlightFill}
+                    onPeakSteps={onPeakSteps}
+                    onPeakFill={onPeakFill}
                     userHighlightFill={greenFill}
                     userSelectedSteps={barSelectedSteps.top}
                     onToggleStep={(index) => toggleStep("top", index)}
@@ -172,8 +173,8 @@ export function FloHorizonBars(props: {
                 />
                 <FloHorizonBar
                     stepCount={stepCount}
-                    highPriceSteps={highPriceSteps}
-                    priceHighlightFill={priceHighlightFill}
+                    onPeakSteps={onPeakSteps}
+                    onPeakFill={onPeakFill}
                     userHighlightFill={redFill}
                     userSelectedSteps={barSelectedSteps.bottom}
                     onToggleStep={(index) => toggleStep("bottom", index)}

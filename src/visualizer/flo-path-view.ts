@@ -137,6 +137,8 @@ export function pathView(recommendation: AnyFloRecommendation, pairIndex: number
  *  optimizer saw, in USD per MWh. */
 export type FloParamsView = {
     stepStart: string[];
+    /** The same step starts in UTC seconds. */
+    stepStartS: number[];
     /** Where the last step ends, as a display time. */
     horizonEnd: string;
     priceUsdMwh: number[];
@@ -152,6 +154,7 @@ export function paramsView(params: AnyFloParams): FloParamsView {
     }
     return {
         stepStart: stepStartS.map((s) => formatForDisplay(DateTime.fromSeconds(s))),
+        stepStartS,
         horizonEnd: formatForDisplay(DateTime.fromSeconds(t)),
         priceUsdMwh: priceUsdMwhList(params),
         loadKw: params.LoadKwhList.map((kwh, i) => kwh / (params.StepDurationMinutes[i] / 60)),

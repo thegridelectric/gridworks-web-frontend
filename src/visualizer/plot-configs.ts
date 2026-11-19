@@ -373,7 +373,7 @@ const STORAGE_CONFIG: PlotConfig = {
 };
 
 const PRICING_CONFIG: PlotConfig = {
-    title: 'Price',
+    title: 'Price*',
     plotType: 'PriceForecast',
     yAxis1: {
         titleText: 'Price [$/MWh]'

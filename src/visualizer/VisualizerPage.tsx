@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import './VisualizerPage.css';
 import SingleInstallationPicker from "../_shared/SingleInstallationPicker";
-import SessionContext, { canViewDataFromDate } from "../_util/SessionContext";
+import SessionContext, { canViewDataFromDate, installationRoleForGNode } from "../_util/SessionContext";
 import {
     NEW_YORK_TIME_ZONE,
     formatDate,
@@ -21,7 +21,8 @@ import { useVisualizerControls } from "./useVisualizerControls";
 import { useVisualizerAutoRefresh } from "./useVisualizerAutoRefresh";
 import { PLOT_CONFIGS } from "./plot-configs";
 import VisualizerPlot from "./VisualizerPlot";
-import FloPlot, { floHighElecPriceStepMask, floSummaryXAxisMetricsEqual, type FloSummaryXAxisMetrics } from "./FloPlot";
+import FloPlot, { floSummaryXAxisMetricsEqual, type FloSummaryXAxisMetrics } from "./FloPlot";
+import { onPeakStepMask, tariffForHouse, type TouTariff } from "./tou-tariff";
 import FloBidPlot from "./FloBidPlot";
 import {
     FloHorizonBars,
@@ -59,6 +60,7 @@ export default function VisualizerPage() {
     const [floNotice, setFloNotice] = useState<string | null>(null);
     const [plotError, setPlotError] = useState<string | null>(null);
     const [autoRefresh, setAutoRefresh] = useState(false);
+    const [tariff, setTariff] = useState<TouTariff | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [isFloPenMode, setIsFloPenMode] = useState(false);
     const [floHorizonBarSelections, setFloHorizonBarSelections] = useState<FloHorizonBarSelections>({
@@ -93,11 +95,15 @@ export default function VisualizerPage() {
     const endDateInputRef = useRef<HTMLInputElement>(null);
     const endTimeInputRef = useRef<HTMLInputElement>(null);
     const floQueryGeneration = useRef(0);
+    // A plot the viewer dragged into a zoom; a ref, so a drag renders nothing.
+    const isZoomedRef = useRef(false);
     const { installationGNode, pathRoot } = useRouteInfo();
     const session = useContext(SessionContext);
+    const summary = installationRoleForGNode(session?.installations, installationGNode);
     useVisualizerAutoRefresh({
         autoRefresh,
         isBusy: isLoading || isFloLoading,
+        isZoomedRef,
         pathRoot,
         setEndDateTime: setEndDateWindow,
         onTick: (end) => {
@@ -109,6 +115,20 @@ export default function VisualizerPage() {
         setReadingsBundleData(null);
         setPlotError(null);
     }, [installationGNode]);
+
+    // The house's tariff: its on-peak hours band the FLO plot and its
+    // delivery premium comes off the FLO plot's price.
+    useEffect(() => {
+        let stale = false;
+        setTariff(null);
+        if (!installationGNode) {
+            return;
+        }
+        tariffForHouse(summary)
+            .then((t) => { if (!stale) setTariff(t); })
+            .catch(() => { if (!stale) setTariff(null); });
+        return () => { stale = true; };
+    }, [installationGNode, summary]);
 
     // The pen is the re-run editor, and the route is mounted only when
     // BACKEND_FLO_RERUN=in-process. The probe is a GET of that POST-only
@@ -274,6 +294,9 @@ export default function VisualizerPage() {
             }
             const readings = SyncedReadingsBundle.parse(apiResult.data);
             clearVisualizerContent();
+            // New data draws every plot at the full window; a zoom from
+            // before it is gone with the old plots.
+            isZoomedRef.current = false;
             setPlottedParams({
                 startDate: startDate,
                 endDate: endDate,
@@ -451,13 +474,9 @@ export default function VisualizerPage() {
     }
 
     const floRequestView = floParams === null ? null : paramsView(floParams);
-    const floHighElecPriceSteps = floRequestView === null
+    const floOnPeakSteps = floRequestView === null || tariff === null
         ? []
-        : floHighElecPriceStepMask(
-            [...floRequestView.stepStart, floRequestView.horizonEnd],
-            floRequestView.priceUsdMwh,
-            floRequestView.stepStart.length,
-        );
+        : onPeakStepMask(tariff, floRequestView.stepStartS);
     const shownFloRecommendation = floRerunRecommendation ?? floRecommendation;
     const shownFloPairIndex = floRerunRecommendation === null
         ? floPairIndex
@@ -632,7 +651,7 @@ export default function VisualizerPage() {
                                 </p>
                                 <FloHorizonBars
                                     metrics={floSummaryXAxisMetrics}
-                                    highPriceSteps={floHighElecPriceSteps}
+                                    onPeakSteps={floOnPeakSteps}
                                     isDarkMode={getIsDarkMode()}
                                     barSelectedSteps={floHorizonBarSelections}
                                     onBarSelectedStepsChange={setFloHorizonBarSelections}
@@ -680,6 +699,7 @@ export default function VisualizerPage() {
                             <FloPlot
                                 recommendation={shownFloRecommendation}
                                 params={floParams}
+                                tariff={tariff}
                                 pairIndex={shownFloPairIndex}
                                 isDarkMode={getIsDarkMode()}
                                 onXAxisMetrics={isFloPenMode ? onFloSummaryXAxisMetrics : undefined}
@@ -703,7 +723,8 @@ export default function VisualizerPage() {
                                 selectedChannels={plotSelectedChannels} 
                                 readingsBundleData={readingsBundleData} 
                                 isDarkMode={getIsDarkMode()} 
-                                showPoints={showPoints} />
+                                showPoints={showPoints}
+                                onZoomChange={(zoomed) => { isZoomedRef.current = zoomed; }} />
                         ))}
                     </div>
                 </div>
