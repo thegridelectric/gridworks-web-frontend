@@ -1,5 +1,7 @@
+import { useState } from "react";
 import Plot from "react-plotly.js";
 import type { Data, Layout } from "plotly.js";
+import { DIST_ENERGY_RHO } from "./dist-load";
 import { FLO_PLOT_MARGINS, floHorizonTimeAxis, getDefaultPlotLayout } from "./plot-configs";
 import type { FloSummaryXAxisMetrics } from "./FloPlot";
 import type { FloParamsView } from "./flo-path-view";
@@ -25,6 +27,19 @@ const LOAD_DOMAIN: [number, number] = [0.5 + PANEL_GAP / 2, 1];
 
 const trace = (value: object): Data => value as Data;
 
+function loadForecastRmseKw(forecastKw: number[], actualKw: (number | null)[]): number | null {
+    let sumSq = 0;
+    let n = 0;
+    for (let i = 0; i < forecastKw.length; i += 1) {
+        const actual = actualKw[i];
+        if (actual === null) continue;
+        const err = actual - forecastKw[i];
+        sumSq += err * err;
+        n += 1;
+    }
+    return n === 0 ? null : Math.sqrt(sumSq / n);
+}
+
 /** Load and RSWT step forecasts from ``flo.params`` on a shared time axis. */
 export default function FloParamsForecastPlot(props: {
     request: FloParamsView;
@@ -35,6 +50,8 @@ export default function FloParamsForecastPlot(props: {
     summaryTimeAxis?: FloSummaryXAxisMetrics | null;
 }) {
     const { request, isDarkMode, actualKw, summaryTimeAxis } = props;
+    const [rho, setRho] = useState(DIST_ENERGY_RHO);
+    const scaledActual = actualKw?.map((value) => (value === null ? null : value * rho)) ?? null;
     const base = getDefaultPlotLayout(isDarkMode);
     const lines = lineColors(isDarkMode);
     const timeAxis = floHorizonTimeAxis(base);
@@ -48,18 +65,24 @@ export default function FloParamsForecastPlot(props: {
     const loadForecast = stepThrough(request.stepStart, request.horizonEnd, request.loadKw);
     const rswtForecast = stepThrough(request.stepStart, request.horizonEnd, request.rswtF);
 
-    const showActual = actualKw != null
-        && actualKw.length === request.loadKw.length
-        && actualKw.some((value) => value !== null);
+    const showActual = scaledActual != null
+        && scaledActual.length === request.loadKw.length
+        && scaledActual.some((value) => value !== null);
     const actual = showActual
-        ? stepThrough(request.stepStart, request.horizonEnd, actualKw)
+        ? stepThrough(request.stepStart, request.horizonEnd, scaledActual)
         : null;
+    const rmseKw = scaledActual
+        ? loadForecastRmseKw(request.loadKw, scaledActual)
+        : null;
+    const actualLegendName = rmseKw === null
+        ? "Actual"
+        : `Actual (RMSE: ${rmseKw.toFixed(2)} kW)`;
 
     const data: Data[] = [
         ...(actual === null ? [] : [trace({
             type: "scatter",
             mode: "lines",
-            name: "Actual",
+            name: actualLegendName,
             x: actual.x,
             y: actual.y,
             xaxis: "x",
@@ -156,14 +179,28 @@ export default function FloParamsForecastPlot(props: {
     } as Partial<Layout>;
 
     return (
-        <div className="plot-div" style={{ width: "100%", height: PLOT_HEIGHT }}>
-            <Plot
-                data={data}
-                layout={layout}
-                config={{ displayModeBar: false, responsive: true }}
-                style={{ width: "100%", height: "100%" }}
-                useResizeHandler
-            />
+        <div className="plot-div" style={{ width: "100%" }}>
+            <div style={{ width: "100%", height: PLOT_HEIGHT }}>
+                <Plot
+                    data={data}
+                    layout={layout}
+                    config={{ displayModeBar: false, responsive: true }}
+                    style={{ width: "100%", height: "100%" }}
+                    useResizeHandler
+                />
+            </div>
+            <label className="flo-rho-control">
+                <span className="flo-rho-control__label">ρ {rho.toFixed(2)}</span>
+                <input
+                    type="range"
+                    min={0.5}
+                    max={2.5}
+                    step={0.05}
+                    value={rho}
+                    aria-label="Energy ratio rho"
+                    onChange={(event) => setRho(Number(event.currentTarget.value))}
+                />
+            </label>
         </div>
     );
 }

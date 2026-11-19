@@ -7,7 +7,7 @@ import { toDisplayValue } from "../sema/units";
  * Placeholder for the house energy ratio (sum of heat-pump kWh over sum of
  * distribution kWh on the training window). Replace with the fitted ratio.
  */
-export const DIST_ENERGY_RHO = 1.3;
+export const DIST_ENERGY_RHO = 1.46;
 
 const DIST_CHANNELS = ["dist-swt", "dist-rwt", "dist-flow"] as const;
 /** Bucket the distribution channels the same way the visualizer reads them. */
@@ -97,9 +97,10 @@ export function distSamples(bundle: SyncedReadingsBundle): DistSample[] {
 }
 
 /**
- * Scaled distribution load on the FLO step grid, or null when the horizon
- * has not started or the readings request fails. Hours with no samples stay
- * null so the plot shows the forecast alone there.
+ * Unscaled distribution load (ρ = 1) on the FLO step grid, or null when the
+ * horizon has not started or the readings request fails. Hours with no
+ * samples stay null so the plot shows the forecast alone there. The forecast
+ * plot multiplies by the ρ slider.
  */
 export async function fetchActualLoadKw(params: {
     installationGNode: string;
@@ -128,7 +129,8 @@ export async function fetchActualLoadKw(params: {
             },
         );
         const bundle = SyncedReadingsBundle.parse(res.data);
-        const load = actualLoadKw(distSamples(bundle), stepStartS, stepDurationMinutes);
+        // Unscaled (ρ = 1). The forecast plot multiplies by the ρ slider.
+        const load = actualLoadKw(distSamples(bundle), stepStartS, stepDurationMinutes, 1);
         return load.some((value) => value !== null) ? load : null;
     } catch {
         return null;
