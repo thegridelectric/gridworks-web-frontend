@@ -24,6 +24,7 @@ import VisualizerPlot from "./VisualizerPlot";
 import FloPlot, { floSummaryXAxisMetricsEqual, type FloSummaryXAxisMetrics } from "./FloPlot";
 import { onPeakStepMask, tariffForHouse, type TouTariff } from "./tou-tariff";
 import FloBidPlot from "./FloBidPlot";
+import FloParamsForecastPlot from "./FloParamsForecastPlot";
 import {
     FloHorizonBars,
     emptyFloHorizonBarSelections,
@@ -39,6 +40,7 @@ import {
     type FloPenaltyTuningDraft,
 } from "./FloPenaltyTuning";
 import { fetchParams, fetchRecommendation, probeRerun, rerun } from "./flo-api";
+import { fetchActualLoadKw } from "./dist-load";
 import { bidView, defaultPairIndex, paramsView } from "./flo-path-view";
 import { floRerunRequest, penaltyTuning, type PenaltyTuning } from "./flo-rerun-tuning";
 import { fetchSlotClearedPrice } from "./pricing-api";
@@ -55,6 +57,7 @@ export default function VisualizerPage() {
     const [floHourShift, setFloHourShift] = useState<-1 | 1 | null>(null);
     const [floRecommendation, setFloRecommendation] = useState<AnyFloRecommendation | null>(null);
     const [floParams, setFloParams] = useState<AnyFloParams | null>(null);
+    const [floActualLoadKw, setFloActualLoadKw] = useState<(number | null)[] | null>(null);
     const [floRealPriceMwh, setFloRealPriceMwh] = useState<number | null>(null);
     const [floPairIndex, setFloPairIndex] = useState(0);
     const [floNotice, setFloNotice] = useState<string | null>(null);
@@ -473,6 +476,24 @@ export default function VisualizerPage() {
         }
     }
 
+    useEffect(() => {
+        if (!installationGNode || floParams === null) {
+            setFloActualLoadKw(null);
+            return;
+        }
+        let cancelled = false;
+        void fetchActualLoadKw({
+            installationGNode,
+            stepStartS: paramsView(floParams).stepStartS,
+            stepDurationMinutes: floParams.StepDurationMinutes,
+        }).then((load) => {
+            if (!cancelled) setFloActualLoadKw(load);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [installationGNode, floParams]);
+
     const floRequestView = floParams === null ? null : paramsView(floParams);
     const floOnPeakSteps = floRequestView === null || tariff === null
         ? []
@@ -702,9 +723,17 @@ export default function VisualizerPage() {
                                 tariff={tariff}
                                 pairIndex={shownFloPairIndex}
                                 isDarkMode={getIsDarkMode()}
-                                onXAxisMetrics={isFloPenMode ? onFloSummaryXAxisMetrics : undefined}
+                                onXAxisMetrics={onFloSummaryXAxisMetrics}
                             />
                             {floBid && <FloBidPlot bid={floBid} isDarkMode={getIsDarkMode()} />}
+                            {floRequestView && (
+                                <FloParamsForecastPlot
+                                    request={floRequestView}
+                                    isDarkMode={getIsDarkMode()}
+                                    actualKw={floActualLoadKw}
+                                    summaryTimeAxis={floSummaryXAxisMetrics}
+                                />
+                            )}
                         </div>
                     }
                 </div>
