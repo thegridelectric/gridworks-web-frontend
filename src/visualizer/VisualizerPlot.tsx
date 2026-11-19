@@ -1,5 +1,6 @@
 import { type PlotParams } from "react-plotly.js";
 import type { Config } from 'plotly.js';
+import { zoomAfterRelayout } from './plot-zoom';
 import type { SyncedReadingsBundle } from '../sema/types/SyncedReadingsBundle';
 import { type PlotConfig } from "./plot-configs";
 import WeatherForecastPlot from './WeatherForecastPlot';
@@ -19,6 +20,9 @@ interface VisualizerPlotProps {
     endDate: DateTime,
     showPoints: boolean,
     isDarkMode: boolean;
+    /** Hears true when the viewer zooms this plot in and false when the
+     *  plot is back at its full range. */
+    onZoomChange: (zoomed: boolean) => void;
 }
 
 const defaultPlotConfig: Partial<Config> = {
@@ -28,8 +32,6 @@ const defaultPlotConfig: Partial<Config> = {
 
 export default function VisualizerPlot(props: VisualizerPlotProps) {
 
-    // const { plotConfig, readingsBundleData, selectedChannels, priceData, showPoints, isDarkMode } = props;
-
     const session = useContext(SessionContext);
     
     const plotParams: Partial<PlotParams> = {
@@ -37,7 +39,11 @@ export default function VisualizerPlot(props: VisualizerPlotProps) {
             ...defaultPlotConfig,
         },
         style: { width: '100%', height: '100%' },
-        useResizeHandler: true
+        useResizeHandler: true,
+        onRelayout: (event) => {
+            const zoomed = zoomAfterRelayout(event);
+            if (zoomed !== null) props.onZoomChange(zoomed);
+        },
     }
 
     const subPlotProps = {

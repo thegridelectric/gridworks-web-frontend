@@ -4,7 +4,9 @@ import type { Figure } from "react-plotly.js";
 import type { Data, Layout, Shape } from "plotly.js";
 import type { AnyFloRecommendation } from "../sema/types/AnyFloRecommendation";
 import type { AnyFloParams } from "../sema/types/AnyFloParams";
+import { DateTime } from "luxon";
 import { FLO_PLOT_MARGINS, getDefaultPlotLayout } from "./plot-configs";
+import { flatDeliveryPrices, onPeakShapes, type TouTariff } from "./tou-tariff";
 import {
     paramsView,
     pathView,
@@ -14,32 +16,6 @@ import {
     storePlot,
     type PenaltySeriesEnabled,
 } from "./flo-path-view";
-
-export const ELEC_PRICE_HIGHLIGHT_USD_MWH = 400;
-
-const ELEC_PRICE_HIGHLIGHT_FILL = {
-    light: "rgba(255, 244, 190, 0.42)",
-    dark: "rgba(255, 214, 100, 0.11)",
-} as const;
-
-export function elecPriceHighlightFillColor(isDarkMode: boolean): string {
-    return isDarkMode ? ELEC_PRICE_HIGHLIGHT_FILL.dark : ELEC_PRICE_HIGHLIGHT_FILL.light;
-}
-
-export function floHighElecPriceStepMask(
-    times: string[],
-    elecPriceUsdMwh: number[],
-    segmentCount: number,
-): boolean[] {
-    const mask = Array.from({ length: segmentCount }, () => false);
-    const stepCount = Math.min(times.length - 1, elecPriceUsdMwh.length);
-    for (let i = 0; i < stepCount && i < segmentCount; i++) {
-        if (elecPriceUsdMwh[i] > ELEC_PRICE_HIGHLIGHT_USD_MWH) {
-            mask[i] = true;
-        }
-    }
-    return mask;
-}
 
 export interface FloSummaryXAxisMetrics {
     offsetPx: number;
@@ -169,51 +145,37 @@ function penaltyEnabled(params: AnyFloParams | null): PenaltySeriesEnabled {
 const FLO_SUMMARY_HEIGHT = 1250;
 const FLO_SUMMARY_HEIGHT_NO_PENALTIES = 900;
 
-/** Yellow bands on the power panel when forecast electricity exceeds $/MWh threshold. */
-function shapesForHighElecPrice(
-    stepEdges: string[],
-    elecPriceUsdMwh: number[],
-    isDarkMode: boolean,
-): Partial<Shape>[] {
-    const fillcolor = elecPriceHighlightFillColor(isDarkMode);
-    const shapes: Partial<Shape>[] = [];
-    const stepCount = Math.min(stepEdges.length - 1, elecPriceUsdMwh.length);
-    for (let i = 0; i < stepCount; i++) {
-        if (elecPriceUsdMwh[i] > ELEC_PRICE_HIGHLIGHT_USD_MWH) {
-            shapes.push({
-                type: "rect",
-                xref: "x",
-                yref: "y domain",
-                x0: stepEdges[i],
-                x1: stepEdges[i + 1],
-                y0: 0,
-                y1: 1,
-                fillcolor,
-                layer: "below",
-                line: { width: 0 },
-            });
-        }
-    }
-    return shapes;
+/** The tariff's on-peak hours as bands on the power panel, the price
+ *  panel's pink. */
+function onPeakShapesOnPowerPanel(tariff: TouTariff, stepStartS: number[], stepMinutes: number[]): Partial<Shape>[] {
+    if (stepStartS.length === 0) return [];
+    const start = DateTime.fromSeconds(stepStartS[0]);
+    const end = DateTime.fromSeconds(stepStartS[stepStartS.length - 1] + stepMinutes[stepMinutes.length - 1] * 60);
+    return onPeakShapes(tariff, start, end, "y domain");
 }
 
 /** One pair's path of a FLO recommendation in the three panels bruce's
  *  visualizer draws: heating power and, where the request is known, the
- *  forecast load and the electricity price, with the hours above the
- *  high-price threshold shaded; the store's layers by temperature with
- *  its state of charge; and the optimizer's penalties. `onXAxisMetrics`
- *  hears where the horizon sits on the page, so controls can line up
- *  with the steps. */
+ *  forecast load and the electricity price less the tariff's on-peak
+ *  delivery premium, with the tariff's on-peak hours shaded; the store's
+ *  layers by temperature with its state of charge; and the optimizer's
+ *  penalties. With no tariff the price is drawn as the optimizer saw it
+ *  and no hour is shaded. `onXAxisMetrics` hears where the horizon sits
+ *  on the page, so controls can line up with the steps. */
 export default function FloPlot(props: {
     recommendation: AnyFloRecommendation;
     params: AnyFloParams | null;
+    tariff: TouTariff | null;
     pairIndex: number;
     isDarkMode: boolean;
     onXAxisMetrics?: (metrics: FloSummaryXAxisMetrics | null) => void;
 }) {
-    const { recommendation, params, pairIndex, isDarkMode, onXAxisMetrics } = props;
+    const { recommendation, params, tariff, pairIndex, isDarkMode, onXAxisMetrics } = props;
     const view = pathView(recommendation, pairIndex);
     const request = params === null ? null : paramsView(params);
+    const priceUsdMwh = request === null
+        ? null
+        : tariff === null ? request.priceUsdMwh : flatDeliveryPrices(tariff, request.stepStartS, request.priceUsdMwh);
     const stepEdges = [...view.stepStart, view.horizonEnd];
 
     const plotShellRef = useRef<HTMLDivElement>(null);
@@ -290,7 +252,7 @@ export default function FloPlot(props: {
     const hasPenalties = penalties.series.length > 0;
     const hp = stepThrough(view.stepStart, view.horizonEnd, view.hpKw);
     const load = request === null ? null : stepThrough(request.stepStart, request.horizonEnd, request.loadKw);
-    const price = request === null ? null : stepThrough(request.stepStart, request.horizonEnd, request.priceUsdMwh);
+    const price = request === null || priceUsdMwh === null ? null : stepThrough(request.stepStart, request.horizonEnd, priceUsdMwh);
     const hpMaxKw = Math.max(0, ...view.hpKw);
 
     const data: Data[] = [
@@ -387,9 +349,9 @@ export default function FloPlot(props: {
         height,
         margin: FLO_PLOT_MARGINS,
         barmode: "overlay",
-        shapes: request === null
+        shapes: request === null || params === null || tariff === null
             ? []
-            : shapesForHighElecPrice([...request.stepStart, request.horizonEnd], request.priceUsdMwh, isDarkMode),
+            : onPeakShapesOnPowerPanel(tariff, request.stepStartS, params.StepDurationMinutes),
         title: { ...base.title, text: plotTitle(recommendation, view), x: 0.5, xanchor: "center", font: { ...base.title?.font, size: 12 } },
         xaxis: { ...timeAxis, anchor: "y" },
         xaxis2: { ...timeAxis, anchor: "y3", matches: "x" },

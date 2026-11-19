@@ -1,6 +1,6 @@
 import Plot, { type PlotParams } from "react-plotly.js";
 import { fetchLatestPrices, fetchPriceForecast, type PriceSeries, type RealTimeSeries } from "./pricing-api";
-import { onPeakShapes, tariffForHouse, type TouTariff } from "./tou-tariff";
+import { flatDeliveryPrices, ON_PEAK_DELIVERY_PREMIUM_USD_MWH, onPeakShapes, tariffForHouse, type TouTariff } from "./tou-tariff";
 import React, { useContext, useEffect, useState } from "react";
 import SessionContext, { installationRoleForGNode } from "../_util/SessionContext";
 import { formatForDisplay, formatHourStartSForDisplay, type PlotConfig } from "./plot-configs";
@@ -60,12 +60,13 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
     }, [installationGNode, startDate, endDate, summary])
 
     let content: React.ReactNode;
+    let note: React.ReactNode = null;
     if (priceData && realTime && priceData.HourStartS.length === 0 && realTime.HourStartS.length === 0) {
         content = <div className="alert alert-secondary mt-3 mb-0" role="status">No price forecast in this window</div>
     } else if (priceData && realTime) {
         const series: { seriesName: string, xS: number[], yValues: number[] }[] = [
-            { seriesName: 'ForecastList', xS: priceData.HourStartS, yValues: priceData.ForecastList },
-            { seriesName: 'RealTimeList', xS: realTime.HourStartS, yValues: realTime.RealTimeList },
+            { seriesName: 'ForecastList', xS: priceData.HourStartS, yValues: flatDelivery(tariff, priceData.HourStartS, priceData.ForecastList) },
+            { seriesName: 'RealTimeList', xS: realTime.HourStartS, yValues: flatDelivery(tariff, realTime.HourStartS, realTime.RealTimeList) },
         ];
         const tracesWithData = series
             .filter(x => x.xS.length > 0)
@@ -93,6 +94,11 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
             plotlyLayout.shapes = onPeakShapes(tariff, startDate, endDate);
         }
         content = <Plot data={plotlyData} layout={plotlyLayout} {...props.plotParams} />
+        note = tariff === null ? null : <p className="text-muted small mb-3 px-3" style={{ marginTop: "-1.5rem" }}>
+            * On-peak hours (the bands) are drawn less the on-peak delivery premium, the on-peak
+            delivery charge over the off-peak one (${ON_PEAK_DELIVERY_PREMIUM_USD_MWH}/MWh), so every
+            hour reads as if it paid the off-peak delivery charge.
+        </p>;
 
     } else if (isLoading) {
         content = <div className="loader" aria-label="Loading price data" />;
@@ -101,6 +107,19 @@ export default function PriceForecastPlot(props: PriceForecastPlotParams) {
     }
 
     if (content) {
-        return <PlotlyWrapper>{content}</PlotlyWrapper>
+        return <>
+            <PlotlyWrapper>{content}</PlotlyWrapper>
+            {note}
+        </>
     }
+}
+
+/** A step series with the on-peak delivery premium taken out; the
+ *  closing point repeats the last step's value, as the series builders
+ *  make it. */
+function flatDelivery(tariff: TouTariff | null, hourStartS: number[], values: number[]): number[] {
+    if (tariff === null || values.length === 0) return values;
+    const flat = flatDeliveryPrices(tariff, hourStartS, values);
+    flat[flat.length - 1] = flat.length > 1 ? flat[flat.length - 2] : flat[0];
+    return flat;
 }

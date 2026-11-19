@@ -48,22 +48,60 @@ export function onPeakSpans(tariff: TouTariff, start: DateTime, end: DateTime): 
     return spans;
 }
 
+/** The one fill for an on-peak hour wherever the page marks one: the
+ *  price panel's bands, the FLO plot's bands and the horizon bars. */
+export const ON_PEAK_FILL = "rgba(255, 182, 193, 0.35)";
+
 /** The tariff's on-peak hours as light pink blocks behind a plot's
- *  traces, over the full height of the plot, on its first time axis. */
-export function onPeakShapes(tariff: TouTariff, start: DateTime, end: DateTime): Partial<Shape>[] {
+ *  traces, on its first time axis, over the full height of the plot or
+ *  of the one y axis `yref` names. */
+export function onPeakShapes(tariff: TouTariff, start: DateTime, end: DateTime, yref: "paper" | "y domain" = "paper"): Partial<Shape>[] {
     return onPeakSpans(tariff, start, end).map(([spanStart, spanEnd]) => ({
         type: "rect",
         xref: "x",
-        yref: "paper",
+        yref,
         x0: formatForDisplay(spanStart),
         x1: formatForDisplay(spanEnd),
         y0: 0,
         y1: 1,
-        fillcolor: "lightpink",
-        opacity: 0.35,
+        fillcolor: ON_PEAK_FILL,
         layer: "below",
         line: { width: 0 },
     }));
+}
+
+/** Whether the instant is inside one of the tariff's on-peak windows. */
+export function isOnPeak(tariff: TouTariff, at: DateTime): boolean {
+    return onPeakSpans(tariff, at, at.plus({ seconds: 1 })).length > 0;
+}
+
+/** For each step, whether its start is on-peak. */
+export function onPeakStepMask(tariff: TouTariff, stepStartS: number[]): boolean[] {
+    return stepStartS.map((s) => isOnPeak(tariff, DateTime.fromSeconds(s)));
+}
+
+/** The on-peak delivery premium, USD/MWh: what an on-peak hour pays in
+ *  delivery over an off-peak one. One hack constant: Versant A-1 (page
+ *  6.1.1 Seventeenth Revision, effective 2026-07-01) has on-peak delivery
+ *  at 588.53 in winter and 574.18 the rest of the year against 58.56
+ *  off-peak, and the shoulder is 6 over off-peak, so one round figure
+ *  serves the page. `gw.tou.tariff` 000 states the windows and no prices;
+ *  a tariff word that states each period's delivery price retires this. */
+export const ON_PEAK_DELIVERY_PREMIUM_USD_MWH = 530;
+
+/** The delivery premium an hour starting at `at` pays over an off-peak
+ *  one under the tariff, USD/MWh: the premium on-peak, zero otherwise. */
+export function onPeakDeliveryPremiumUsdMwh(tariff: TouTariff, at: DateTime): number {
+    return isOnPeak(tariff, at) ? ON_PEAK_DELIVERY_PREMIUM_USD_MWH : 0;
+}
+
+/** The prices with the on-peak delivery premium taken out of every
+ *  on-peak step, so each step reads as if it paid the off-peak delivery
+ *  charge: the price variation shows at one scale and the on-peak
+ *  hours are the bands. `stepStartS[i]` is the start of the step
+ *  `pricesUsdMwh[i]` prices. */
+export function flatDeliveryPrices(tariff: TouTariff, stepStartS: number[], pricesUsdMwh: number[]): number[] {
+    return pricesUsdMwh.map((price, i) => price - onPeakDeliveryPremiumUsdMwh(tariff, DateTime.fromSeconds(stepStartS[i])));
 }
 
 function atWallClock(day: DateTime, hhmm: string): DateTime {

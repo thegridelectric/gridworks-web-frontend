@@ -1,15 +1,22 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 
 import { getDefaultDate } from '../_util/newYorkTime';
 
+/** Moves the window's end to now every 30 s while the page is focused
+ *  and the plots are not loading. A zoomed plot (`isZoomedRef`) holds
+ *  the tick: a refresh redraws every plot at the full window, which
+ *  would throw the zoom away. The flag is a ref so that a drag renders
+ *  nothing; a re-render alone hands every plot a fresh layout and
+ *  resets its zoom. */
 export function useVisualizerAutoRefresh(params: {
     autoRefresh: boolean;
     isBusy: boolean;
+    isZoomedRef: RefObject<boolean>;
     pathRoot: string | undefined;
     onTick: (end: Date) => void;
     setEndDateTime: (end: Date) => void;
 }) {
-    const { autoRefresh, isBusy, pathRoot, onTick, setEndDateTime } = params;
+    const { autoRefresh, isBusy, isZoomedRef, pathRoot, onTick, setEndDateTime } = params;
     const isPageFocusedRef = useRef(true);
     const autoRefreshRef = useRef(autoRefresh);
     const blockRefreshRef = useRef(isBusy);
@@ -55,7 +62,7 @@ export function useVisualizerAutoRefresh(params: {
             if (pathRoot !== 'visualizer') {
                 return;
             }
-            if (blockRefreshRef.current) {
+            if (blockRefreshRef.current || isZoomedRef.current) {
                 return;
             }
             const end = getDefaultDate(false);
@@ -107,5 +114,5 @@ export function useVisualizerAutoRefresh(params: {
             document.removeEventListener('visibilitychange', onVisibilityChange);
             clearTimers();
         };
-    }, [autoRefresh, pathRoot]);
+    }, [autoRefresh, pathRoot, isZoomedRef]);
 }

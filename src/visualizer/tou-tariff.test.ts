@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import { describe, expect, it } from "vitest";
 import elm013 from "../sema/__tests__/fixtures/elm-layout.lite-013.json";
 import { AnyHouseSummary } from "../sema/types/AnyHouseSummary";
-import { layoutTariff, onPeakShapes, onPeakSpans, TouTariff } from "./tou-tariff";
+import { flatDeliveryPrices, layoutTariff, ON_PEAK_DELIVERY_PREMIUM_USD_MWH, onPeakShapes, onPeakSpans, onPeakStepMask, TouTariff } from "./tou-tariff";
 
 const weekdays = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] as const;
 
@@ -86,5 +86,31 @@ describe("onPeakShapes", () => {
             ["2026-11-11T16:00:00", "2026-11-11T20:00:00"],
         ]);
         expect(shapes.every((s) => s.xref === "x" && s.yref === "paper" && s.y0 === 0 && s.y1 === 1)).toBe(true);
+    });
+});
+
+describe("flatDeliveryPrices", () => {
+    // Wednesday 2026-11-18: 07:00 and 17:00 ET are on-peak, 14:00 and 21:00 are not.
+    const steps = [et("2026-11-18T07:00"), et("2026-11-18T14:00"), et("2026-11-18T17:00"), et("2026-11-18T21:00")]
+        .map((t) => t.toSeconds());
+
+    it("takes the premium off every on-peak step and leaves the rest", () => {
+        expect(flatDeliveryPrices(tariff, steps, [643.442, 100, 647.132, 91.066])).toEqual([
+            643.442 - ON_PEAK_DELIVERY_PREMIUM_USD_MWH, 100, 647.132 - ON_PEAK_DELIVERY_PREMIUM_USD_MWH, 91.066,
+        ]);
+    });
+
+    it("leaves a weekend untouched", () => {
+        // Saturday 2026-11-14 07:00 ET
+        const saturday = [et("2026-11-14T07:00").toSeconds()];
+        expect(flatDeliveryPrices(tariff, saturday, [600])).toEqual([600]);
+    });
+});
+
+describe("onPeakStepMask", () => {
+    it("marks the on-peak step starts", () => {
+        const steps = [et("2026-11-18T06:00"), et("2026-11-18T07:00"), et("2026-11-18T11:59"), et("2026-11-18T12:00")]
+            .map((t) => t.toSeconds());
+        expect(onPeakStepMask(tariff, steps)).toEqual([false, true, true, false]);
     });
 });
