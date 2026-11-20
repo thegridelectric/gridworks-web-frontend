@@ -25,6 +25,8 @@ import FloPlot, { floSummaryXAxisMetricsEqual, type FloSummaryXAxisMetrics } fro
 import { onPeakStepMask, tariffForHouse, type TouTariff } from "./tou-tariff";
 import FloBidPlot from "./FloBidPlot";
 import FloParamsForecastPlot from "./FloParamsForecastPlot";
+import FloPathCopPlot from "./FloPathCopPlot";
+import { pathCopAvgLwtFList, pathCopList, pathHasHpOn } from "./flo-path-cop";
 import {
     FloHorizonBars,
     emptyFloHorizonBarSelections,
@@ -506,6 +508,15 @@ export default function VisualizerPage() {
     const floBid = shownFloRecommendation && floParams
         ? bidView(shownFloRecommendation, floParams, floRealPriceMwh)
         : null;
+    const floShortestPathIndex = shownFloRecommendation
+        ? defaultPairIndex(shownFloRecommendation)
+        : null;
+    const floPathCop = shownFloRecommendation && floParams && floShortestPathIndex !== null
+        ? pathCopList(floParams, shownFloRecommendation, floShortestPathIndex)
+        : null;
+    const floPathCopAvgLwt = shownFloRecommendation && floParams && floShortestPathIndex !== null
+        ? pathCopAvgLwtFList(floParams, shownFloRecommendation, floShortestPathIndex)
+        : null;
 
     function onFullscreenToggle() {
         setIsFullscreen((was) => {
@@ -733,6 +744,19 @@ export default function VisualizerPage() {
                                     request={floRequestView}
                                     isDarkMode={getIsDarkMode()}
                                     actualKw={floActualLoadKw}
+                                    summaryTimeAxis={floSummaryXAxisMetrics}
+                                />
+                            )}
+                            {floRequestView && floPathCop && floPathCopAvgLwt
+                                && floPathCop.length === floRequestView.loadKw.length
+                                && floPathCopAvgLwt.length === floRequestView.loadKw.length
+                                && shownFloRecommendation && floShortestPathIndex !== null
+                                && pathHasHpOn(shownFloRecommendation, floShortestPathIndex) && (
+                                <FloPathCopPlot
+                                    request={floRequestView}
+                                    cop={floPathCop}
+                                    avgLwtF={floPathCopAvgLwt}
+                                    isDarkMode={getIsDarkMode()}
                                     summaryTimeAxis={floSummaryXAxisMetrics}
                                 />
                             )}
