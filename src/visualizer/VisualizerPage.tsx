@@ -39,6 +39,7 @@ import {
     floPenaltyTuningFromDraft,
     type FloPenaltyTuningDraft,
 } from "./FloPenaltyTuning";
+import { FloPenGitCommitCopy } from "./FloPenGitCommitCopy";
 import { fetchParams, fetchRecommendation, probeRerun, rerun } from "./flo-api";
 import { fetchActualLoadKw } from "./dist-load";
 import { bidView, defaultPairIndex, paramsView } from "./flo-path-view";
@@ -664,7 +665,7 @@ export default function VisualizerPage() {
                             </button>
                         }
                         </div>
-                        {rerunAvailable && isFloPenMode && floRecommendation &&
+                        {rerunAvailable && isFloPenMode && floRecommendation && shownFloRecommendation &&
                             <div className="flo-pen-controls">
                                 <p className="flo-pen-instructions text-muted small mb-0">
                                     Re-run the same FLO but forcing the heat pump to be on or off in some of the
@@ -682,6 +683,7 @@ export default function VisualizerPage() {
                                     onDraftChange={setFloTuningDraft}
                                     disabled={isLoading || isFloLoading || isRerunning}
                                 />
+                                <FloPenGitCommitCopy commit={shownFloRecommendation.FloGitCommit} />
                                 <button
                                     className="btn btn-sm btn-outline-secondary flo-pen-rerun-btn"
                                     type="button"
@@ -697,7 +699,7 @@ export default function VisualizerPage() {
                                 >
                                     {isRerunning ? "Re-running…" : "Re-run"}
                                 </button>
-                                {floPenRerunSummary &&
+                                {/* {floPenRerunSummary &&
                                     <div className="flo-pen-rerun-summary text-muted small">
                                         <p className="mb-0">
                                             Steps forced on:{" "}
@@ -708,7 +710,7 @@ export default function VisualizerPage() {
                                             {formatFloPenForcedStepsList(floPenRerunSummary.forcedOff)}
                                         </p>
                                     </div>
-                                }
+                                } */}
                             </div>
                         }
                     </div>

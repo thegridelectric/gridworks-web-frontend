@@ -140,6 +140,82 @@
     line-height: 1.45;
 }
 
+.flo-pen-git-commit {
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 1rem;
+    max-width: 36rem;
+    margin-top: 1.25rem;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.flo-pen-git-commit__row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.flo-pen-git-commit__label {
+    flex-shrink: 0;
+    line-height: 1.45;
+    white-space: nowrap;
+}
+
+.flo-pen-git-commit__box {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+    margin: 0;
+    font-family: inherit;
+    font-size: 0.85em;
+    line-height: 1.45;
+    color: inherit;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    padding: 0.3rem 0.45rem;
+    cursor: pointer;
+    text-align: left;
+}
+
+.flo-pen-git-commit__hash {
+    flex: 1;
+    min-width: 0;
+    font-variant-numeric: tabular-nums;
+    word-break: break-all;
+    text-align: center;
+}
+
+.flo-pen-git-commit__icon {
+    flex-shrink: 0;
+    font-size: 1.1em;
+    line-height: 1.45;
+    opacity: 0.75;
+}
+
+.flo-pen-git-commit__box:hover {
+    color: var(--text-color);
+    background-color: var(--hover-color);
+}
+
+.flo-pen-git-commit__box:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--text-color) 35%, transparent);
+    outline-offset: 2px;
+}
+
 .flo-horizon-bars-track {
     display: flex;
     flex-direction: column;
@@ -266,6 +342,7 @@
 
 @media (max-width: 650px) {
     .flo-pen-instructions,
+    .flo-pen-git-commit,
     .flo-horizon-bars-wrap,
     .flo-penalty-tuning {
         padding-left: 0.5rem;
