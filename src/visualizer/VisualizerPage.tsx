@@ -25,6 +25,8 @@ import FloPlot, { floSummaryXAxisMetricsEqual, type FloSummaryXAxisMetrics } fro
 import { onPeakStepMask, tariffForHouse, type TouTariff } from "./tou-tariff";
 import FloBidPlot from "./FloBidPlot";
 import FloParamsForecastPlot from "./FloParamsForecastPlot";
+import FloPathCopPlot from "./FloPathCopPlot";
+import { pathCopAvgLwtFList, pathCopList, pathHasHpOn } from "./flo-path-cop";
 import {
     FloHorizonBars,
     emptyFloHorizonBarSelections,
@@ -39,6 +41,7 @@ import {
     floPenaltyTuningFromDraft,
     type FloPenaltyTuningDraft,
 } from "./FloPenaltyTuning";
+import { FloPenGitCommitCopy } from "./FloPenGitCommitCopy";
 import { fetchParams, fetchRecommendation, probeRerun, rerun } from "./flo-api";
 import { fetchActualLoadKw } from "./dist-load";
 import { bidView, defaultPairIndex, paramsView } from "./flo-path-view";
@@ -505,6 +508,15 @@ export default function VisualizerPage() {
     const floBid = shownFloRecommendation && floParams
         ? bidView(shownFloRecommendation, floParams, floRealPriceMwh)
         : null;
+    const floShortestPathIndex = shownFloRecommendation
+        ? defaultPairIndex(shownFloRecommendation)
+        : null;
+    const floPathCop = shownFloRecommendation && floParams && floShortestPathIndex !== null
+        ? pathCopList(floParams, shownFloRecommendation, floShortestPathIndex)
+        : null;
+    const floPathCopAvgLwt = shownFloRecommendation && floParams && floShortestPathIndex !== null
+        ? pathCopAvgLwtFList(floParams, shownFloRecommendation, floShortestPathIndex)
+        : null;
 
     function onFullscreenToggle() {
         setIsFullscreen((was) => {
@@ -664,7 +676,7 @@ export default function VisualizerPage() {
                             </button>
                         }
                         </div>
-                        {rerunAvailable && isFloPenMode && floRecommendation &&
+                        {rerunAvailable && isFloPenMode && floRecommendation && shownFloRecommendation &&
                             <div className="flo-pen-controls">
                                 <p className="flo-pen-instructions text-muted small mb-0">
                                     Re-run the same FLO but forcing the heat pump to be on or off in some of the
@@ -682,6 +694,7 @@ export default function VisualizerPage() {
                                     onDraftChange={setFloTuningDraft}
                                     disabled={isLoading || isFloLoading || isRerunning}
                                 />
+                                <FloPenGitCommitCopy commit={shownFloRecommendation.FloGitCommit} />
                                 <button
                                     className="btn btn-sm btn-outline-secondary flo-pen-rerun-btn"
                                     type="button"
@@ -697,7 +710,7 @@ export default function VisualizerPage() {
                                 >
                                     {isRerunning ? "Re-running…" : "Re-run"}
                                 </button>
-                                {floPenRerunSummary &&
+                                {/* {floPenRerunSummary &&
                                     <div className="flo-pen-rerun-summary text-muted small">
                                         <p className="mb-0">
                                             Steps forced on:{" "}
@@ -708,7 +721,7 @@ export default function VisualizerPage() {
                                             {formatFloPenForcedStepsList(floPenRerunSummary.forcedOff)}
                                         </p>
                                     </div>
-                                }
+                                } */}
                             </div>
                         }
                     </div>
@@ -731,6 +744,19 @@ export default function VisualizerPage() {
                                     request={floRequestView}
                                     isDarkMode={getIsDarkMode()}
                                     actualKw={floActualLoadKw}
+                                    summaryTimeAxis={floSummaryXAxisMetrics}
+                                />
+                            )}
+                            {floRequestView && floPathCop && floPathCopAvgLwt
+                                && floPathCop.length === floRequestView.loadKw.length
+                                && floPathCopAvgLwt.length === floRequestView.loadKw.length
+                                && shownFloRecommendation && floShortestPathIndex !== null
+                                && pathHasHpOn(shownFloRecommendation, floShortestPathIndex) && (
+                                <FloPathCopPlot
+                                    request={floRequestView}
+                                    cop={floPathCop}
+                                    avgLwtF={floPathCopAvgLwt}
+                                    isDarkMode={getIsDarkMode()}
                                     summaryTimeAxis={floSummaryXAxisMetrics}
                                 />
                             )}
