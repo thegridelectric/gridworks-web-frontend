@@ -17,6 +17,7 @@ import {
     storePlot,
     type PenaltySeriesEnabled,
 } from "./flo-path-view";
+import { unmetLoadKnobs } from "./flo-rerun-tuning";
 
 export interface FloSummaryXAxisMetrics {
     offsetPx: number;
@@ -163,7 +164,7 @@ function penaltyEnabled(params: AnyFloParams | null): PenaltySeriesEnabled {
     }
     return {
         rswt: tuning.RswtPenaltyEnabled,
-        unmet: tuning.Version === "002" ? tuning.UnmetLoadPenaltyEnabled : true,
+        unmet: unmetLoadKnobs(tuning)?.UnmetLoadPenaltyEnabled ?? true,
         stability: tuning.StabilityPenaltyEnabled,
         shortCycle: tuning.ShortCyclePenaltyEnabled,
         terminal: tuning.TerminalCostEnabled,

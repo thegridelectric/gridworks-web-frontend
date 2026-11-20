@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { z } from "zod";
 import type { AnyFloRecommendation } from "../sema/types/AnyFloRecommendation";
 import { type AnyFloParams, priceUsdMwhList } from "../sema/types/AnyFloParams";
 import { formatForDisplay } from "./plot-configs";
@@ -14,6 +15,24 @@ export type BandView = {
     layers: number[];
     tempF: number[];
 };
+
+/** The unmet-load series as the `UnmetLoadPenaltyUsdList` key of a
+ *  `flo.path.penalties.bruce` 002 Experimental. Hand-coded: no word
+ *  declares this key; a `flo.path.penalties.bruce` version that declares
+ *  the list retires it. */
+const UnmetLoadPenaltyUsdList = z.array(z.number());
+
+type BrucePenalties = NonNullable<Extract<AnyFloRecommendation, { Version: "001" | "002" | "003" }>["PathPenaltiesList"]>[number];
+
+/** The unmet-load penalty per step: the declared list at 001, the
+ *  Experimental series at 002. Null at 000, and when a 002 word's
+ *  Experimental holds no such series of the path's step count. */
+function unmetLoadPenaltyUsdList(bruce: BrucePenalties): number[] | null {
+    if (bruce.Version === "001") return bruce.UnmetLoadPenaltyUsdList;
+    if (bruce.Version !== "002") return null;
+    const series = UnmetLoadPenaltyUsdList.safeParse(bruce.Experimental.UnmetLoadPenaltyUsdList);
+    return series.success && series.data.length === bruce.RswtPenaltyUsdList.length ? series.data : null;
+}
 
 /** One of the optimizer's penalty series, stacked on the ones before it. */
 export type PenaltyView = {
@@ -94,8 +113,9 @@ export function pathView(recommendation: AnyFloRecommendation, pairIndex: number
     const penalties: PenaltyView[] = [];
     if (bruce) {
         const series: [string, number[]][] = [["RSWT penalty", bruce.RswtPenaltyUsdList]];
-        if ("UnmetLoadPenaltyUsdList" in bruce) {
-            series.push(["Unmet load penalty", bruce.UnmetLoadPenaltyUsdList]);
+        const unmetLoad = unmetLoadPenaltyUsdList(bruce);
+        if (unmetLoad !== null) {
+            series.push(["Unmet load penalty", unmetLoad]);
         }
         series.push(
             ["Stability penalty", bruce.StabilityPenaltyUsdList],

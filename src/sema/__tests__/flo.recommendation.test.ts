@@ -1,11 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import orange1Recommendation001 from './fixtures/orange1-flo.recommendation-001.json';
 import exampleRecommendation000 from './fixtures/registry-example-flo.recommendation-000.json';
+import exampleRecommendation003 from './fixtures/registry-example-flo.recommendation-003.json';
 import { AnyFloRecommendation } from '../types/AnyFloRecommendation';
+import { FloRecommendation } from '../types/FloRecommendation';
 import { FloRecommendation001 } from '../types/old_versions/FloRecommendation001';
 import { FloRecommendation000 } from '../types/old_versions/FloRecommendation000';
 
 describe('flo.recommendation', () => {
+    it('round-trips the registry example at 003, the unmet-load series in each penalties word\'s Experimental', () => {
+        const parsed = FloRecommendation.parse(exampleRecommendation003);
+        expect(parsed).toEqual(exampleRecommendation003);
+        expect(AnyFloRecommendation.parse(exampleRecommendation003)).toEqual(exampleRecommendation003);
+        expect(parsed.PathPenaltiesList?.[0].Experimental.UnmetLoadPenaltyUsdList).toEqual([0, 0, 0.4]);
+    });
+
+    it('rejects a 003 penalties word whose declared lists differ in length (penalties axiom 1)', () => {
+        const broken = structuredClone(exampleRecommendation003);
+        broken.PathPenaltiesList[0].StabilityPenaltyUsdList.pop();
+        expect(FloRecommendation.safeParse(broken).success).toBe(false);
+    });
+
     it('round-trips a FLO service recommendation at 001 with store state and penalties', () => {
         const parsed = FloRecommendation001.parse(orange1Recommendation001);
         expect(parsed).toEqual(orange1Recommendation001);

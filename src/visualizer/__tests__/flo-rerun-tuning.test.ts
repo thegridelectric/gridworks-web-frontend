@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import orange1Params001 from "../../sema/__tests__/fixtures/orange1-flo.params-001.json";
 import exampleParams002 from "../../sema/__tests__/fixtures/registry-example-flo.params-002.json";
+import exampleParams004 from "../../sema/__tests__/fixtures/registry-example-flo.params-004.json";
 import { AnyFloParams } from "../../sema/types/AnyFloParams";
 import { PENALTY_FIELDS, floRerunRequest, penaltyTuning, withPenaltyTuning } from "../flo-rerun-tuning";
 
 const orange1 = AnyFloParams.parse(orange1Params001);
 const example002 = AnyFloParams.parse(exampleParams002);
+const example004 = AnyFloParams.parse(exampleParams004);
 
 describe("the re-run's penalty tuning", () => {
     it("names the fifteen penalty fields of flo.tuning.bruce", () => {
@@ -49,17 +51,33 @@ describe("the re-run's penalty tuning", () => {
             [1],
         );
         expect(request.TypeName).toBe("flo.rerun.request");
-        expect(request.Version).toBe("001");
+        expect(request.Version).toBe("002");
         expect(request.HpForcedOnSteps).toEqual([0]);
         expect(request.HpForcedOffSteps).toEqual([1]);
-        expect(request.Params.Version).toBe("003");
+        expect(request.Params.Version).toBe("004");
         expect(request.Params.Tuning).toMatchObject({
             TypeName: "flo.tuning.bruce",
-            Version: "002",
+            Version: "003",
             RswtPenaltyWeight: 2.5,
-            UnmetLoadPenaltyEnabled: false,
-            UnmetLoadPenaltyWeight: 10,
+            Experimental: { UnmetLoadPenaltyEnabled: false, UnmetLoadPenaltyWeight: 10 },
         });
+        expect(request.Params.Tuning).not.toHaveProperty("UnmetLoadPenaltyEnabled");
+    });
+
+    it("round-trips a 003 tuning's unmet-load knobs through Experimental, keeping its other keys", () => {
+        const tuning = penaltyTuning(example004)!;
+        expect(tuning.UnmetLoadPenaltyEnabled).toBe(true);
+        expect(tuning.UnmetLoadPenaltyWeight).toBe(10);
+        const word = structuredClone(exampleParams004);
+        const sent = AnyFloParams.parse({ ...word, Tuning: { ...word.Tuning, Experimental: { ...word.Tuning.Experimental, OtherKnob: 3 } } });
+        const edited = withPenaltyTuning(sent, { ...tuning, UnmetLoadPenaltyEnabled: false, UnmetLoadPenaltyWeight: 4.5 });
+        expect(edited.Version).toBe("004");
+        expect(edited.Tuning).toMatchObject({
+            Version: "003",
+            Experimental: { UnmetLoadPenaltyEnabled: false, UnmetLoadPenaltyWeight: 4.5, OtherKnob: 3 },
+        });
+        expect(edited.Tuning).not.toHaveProperty("UnmetLoadPenaltyWeight");
+        expect(penaltyTuning(edited)).toEqual({ ...tuning, UnmetLoadPenaltyEnabled: false, UnmetLoadPenaltyWeight: 4.5 });
     });
 
     it("refuses a step outside the horizon, or one forced both on and off", () => {

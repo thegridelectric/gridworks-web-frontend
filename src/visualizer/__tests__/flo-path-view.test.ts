@@ -69,6 +69,33 @@ describe('the FLO path view', () => {
         expect(view.penalties[2].base[0]).toBe(view.penalties[0].usd[0] + 1.25);
     });
 
+    it('reads the unmet-load series from Experimental in a 002 penalties word', () => {
+        const word = structuredClone(orange1Recommendation001);
+        word.Version = '003';
+        const penaltiesList = word.PathPenaltiesList.map((penalties) => ({
+            ...penalties,
+            Version: '002',
+            Experimental: { UnmetLoadPenaltyUsdList: penalties.RswtPenaltyUsdList.map(() => 0.75) },
+        }));
+        const view = pathView(AnyFloRecommendation.parse({ ...word, PathPenaltiesList: penaltiesList }), 1);
+        expect(view.penalties.map((p) => p.name)).toEqual([
+            'RSWT penalty',
+            'Unmet load penalty',
+            'Stability penalty',
+            'Short-cycle penalty',
+        ]);
+        expect(view.penalties[1].usd[0]).toBe(0.75);
+        expect(view.penalties[2].base[0]).toBe(view.penalties[0].usd[0] + 0.75);
+    });
+
+    it('draws no unmet-load series for a 002 penalties word whose Experimental holds none', () => {
+        const word = structuredClone(orange1Recommendation001);
+        word.Version = '003';
+        const penaltiesList = word.PathPenaltiesList.map((penalties) => ({ ...penalties, Version: '002', Experimental: {} }));
+        const view = pathView(AnyFloRecommendation.parse({ ...word, PathPenaltiesList: penaltiesList }), 1);
+        expect(view.penalties.map((p) => p.name)).toEqual(['RSWT penalty', 'Stability penalty', 'Short-cycle penalty']);
+    });
+
     it('stacks the three penalty series', () => {
         const view = pathView(orange1, 1);
         expect(view.penalties.map((p) => p.name)).toEqual(['RSWT penalty', 'Stability penalty', 'Short-cycle penalty']);
