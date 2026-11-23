@@ -445,7 +445,14 @@ export default function VisualizerPage() {
         setFloHourShift(hourShift);
         setIsFloLoading(true);
         const slotStart = endDate.setZone(NEW_YORK_TIME_ZONE).startOf('hour');
-        let rerunAfter: { params: AnyFloParams; selections: FloHorizonBarSelections } | null = null;
+        // Hold keeps the plots already on screen until the re-run of the
+        // next hour is ready, so the journaled FLO for that hour is never drawn.
+        let holdRerun: {
+            recommendation: AnyFloRecommendation;
+            params: AnyFloParams;
+            realPriceMwh: number | null;
+            selections: FloHorizonBarSelections;
+        } | null = null;
         try {
             const [recommendation, params, realPriceMwh] = await Promise.all([
                 fetchRecommendation({ installationGNode, time: endDate }),
@@ -456,31 +463,40 @@ export default function VisualizerPage() {
             if (generation !== floQueryGeneration.current) {
                 return;
             }
-            clearVisualizerContent(holdEdits ? { keepHoldEdits: true } : undefined);
-            if (recommendation === null) {
-                setFloRecommendation(null);
-                setFloNotice(`No FLO was run for the slot starting ${slotStart.toFormat('yyyy-LL-dd HH:mm')} ET`);
+            const carried = recommendation === null
+                ? null
+                : fitFloHorizonBarSelections(
+                    carriedSelections,
+                    recommendation.OptimalPathList[defaultPairIndex(recommendation)].StepDurationMinutes.length,
+                );
+            const canHoldRerun = holdEdits
+                && recommendation !== null
+                && params !== null
+                && carried !== null
+                && penaltyTuning(params) !== null
+                && floPenaltyTuningFromDraft(carriedDraft) !== null;
+            if (canHoldRerun && recommendation && params && carried) {
+                holdRerun = { recommendation, params, realPriceMwh, selections: carried };
             } else {
-                const pairIndex = defaultPairIndex(recommendation);
-                const stepCount = recommendation.OptimalPathList[pairIndex].StepDurationMinutes.length;
-                setFloNotice(null);
-                setFloPairIndex(pairIndex);
-                setFloRecommendation(recommendation);
-                setFloParams(params);
-                setFloRealPriceMwh(realPriceMwh);
-                if (holdEdits) {
-                    // Keep the penalty draft and the same horizon steps.
-                    // The new FLO starts one hour earlier or later, so a
-                    // force on 05:00 lands on 04:00 or 06:00 on its own.
-                    const carried = fitFloHorizonBarSelections(carriedSelections, stepCount);
-                    setFloHorizonBarSelections(carried);
-                    if (params) {
-                        rerunAfter = { params, selections: carried };
-                    }
+                clearVisualizerContent(holdEdits ? { keepHoldEdits: true } : undefined);
+                if (recommendation === null) {
+                    setFloRecommendation(null);
+                    setFloNotice(`No FLO was run for the slot starting ${slotStart.toFormat('yyyy-LL-dd HH:mm')} ET`);
                 } else {
-                    setFloHorizonBarSelections(emptyFloHorizonBarSelections(stepCount));
-                    setFloTuningDraft(floPenaltyTuningDraft((params && penaltyTuning(params)) ?? {}));
-                    setFloRerunRecommendation(null);
+                    const pairIndex = defaultPairIndex(recommendation);
+                    const stepCount = recommendation.OptimalPathList[pairIndex].StepDurationMinutes.length;
+                    setFloNotice(null);
+                    setFloPairIndex(pairIndex);
+                    setFloRecommendation(recommendation);
+                    setFloParams(params);
+                    setFloRealPriceMwh(realPriceMwh);
+                    if (holdEdits && carried) {
+                        setFloHorizonBarSelections(carried);
+                    } else {
+                        setFloHorizonBarSelections(emptyFloHorizonBarSelections(stepCount));
+                        setFloTuningDraft(floPenaltyTuningDraft((params && penaltyTuning(params)) ?? {}));
+                        setFloRerunRecommendation(null);
+                    }
                 }
             }
         } catch (error) {
@@ -491,15 +507,52 @@ export default function VisualizerPage() {
         } finally {
             if (generation === floQueryGeneration.current) {
                 setIsFloLoading(false);
-                if (!rerunAfter) {
+                if (!holdRerun) {
                     setFloHourShift(null);
                 }
             }
         }
-        if (rerunAfter && generation === floQueryGeneration.current) {
-            await rerunFlo(rerunAfter.params, carriedDraft, rerunAfter.selections);
-            if (generation === floQueryGeneration.current) {
-                setFloHourShift(null);
+        if (holdRerun && generation === floQueryGeneration.current) {
+            setIsRerunning(true);
+            try {
+                const answer = await rerun(floRerunRequest(
+                    holdRerun.params,
+                    { ...penaltyTuning(holdRerun.params)!, ...floPenaltyTuningFromDraft(carriedDraft)! } as PenaltyTuning,
+                    floHorizonSelectedSteps(holdRerun.selections.top),
+                    floHorizonSelectedSteps(holdRerun.selections.bottom),
+                ));
+                if (generation !== floQueryGeneration.current) {
+                    return;
+                }
+                const pairIndex = defaultPairIndex(holdRerun.recommendation);
+                clearVisualizerContent({ keepHoldEdits: true });
+                setFloNotice(null);
+                setFloPairIndex(pairIndex);
+                setFloRecommendation(holdRerun.recommendation);
+                setFloParams(holdRerun.params);
+                setFloRealPriceMwh(holdRerun.realPriceMwh);
+                setFloHorizonBarSelections(holdRerun.selections);
+                setFloActualLoadKw(null);
+                setFloRerunRecommendation(answer);
+            } catch (error) {
+                if (generation !== floQueryGeneration.current) {
+                    return;
+                }
+                const pairIndex = defaultPairIndex(holdRerun.recommendation);
+                clearVisualizerContent({ keepHoldEdits: true });
+                setFloNotice(null);
+                setFloPairIndex(pairIndex);
+                setFloRecommendation(holdRerun.recommendation);
+                setFloParams(holdRerun.params);
+                setFloRealPriceMwh(holdRerun.realPriceMwh);
+                setFloHorizonBarSelections(holdRerun.selections);
+                setFloActualLoadKw(null);
+                setPlotError(error instanceof Error ? error.message : "Unknown error");
+            } finally {
+                setIsRerunning(false);
+                if (generation === floQueryGeneration.current) {
+                    setFloHourShift(null);
+                }
             }
         }
     }
