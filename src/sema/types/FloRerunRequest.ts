@@ -3,7 +3,7 @@ import { NonNegativeInt } from '../formats';
 import { AnyFloParams } from './AnyFloParams';
 import { FLO_RERUN_REQUEST_AXIOMS } from './floRerunRequestAxioms';
 
-/** Sema: https://schemas.electricity.works/types/flo.rerun.request/001 */
+/** Sema: https://schemas.electricity.works/types/flo.rerun.request/002 */
 export const FloRerunRequest = FLO_RERUN_REQUEST_AXIOMS.reduce(
     (schema, [check, message, path]) => schema.refine(check, { message, path: [path] }),
     z.strictObject({
@@ -11,7 +11,7 @@ export const FloRerunRequest = FLO_RERUN_REQUEST_AXIOMS.reduce(
         HpForcedOnSteps: z.array(NonNegativeInt),
         HpForcedOffSteps: z.array(NonNegativeInt),
         TypeName: z.literal('flo.rerun.request'),
-        Version: z.literal('001'),
+        Version: z.literal('002'),
     }),
 );
 
