@@ -27,12 +27,13 @@ import FloBidPlot from "./FloBidPlot";
 import FloParamsForecastPlot from "./FloParamsForecastPlot";
 import FloPathCopPlot from "./FloPathCopPlot";
 import { pathCopAvgLwtFList, pathCopList, pathHasHpOn } from "./flo-path-cop";
+import { FloHorizonBars } from "./FloHorizonBars";
 import {
-    FloHorizonBars,
     emptyFloHorizonBarSelections,
     floHorizonSelectedSteps,
+    fitFloHorizonBarSelections,
     type FloHorizonBarSelections,
-} from "./FloHorizonBars";
+} from "./flo-horizon-selections";
 import {
     FloPenaltyTuning,
     floPenaltyTuningDraft,
@@ -46,6 +47,18 @@ import { bidView, defaultPairIndex, paramsView } from "./flo-path-view";
 import { floRerunRequest, penaltyTuning, type PenaltyTuning } from "./flo-rerun-tuning";
 import { fetchSlotClearedPrice } from "./pricing-api";
 import type { VisualizerParams } from "./VisualizerParams";
+
+type FloPenMode = "off" | "edit" | "hold";
+
+function nextFloPenMode(mode: FloPenMode): FloPenMode {
+    if (mode === "off") {
+        return "edit";
+    }
+    if (mode === "edit") {
+        return "hold";
+    }
+    return "off";
+}
 
 export default function VisualizerPage() {
 
@@ -66,7 +79,7 @@ export default function VisualizerPage() {
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [tariff, setTariff] = useState<TouTariff | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [isFloPenMode, setIsFloPenMode] = useState(false);
+    const [floPenMode, setFloPenMode] = useState<FloPenMode>("off");
     const [floHorizonBarSelections, setFloHorizonBarSelections] = useState<FloHorizonBarSelections>({
         top: [],
         bottom: [],
@@ -227,22 +240,24 @@ export default function VisualizerPage() {
         setPlottedParams(null);
     }
 
-    function clearFloDisplay() {
+    function clearFloDisplay(options?: { keepHoldEdits?: boolean }) {
         setFloRecommendation(null);
         setFloParams(null);
         setFloRealPriceMwh(null);
         setFloNotice(null);
         setFloPairIndex(0);
         setFloRerunRecommendation(null);
-        setFloHorizonBarSelections({ top: [], bottom: [] });
-        setFloTuningDraft({});
-        setIsFloPenMode(false);
         setFloSummaryXAxisMetrics(null);
+        if (!options?.keepHoldEdits) {
+            setFloHorizonBarSelections({ top: [], bottom: [] });
+            setFloTuningDraft({});
+            setFloPenMode("off");
+        }
     }
 
-    function clearVisualizerContent() {
+    function clearVisualizerContent(options?: { keepHoldEdits?: boolean }) {
         clearReadingsDisplay();
-        clearFloDisplay();
+        clearFloDisplay(options);
         setPlotError(null);
     }
 
@@ -373,7 +388,41 @@ export default function VisualizerPage() {
         return new Date(ny.year, ny.month - 1, ny.day, ny.hour, ny.minute, 0, 0);
     }
 
-    async function runFloQuery(endDt: Date, hourShift: -1 | 1 | null = null) {
+    async function rerunFlo(
+        params: AnyFloParams,
+        draft: FloPenaltyTuningDraft,
+        selections: FloHorizonBarSelections,
+    ) {
+        const base = penaltyTuning(params);
+        const values = floPenaltyTuningFromDraft(draft);
+        const generation = floQueryGeneration.current;
+        if (base === null || values === null) {
+            return;
+        }
+        setPlotError(null);
+        setIsRerunning(true);
+        try {
+            const answer = await rerun(floRerunRequest(
+                params,
+                { ...base, ...values } as PenaltyTuning,
+                floHorizonSelectedSteps(selections.top),
+                floHorizonSelectedSteps(selections.bottom),
+            ));
+            if (generation !== floQueryGeneration.current) {
+                return;
+            }
+            setFloRerunRecommendation(answer);
+        } catch (error) {
+            if (generation !== floQueryGeneration.current) {
+                return;
+            }
+            setPlotError(error instanceof Error ? error.message : "Unknown error");
+        } finally {
+            setIsRerunning(false);
+        }
+    }
+
+    async function runFloQuery(endDt: Date, hourShift: -1 | 1 | null = null, holdEdits = false) {
         setPlotError(null);
 
         if (!installationGNode) {
@@ -387,11 +436,16 @@ export default function VisualizerPage() {
             return;
         }
 
+        // Captured before the await so a hold step re-runs the edits the
+        // user had, not whatever the next hour was solved with.
+        const carriedDraft = floTuningDraft;
+        const carriedSelections = floHorizonBarSelections;
         const generation = ++floQueryGeneration.current;
         setEndDateWindow(endDt);
         setFloHourShift(hourShift);
         setIsFloLoading(true);
         const slotStart = endDate.setZone(NEW_YORK_TIME_ZONE).startOf('hour');
+        let rerunAfter: { params: AnyFloParams; selections: FloHorizonBarSelections } | null = null;
         try {
             const [recommendation, params, realPriceMwh] = await Promise.all([
                 fetchRecommendation({ installationGNode, time: endDate }),
@@ -402,29 +456,51 @@ export default function VisualizerPage() {
             if (generation !== floQueryGeneration.current) {
                 return;
             }
-            clearVisualizerContent();
+            clearVisualizerContent(holdEdits ? { keepHoldEdits: true } : undefined);
             if (recommendation === null) {
                 setFloRecommendation(null);
                 setFloNotice(`No FLO was run for the slot starting ${slotStart.toFormat('yyyy-LL-dd HH:mm')} ET`);
             } else {
                 const pairIndex = defaultPairIndex(recommendation);
+                const stepCount = recommendation.OptimalPathList[pairIndex].StepDurationMinutes.length;
                 setFloNotice(null);
                 setFloPairIndex(pairIndex);
                 setFloRecommendation(recommendation);
                 setFloParams(params);
                 setFloRealPriceMwh(realPriceMwh);
-                setFloHorizonBarSelections(emptyFloHorizonBarSelections(
-                    recommendation.OptimalPathList[pairIndex].StepDurationMinutes.length,
-                ));
-                setFloTuningDraft(floPenaltyTuningDraft((params && penaltyTuning(params)) ?? {}));
-                setFloRerunRecommendation(null);
+                if (holdEdits) {
+                    // Keep the penalty draft and the same horizon steps.
+                    // The new FLO starts one hour earlier or later, so a
+                    // force on 05:00 lands on 04:00 or 06:00 on its own.
+                    const carried = fitFloHorizonBarSelections(carriedSelections, stepCount);
+                    setFloHorizonBarSelections(carried);
+                    if (params) {
+                        rerunAfter = { params, selections: carried };
+                    }
+                } else {
+                    setFloHorizonBarSelections(emptyFloHorizonBarSelections(stepCount));
+                    setFloTuningDraft(floPenaltyTuningDraft((params && penaltyTuning(params)) ?? {}));
+                    setFloRerunRecommendation(null);
+                }
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error';
-            setPlotError(message);
+            if (generation === floQueryGeneration.current) {
+                setPlotError(message);
+            }
         } finally {
-            setIsFloLoading(false);
-            setFloHourShift(null);
+            if (generation === floQueryGeneration.current) {
+                setIsFloLoading(false);
+                if (!rerunAfter) {
+                    setFloHourShift(null);
+                }
+            }
+        }
+        if (rerunAfter && generation === floQueryGeneration.current) {
+            await rerunFlo(rerunAfter.params, carriedDraft, rerunAfter.selections);
+            if (generation === floQueryGeneration.current) {
+                setFloHourShift(null);
+            }
         }
     }
 
@@ -437,35 +513,18 @@ export default function VisualizerPage() {
         if (isLoading || isFloLoading || isRerunning) {
             return;
         }
-        setIsFloPenMode(false);
-        void runFloQuery(shiftEndWall(endDateTime, hours), hours < 0 ? -1 : 1);
+        const holdEdits = floPenMode === "hold";
+        if (!holdEdits) {
+            setFloPenMode("off");
+        }
+        void runFloQuery(shiftEndWall(endDateTime, hours), hours < 0 ? -1 : 1, holdEdits);
     }
 
     async function onFloPenRerunClick() {
-        const base = floParams === null ? null : penaltyTuning(floParams);
-        const values = floPenaltyTuningFromDraft(floTuningDraft);
-        if (!floParams || base === null || values === null || isLoading || isFloLoading || isRerunning) {
+        if (!floParams || isLoading || isFloLoading || isRerunning) {
             return;
         }
-        const generation = floQueryGeneration.current;
-        setPlotError(null);
-        setIsRerunning(true);
-        try {
-            const answer = await rerun(floRerunRequest(
-                floParams,
-                { ...base, ...values } as PenaltyTuning,
-                floHorizonSelectedSteps(floHorizonBarSelections.top),
-                floHorizonSelectedSteps(floHorizonBarSelections.bottom),
-            ));
-            if (generation !== floQueryGeneration.current) {
-                return;
-            }
-            setFloRerunRecommendation(answer);
-        } catch (error) {
-            setPlotError(error instanceof Error ? error.message : "Unknown error");
-        } finally {
-            setIsRerunning(false);
-        }
+        await rerunFlo(floParams, floTuningDraft, floHorizonBarSelections);
     }
 
     useEffect(() => {
@@ -629,7 +688,7 @@ export default function VisualizerPage() {
                     <div className="d-flex flex-column align-items-center gap-2 pt-3">
                         <div className="d-flex justify-content-center align-items-center gap-2">
                         <button
-                            className={`btn btn-sm btn-outline-secondary flo-hour-btn${floHourShift === -1 ? ' is-loading' : ''}`}
+                            className={`btn btn-sm btn-outline-secondary flo-hour-btn${floHourShift === -1 ? ' is-loading' : ''}${floPenMode === "hold" ? ' is-hold' : ''}`}
                             type="button"
                             aria-label="One hour earlier"
                             aria-busy={floHourShift === -1}
@@ -641,7 +700,7 @@ export default function VisualizerPage() {
                                 : <i className="bi bi-chevron-left" aria-hidden />}
                         </button>
                         <button
-                            className={`btn btn-sm btn-outline-secondary flo-hour-btn${floHourShift === 1 ? ' is-loading' : ''}`}
+                            className={`btn btn-sm btn-outline-secondary flo-hour-btn${floHourShift === 1 ? ' is-loading' : ''}${floPenMode === "hold" ? ' is-hold' : ''}`}
                             type="button"
                             aria-label="One hour later"
                             aria-busy={floHourShift === 1}
@@ -654,18 +713,19 @@ export default function VisualizerPage() {
                         </button>
                         {rerunAvailable &&
                             <button
-                                className={`btn btn-sm btn-outline-secondary flo-hour-btn${isFloPenMode ? ' is-selected' : ''}`}
+                                className={`btn btn-sm btn-outline-secondary flo-hour-btn${floPenMode === "edit" ? " is-selected" : floPenMode === "hold" ? " is-hold" : ""}`}
                                 type="button"
-                                aria-label="Edit"
-                                aria-pressed={isFloPenMode}
-                                disabled={isLoading || isFloLoading || !floRecommendation}
-                                onClick={() => setIsFloPenMode((on) => !on)}
+                                aria-label={floPenMode === "hold" ? "Pen hold" : floPenMode === "edit" ? "Pen enabled" : "Pen disabled"}
+                                aria-pressed={floPenMode === "hold" ? "mixed" : floPenMode === "edit"}
+                                title={floPenMode === "hold" ? "Hold" : floPenMode === "edit" ? "Enabled" : "Disabled"}
+                                disabled={isLoading || isFloLoading || (!floRecommendation && floPenMode !== "hold")}
+                                onClick={() => setFloPenMode(nextFloPenMode)}
                             >
                                 <i className="bi bi-pencil" aria-hidden />
                             </button>
                         }
                         </div>
-                        {rerunAvailable && isFloPenMode && floRecommendation && shownFloRecommendation &&
+                        {rerunAvailable && floPenMode !== "off" && floRecommendation && shownFloRecommendation &&
                             <div className="flo-pen-controls">
                                 <p className="flo-pen-instructions text-muted small mb-0">
                                     Re-run the same FLO but forcing the heat pump to be on or off in some of the

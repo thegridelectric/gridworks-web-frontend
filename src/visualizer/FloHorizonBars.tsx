@@ -1,27 +1,9 @@
 import { type FloSummaryXAxisMetrics } from "./FloPlot";
+import {
+    emptyFloHorizonBarSelections,
+    type FloHorizonBarSelections,
+} from "./flo-horizon-selections";
 import { ON_PEAK_FILL } from "./tou-tariff";
-
-export type FloHorizonBarSelections = {
-    top: boolean[];
-    bottom: boolean[];
-};
-
-export function emptyFloHorizonBarSelections(stepCount: number): FloHorizonBarSelections {
-    const empty = Array.from({ length: stepCount }, () => false);
-    return { top: empty, bottom: [...empty] };
-}
-
-/** The same selection as step ordinals for `flo.rerun.request`: 0 is the
- *  first horizon step. The panel shows those steps counted from 1. */
-export function floHorizonSelectedSteps(selected: boolean[]): number[] {
-    const steps: number[] = [];
-    for (let i = 0; i < selected.length; i++) {
-        if (selected[i]) {
-            steps.push(i);
-        }
-    }
-    return steps;
-}
 
 const FLO_HORIZON_USER_HIGHLIGHT = {
     green: {
