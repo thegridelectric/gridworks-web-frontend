@@ -32,7 +32,6 @@ export function installationRoleForGNode(
 export interface Session {
     username: string;
     isSystemAdmin: boolean;
-    refreshTime: DateTime;
     installations: AnyHouseSummary[];
 }
 
