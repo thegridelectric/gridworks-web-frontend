@@ -1,22 +1,15 @@
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
+import orange1Params001 from "../../sema/__tests__/fixtures/orange1-flo.params-001.json";
+import orange1Recommendation001 from "../../sema/__tests__/fixtures/orange1-flo.recommendation-001.json";
 import { AnyFloParams } from "../../sema/types/AnyFloParams";
 import { AnyFloRecommendation } from "../../sema/types/AnyFloRecommendation";
 import { defaultPairIndex } from "../flo-path-view";
 import { pathCopAvgLwtFList, pathCopList, pathLwtFList } from "../flo-path-cop";
 
-const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "../../sema/__tests__/fixtures");
-
 describe("pathCopList", () => {
     it("returns one COP per horizon step on the cheapest path", () => {
-        const params = AnyFloParams.parse(
-            JSON.parse(readFileSync(join(fixturesDir, "orange1-flo.params-001.json"), "utf8")),
-        );
-        const recommendation = AnyFloRecommendation.parse(
-            JSON.parse(readFileSync(join(fixturesDir, "orange1-flo.recommendation-001.json"), "utf8")),
-        );
+        const params = AnyFloParams.parse(orange1Params001);
+        const recommendation = AnyFloRecommendation.parse(orange1Recommendation001);
         const pairIndex = defaultPairIndex(recommendation);
         const cop = pathCopList(params, recommendation, pairIndex);
         const avgLwt = pathCopAvgLwtFList(params, recommendation, pairIndex);

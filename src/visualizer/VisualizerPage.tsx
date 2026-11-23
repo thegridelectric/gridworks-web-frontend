@@ -30,9 +30,7 @@ import { pathCopAvgLwtFList, pathCopList, pathHasHpOn } from "./flo-path-cop";
 import {
     FloHorizonBars,
     emptyFloHorizonBarSelections,
-    floHorizonSelectedPositions,
     floHorizonSelectedSteps,
-    formatFloPenForcedStepsList,
     type FloHorizonBarSelections,
 } from "./FloHorizonBars";
 import {
@@ -74,10 +72,6 @@ export default function VisualizerPage() {
         bottom: [],
     });
     const [floTuningDraft, setFloTuningDraft] = useState<FloPenaltyTuningDraft>({});
-    const [floPenRerunSummary, setFloPenRerunSummary] = useState<{
-        forcedOn: number[];
-        forcedOff: number[];
-    } | null>(null);
     const [rerunAvailable, setRerunAvailable] = useState(false);
     const [isRerunning, setIsRerunning] = useState(false);
     const [floRerunRecommendation, setFloRerunRecommendation] = useState<AnyFloRecommendation | null>(null);
@@ -240,7 +234,6 @@ export default function VisualizerPage() {
         setFloNotice(null);
         setFloPairIndex(0);
         setFloRerunRecommendation(null);
-        setFloPenRerunSummary(null);
         setFloHorizonBarSelections({ top: [], bottom: [] });
         setFloTuningDraft({});
         setIsFloPenMode(false);
@@ -424,7 +417,6 @@ export default function VisualizerPage() {
                     recommendation.OptimalPathList[pairIndex].StepDurationMinutes.length,
                 ));
                 setFloTuningDraft(floPenaltyTuningDraft((params && penaltyTuning(params)) ?? {}));
-                setFloPenRerunSummary(null);
                 setFloRerunRecommendation(null);
             }
         } catch (error) {
@@ -455,8 +447,6 @@ export default function VisualizerPage() {
         if (!floParams || base === null || values === null || isLoading || isFloLoading || isRerunning) {
             return;
         }
-        const forcedOn = floHorizonSelectedPositions(floHorizonBarSelections.top);
-        const forcedOff = floHorizonSelectedPositions(floHorizonBarSelections.bottom);
         const generation = floQueryGeneration.current;
         setPlotError(null);
         setIsRerunning(true);
@@ -471,7 +461,6 @@ export default function VisualizerPage() {
                 return;
             }
             setFloRerunRecommendation(answer);
-            setFloPenRerunSummary({ forcedOn, forcedOff });
         } catch (error) {
             setPlotError(error instanceof Error ? error.message : "Unknown error");
         } finally {
@@ -710,18 +699,6 @@ export default function VisualizerPage() {
                                 >
                                     {isRerunning ? "Re-running…" : "Re-run"}
                                 </button>
-                                {/* {floPenRerunSummary &&
-                                    <div className="flo-pen-rerun-summary text-muted small">
-                                        <p className="mb-0">
-                                            Steps forced on:{" "}
-                                            {formatFloPenForcedStepsList(floPenRerunSummary.forcedOn)}
-                                        </p>
-                                        <p className="mb-0">
-                                            Steps forced off:{" "}
-                                            {formatFloPenForcedStepsList(floPenRerunSummary.forcedOff)}
-                                        </p>
-                                    </div>
-                                } */}
                             </div>
                         }
                     </div>
