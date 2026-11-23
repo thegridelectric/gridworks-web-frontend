@@ -4,7 +4,12 @@ import orange1Recommendation001 from "../../sema/__tests__/fixtures/orange1-flo.
 import { AnyFloParams } from "../../sema/types/AnyFloParams";
 import { AnyFloRecommendation } from "../../sema/types/AnyFloRecommendation";
 import { defaultPairIndex } from "../flo-path-view";
-import { pathCopAvgLwtFList, pathCopList, pathLwtFList } from "../flo-path-cop";
+import {
+    PATH_COP_HP_ON_MIN_KW,
+    pathCopAvgLwtFList,
+    pathCopList,
+    pathLwtFList,
+} from "../flo-path-cop";
 
 describe("pathCopList", () => {
     it("returns one COP per horizon step on the cheapest path", () => {
@@ -19,14 +24,15 @@ describe("pathCopList", () => {
         expect(avgLwt).not.toBeNull();
         expect(cop).toHaveLength(params.OatFList.length);
         const path = recommendation.OptimalPathList[pairIndex];
+        const minW = PATH_COP_HP_ON_MIN_KW * 1000;
         cop!.forEach((value, t) => {
-            if (path.HpAvgWList[t] <= 0) {
+            if (path.HpAvgWList[t] < minW) {
                 expect(value).toBe(0);
             } else {
                 expect(value).toBeGreaterThan(0);
             }
             expect(Number.isFinite(value)).toBe(true);
-            if (path.HpAvgWList[t] <= 0) {
+            if (path.HpAvgWList[t] < minW) {
                 expect(avgLwt![t]).toBe(0);
             } else {
                 expect(avgLwt![t]).toBeCloseTo(lwt![t], 5);

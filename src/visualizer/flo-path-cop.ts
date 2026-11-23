@@ -140,16 +140,21 @@ export function pathLwtFList(
     return lwt;
 }
 
+/** Heat pump treated as on when average electric power is at least this (kW). */
+export const PATH_COP_HP_ON_MIN_KW = 0.1;
+
+const PATH_COP_HP_ON_MIN_W = PATH_COP_HP_ON_MIN_KW * 1000;
+
 function hpOnAtStep(
     recommendation: AnyFloRecommendation,
     pairIndex: number,
     step: number,
 ): boolean {
     const path = recommendation.OptimalPathList[pairIndex];
-    return step < path.HpAvgWList.length && path.HpAvgWList[step] > 0;
+    return step < path.HpAvgWList.length && path.HpAvgWList[step] >= PATH_COP_HP_ON_MIN_W;
 }
 
-/** Step-average LWT (°F) used for COP; 0 where the heat pump is off (HpAvgW = 0). */
+/** Step-average LWT (°F) used for COP; 0 where HP power is below ``PATH_COP_HP_ON_MIN_KW``. */
 export function pathCopAvgLwtFList(
     params: AnyFloParams,
     recommendation: AnyFloRecommendation,
@@ -161,7 +166,7 @@ export function pathCopAvgLwtFList(
     return lwt.map((lwtF, t) => (hpOnAtStep(recommendation, pairIndex, t) ? lwtF : 0));
 }
 
-/** Step COP on the cheapest path; 0 where the heat pump is off (HpAvgW = 0). */
+/** Step COP on the cheapest path; 0 where HP power is below ``PATH_COP_HP_ON_MIN_KW``. */
 export function pathCopList(
     params: AnyFloParams,
     recommendation: AnyFloRecommendation,
@@ -182,5 +187,5 @@ export function pathHasHpOn(
     pairIndex: number,
 ): boolean {
     const path = recommendation.OptimalPathList[pairIndex];
-    return path.HpAvgWList.some((w) => w > 0);
+    return path.HpAvgWList.some((w) => w >= PATH_COP_HP_ON_MIN_W);
 }
