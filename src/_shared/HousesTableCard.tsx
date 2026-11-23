@@ -1,6 +1,9 @@
-import { useContext, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import SessionContext from "../_util/SessionContext";
+import SessionContext, { parseHouseSummaries } from "../_util/SessionContext";
+import GridWorksApi from "../_util/GridWorksApi";
+import { usePageVisibility } from "../_util/usePageVisibility";
+import { useTimer } from "../_util/useTimer";
 import { useHouseTableSelection } from "../_util/useHouseTableSelection";
 import { useRouteInfo } from "../_util/useRouteInfo";
 
@@ -296,6 +299,7 @@ function HousesCardFilters({
 function HousesCardTable({
     homes,
     refreshTime,
+    summariesAt,
     sortClass,
     onSortHeaderClick,
     onRowActivate,
@@ -304,6 +308,7 @@ function HousesCardTable({
 }: {
     homes: AnyHouseSummary[];
     refreshTime: DateTime;
+    summariesAt: DateTime;
     sortClass: (column: SortColumn) => string;
     onSortHeaderClick: (column: SortColumn) => void;
     onRowActivate: (home: AnyHouseSummary) => void;
@@ -344,7 +349,7 @@ function HousesCardTable({
                 </thead>
                 <tbody>
                     {homes.map((h) => {
-                        const badgeClass = aliasBadgeClassForHouse(h, refreshTime);
+                        const badgeClass = aliasBadgeClassForHouse(h, summariesAt);
                         // const alert = h.alertStatus?.status;
 // TODO fix this merge
                         // const badgeClass =
@@ -406,11 +411,51 @@ export default function HousesTableCard() {
     const { pathRoot, installationGNode } = useRouteInfo();
     const { isSelectionMode, selectedInstallationIds, toggleInstallationSelection } =
         useHouseTableSelection();
+    const isVisible = usePageVisibility();
+    const refreshTime = useTimer(36_000); // 0.01 hours, so the heat-call time will update
+    const [homes, setHomes] = useState(session!.installations);
+    // The badge compares a snapshot to this, the time those rows were loaded.
+    // The heat-call clock above moves on its own and must not turn the fleet red.
+    const [summariesAt, setSummariesAt] = useState(() => DateTime.now());
+    const skippedInitialFetch = useRef(false);
+    const requestInFlight = useRef(false);
+    const unmounted = useRef(false);
 
-    const homes = useMemo(
-        () => session!.installations,
-        [session!.installations],
-    );
+    useEffect(() => {
+        return () => {
+            unmounted.current = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        setHomes(session!.installations);
+        setSummariesAt(DateTime.now());
+    }, [session]);
+
+    useEffect(() => {
+        if (!isVisible || requestInFlight.current) {
+            return;
+        }
+        if (!skippedInitialFetch.current) {
+            skippedInitialFetch.current = true;
+            return;
+        }
+        requestInFlight.current = true;
+        (async function() {
+            try {
+                const response = await GridWorksApi.get<unknown>('/api/v2/installations/*/summaries');
+                if (!unmounted.current) {
+                    setHomes(parseHouseSummaries(response.data));
+                    setSummariesAt(DateTime.now());
+                }
+            } catch (ex) {
+                console.warn('Fetching installation summaries failed');
+                console.error(ex);
+            } finally {
+                requestInFlight.current = false;
+            }
+        })();
+    }, [isVisible, refreshTime]);
 
     const {
         filtersVisible,
@@ -426,7 +471,7 @@ export default function HousesTableCard() {
         clearFilters,
         showNoSearchResults,
         sortClass,
-    } = useHousesTableState(homes, session!.refreshTime);
+    } = useHousesTableState(homes, summariesAt);
 
     function selectHouse(h: AnyHouseSummary) {
         const root = pathRoot ?? "installations";
@@ -485,7 +530,8 @@ export default function HousesTableCard() {
 
                     <HousesCardTable
                         homes={filteredSorted}
-                        refreshTime={session!.refreshTime}
+                        refreshTime={refreshTime}
+                        summariesAt={summariesAt}
                         sortClass={sortClass}
                         onSortHeaderClick={onSortHeaderClick}
                         onRowActivate={onRowActivate}

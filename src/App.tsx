@@ -6,8 +6,6 @@ import HeaderLayout from "./_layout/HeaderLayout";
 import { getAuthToken, parseAuthToken } from "./auth/auth";
 import { useEffect, useState } from "react";
 import GridWorksApi from './_util/GridWorksApi';
-import { useTimer } from "./_util/useTimer";
-import { usePageVisibility } from "./_util/usePageVisibility";
 
 
 
@@ -18,8 +16,6 @@ export default function App({ children }: React.PropsWithChildren) {
 
     const location = useLocation();
     const authToken = getAuthToken();
-    const refreshTime = useTimer(36_000); // 0.01 hours, so the heat-call time will update
-    const isVisible = usePageVisibility();
 
 
     // TODO in the future -- switch to react-query?
@@ -39,13 +35,12 @@ export default function App({ children }: React.PropsWithChildren) {
 
     useEffect(() => {
         (async function() {
-            if (authToken && (isVisible || !isSessionLoaded)) {
+            if (authToken && !isSessionLoaded) {
                 try {
                     const installationSummariesResponse = await GridWorksApi.get<unknown>('/api/v2/installations/*/summaries');
                     const authTokenData = parseAuthToken(authToken!);
                     setSession({ 
                         ...authTokenData,
-                        refreshTime,
                         installations: parseHouseSummaries(installationSummariesResponse.data),
                     });
                 }
@@ -60,7 +55,7 @@ export default function App({ children }: React.PropsWithChildren) {
                 }
             }
         })();
-    }, [authToken, isSessionLoaded, refreshTime, isVisible]);
+    }, [authToken, isSessionLoaded]);
 
     if (location.pathname === '/') {
         return <Navigate to="/installations/" />;
