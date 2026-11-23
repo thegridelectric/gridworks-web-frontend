@@ -11,16 +11,6 @@ export function emptyFloHorizonBarSelections(stepCount: number): FloHorizonBarSe
     return { top: empty, bottom: [...empty] };
 }
 
-export function floHorizonSelectedPositions(selected: boolean[]): number[] {
-    const positions: number[] = [];
-    for (let i = 0; i < selected.length; i++) {
-        if (selected[i]) {
-            positions.push(i + 1);
-        }
-    }
-    return positions;
-}
-
 /** The same selection as step ordinals for `flo.rerun.request`: 0 is the
  *  first horizon step. The panel shows those steps counted from 1. */
 export function floHorizonSelectedSteps(selected: boolean[]): number[] {
@@ -31,13 +21,6 @@ export function floHorizonSelectedSteps(selected: boolean[]): number[] {
         }
     }
     return steps;
-}
-
-export function formatFloPenForcedStepsList(positions: number[]): string {
-    if (positions.length === 0) {
-        return "[]";
-    }
-    return `[${positions.join(", ")}]`;
 }
 
 const FLO_HORIZON_USER_HIGHLIGHT = {
