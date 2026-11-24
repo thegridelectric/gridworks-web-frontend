@@ -73,9 +73,13 @@ function storeEnergyBoundsKwh(
     };
 }
 
-/** COP = intercept + cop_lwt_coeff * max(0, lwt − oat), matching bruce's optimizer. */
+/** COP = CopIntercept + lift coefficient * max(0, lwt − oat), the lift
+ *  model bruce optimizes with. 005 names the coefficient
+ *  CopLwtMinusOatCoeff; earlier versions hold the same number in
+ *  CopLwtCoeff. */
 export function heatPumpCop(params: AnyFloParams, oatF: number, lwtF: number): number {
-    return params.CopIntercept + params.CopLwtCoeff * Math.max(0, lwtF - oatF);
+    const liftCoeff = params.Version === "005" ? params.CopLwtMinusOatCoeff : params.CopLwtCoeff;
+    return params.CopIntercept + liftCoeff * Math.max(0, lwtF - oatF);
 }
 
 function expectedLwtF(

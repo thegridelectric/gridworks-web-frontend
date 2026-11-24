@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import orange1Params001 from "../../sema/__tests__/fixtures/orange1-flo.params-001.json";
 import exampleParams002 from "../../sema/__tests__/fixtures/registry-example-flo.params-002.json";
 import exampleParams004 from "../../sema/__tests__/fixtures/registry-example-flo.params-004.json";
+import exampleParams005 from "../../sema/__tests__/fixtures/registry-example-flo.params-005.json";
 import { AnyFloParams } from "../../sema/types/AnyFloParams";
 import { PENALTY_FIELDS, floRerunRequest, penaltyTuning, withPenaltyTuning } from "../flo-rerun-tuning";
 
 const orange1 = AnyFloParams.parse(orange1Params001);
 const example002 = AnyFloParams.parse(exampleParams002);
 const example004 = AnyFloParams.parse(exampleParams004);
+const example005 = AnyFloParams.parse(exampleParams005);
 
 describe("the re-run's penalty tuning", () => {
     it("names the fifteen penalty fields of flo.tuning.bruce", () => {
@@ -51,7 +53,7 @@ describe("the re-run's penalty tuning", () => {
             [1],
         );
         expect(request.TypeName).toBe("flo.rerun.request");
-        expect(request.Version).toBe("002");
+        expect(request.Version).toBe("003");
         expect(request.HpForcedOnSteps).toEqual([0]);
         expect(request.HpForcedOffSteps).toEqual([1]);
         expect(request.Params.Version).toBe("004");
@@ -78,6 +80,13 @@ describe("the re-run's penalty tuning", () => {
         });
         expect(edited.Tuning).not.toHaveProperty("UnmetLoadPenaltyWeight");
         expect(penaltyTuning(edited)).toEqual({ ...tuning, UnmetLoadPenaltyEnabled: false, UnmetLoadPenaltyWeight: 4.5 });
+    });
+
+    it("keeps a 005 request at 005, its COP fields as sent", () => {
+        const edited = withPenaltyTuning(example005, { ...penaltyTuning(example005)!, RswtPenaltyWeight: 2.5 });
+        expect(edited.Version).toBe("005");
+        expect({ ...edited, Tuning: undefined }).toEqual({ ...example005, Tuning: undefined });
+        expect(floRerunRequest(example005, penaltyTuning(example005)!, [], []).Params.Version).toBe("005");
     });
 
     it("refuses a step outside the horizon, or one forced both on and off", () => {
