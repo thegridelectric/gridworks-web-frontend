@@ -53,7 +53,7 @@ describe("rerun", () => {
         HpForcedOnSteps: [1],
         HpForcedOffSteps: [0],
         TypeName: "flo.rerun.request",
-        Version: "002",
+        Version: "003",
     });
 
     it("posts the word to the house in its GNodeAlias and parses the recommendation", async () => {

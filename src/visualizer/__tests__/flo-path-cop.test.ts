@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import orange1Params001 from "../../sema/__tests__/fixtures/orange1-flo.params-001.json";
+import exampleParams004 from "../../sema/__tests__/fixtures/registry-example-flo.params-004.json";
+import exampleParams005 from "../../sema/__tests__/fixtures/registry-example-flo.params-005.json";
 import orange1Recommendation001 from "../../sema/__tests__/fixtures/orange1-flo.recommendation-001.json";
 import { AnyFloParams } from "../../sema/types/AnyFloParams";
 import { AnyFloRecommendation } from "../../sema/types/AnyFloRecommendation";
 import { defaultPairIndex } from "../flo-path-view";
-import { pathCopAvgLwtFList, pathCopList, pathLwtFList } from "../flo-path-cop";
+import { heatPumpCop, pathCopAvgLwtFList, pathCopList, pathLwtFList } from "../flo-path-cop";
 
 describe("pathCopList", () => {
     it("returns one COP per horizon step on the cheapest path", () => {
@@ -33,5 +35,16 @@ describe("pathCopList", () => {
             }
         });
         expect(cop!.some((value) => value > 0)).toBe(true);
+    });
+});
+
+describe("heatPumpCop", () => {
+    it("is the lift model at 005 and at 004, reading the coefficient each version names", () => {
+        const params005 = AnyFloParams.parse(exampleParams005);
+        const params004 = AnyFloParams.parse({ ...exampleParams004, CopIntercept: 2.96, CopLwtCoeff: -0.00628 });
+        const lifted005 = AnyFloParams.parse({ ...exampleParams005, CopIntercept: 2.96, CopLwtMinusOatCoeff: -0.00628 });
+        expect(heatPumpCop(lifted005, 30, 130)).toBeCloseTo(2.96 - 0.628, 9);
+        expect(heatPumpCop(params004, 30, 130)).toBeCloseTo(heatPumpCop(lifted005, 30, 130), 9);
+        expect(heatPumpCop(params005, 140, 130)).toBe(params005.CopIntercept);
     });
 });

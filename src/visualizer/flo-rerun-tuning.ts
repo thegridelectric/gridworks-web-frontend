@@ -79,10 +79,11 @@ export function penaltyTuning(params: AnyFloParams): PenaltyTuning | null {
 
 /** The hour's request with its bruce Tuning's penalty fields replaced, as
  *  a `flo.params` word the backend's codec reads: validated here so an
- *  edit that breaks the word is refused before it is sent. A 002 or 003
- *  request becomes 004, its Tuning `flo.tuning.bruce` 003 with the
- *  unmet-load knobs in Experimental beside the keys it already held; a
- *  001 request stays 001 and drops the unmet-load knobs. */
+ *  edit that breaks the word is refused before it is sent. A 005 request
+ *  stays 005 and a 002 to 004 request becomes 004, its Tuning
+ *  `flo.tuning.bruce` 003 with the unmet-load knobs in Experimental beside
+ *  the keys it already held; a 001 request stays 001 and drops the
+ *  unmet-load knobs. */
 export function withPenaltyTuning(params: AnyFloParams, tuning: PenaltyTuning): AnyFloParams {
     if (params.Tuning.TypeName !== "flo.tuning.bruce") {
         throw new Error(`A re-run edits flo.tuning.bruce; this request's Tuning is ${params.Tuning.TypeName}`);
@@ -98,7 +99,7 @@ export function withPenaltyTuning(params: AnyFloParams, tuning: PenaltyTuning): 
     const experimental = params.Tuning.Version === "003" ? params.Tuning.Experimental : {};
     return AnyFloParams.parse({
         ...params,
-        Version: "004",
+        Version: params.Version === "005" ? "005" : "004",
         Tuning: {
             ...withoutUnmetLoad(params.Tuning),
             ...declared,
@@ -123,6 +124,6 @@ export function floRerunRequest(
         HpForcedOnSteps: hpForcedOnSteps,
         HpForcedOffSteps: hpForcedOffSteps,
         TypeName: "flo.rerun.request",
-        Version: "002",
+        Version: "003",
     });
 }
