@@ -18,12 +18,14 @@ function lineColors(isDarkMode: boolean): { forecast: string; actual: string } {
     };
 }
 
-const PLOT_HEIGHT = 500;
+const PLOT_HEIGHT = 620;
 const FLO_FORECAST_MARGINS = { ...FLO_PLOT_MARGINS, t: 40, b: 72 };
-/** Paper gap between the load and RSWT panels. */
+/** Paper gap between stacked panels. */
 const PANEL_GAP = 0.06;
-const RSWT_DOMAIN: [number, number] = [0, 0.5 - PANEL_GAP / 2];
-const LOAD_DOMAIN: [number, number] = [0.5 + PANEL_GAP / 2, 1];
+const PANEL_H = (1 - 2 * PANEL_GAP) / 3;
+const RSWT_DOMAIN: [number, number] = [0, PANEL_H];
+const LOAD_DOMAIN: [number, number] = [PANEL_H + PANEL_GAP, 2 * PANEL_H + PANEL_GAP];
+const OAT_DOMAIN: [number, number] = [2 * PANEL_H + 2 * PANEL_GAP, 1];
 
 const trace = (value: object): Data => value as Data;
 
@@ -40,7 +42,7 @@ function loadForecastRmseKw(forecastKw: number[], actualKw: (number | null)[]): 
     return n === 0 ? null : Math.sqrt(sumSq / n);
 }
 
-/** Load and RSWT step forecasts from ``flo.params`` on a shared time axis. */
+/** OAT, load, and RSWT step forecasts from ``flo.params`` on a shared time axis. */
 export default function FloParamsForecastPlot(props: {
     request: FloParamsView;
     isDarkMode: boolean;
@@ -62,6 +64,7 @@ export default function FloParamsForecastPlot(props: {
             : {}),
     };
 
+    const oatForecast = stepThrough(request.stepStart, request.horizonEnd, request.oatF);
     const loadForecast = stepThrough(request.stepStart, request.horizonEnd, request.loadKw);
     const rswtForecast = stepThrough(request.stepStart, request.horizonEnd, request.rswtF);
 
@@ -84,17 +87,29 @@ export default function FloParamsForecastPlot(props: {
     );
 
     const data: Data[] = [
+        trace({
+            type: "scatter",
+            mode: "lines",
+            name: "OAT forecast",
+            x: oatForecast.x,
+            y: oatForecast.y,
+            xaxis: "x",
+            yaxis: "y",
+            legend: "legend3",
+            line: { shape: "hv", color: lines.forecast, width: 2, dash: "dash" },
+            hovertemplate: "%{x|%H:%M}: %{y:.1f} °F<extra>OAT forecast</extra>",
+        }),
         ...(actual === null ? [] : [trace({
             type: "scatter",
             mode: "lines",
             name: actualLegendName,
             x: actual.x,
             y: actual.y,
-            xaxis: "x",
-            yaxis: "y",
+            xaxis: "x2",
+            yaxis: "y2",
             connectgaps: false,
             line: { shape: "hv", color: lines.actual, width: 2 },
-            hovertemplate: "%{y:.2f} kW<extra>Actual</extra>",
+            hovertemplate: "%{x|%H:%M}: %{y:.2f} kW<extra>Actual</extra>",
         })]),
         trace({
             type: "scatter",
@@ -102,11 +117,11 @@ export default function FloParamsForecastPlot(props: {
             name: "Load forecast",
             x: loadForecast.x,
             y: loadForecast.y,
-            xaxis: "x",
-            yaxis: "y",
+            xaxis: "x2",
+            yaxis: "y2",
             showlegend: showActual,
             line: { shape: "hv", color: lines.forecast, width: 2, dash: "dash" },
-            hovertemplate: "%{y:.2f} kW<extra>Load forecast</extra>",
+            hovertemplate: "%{x|%H:%M}: %{y:.2f} kW<extra>Load forecast</extra>",
         }),
         trace({
             type: "scatter",
@@ -114,11 +129,11 @@ export default function FloParamsForecastPlot(props: {
             name: "RSWT forecast",
             x: rswtForecast.x,
             y: rswtForecast.y,
-            xaxis: "x2",
-            yaxis: "y2",
+            xaxis: "x3",
+            yaxis: "y3",
             legend: "legend2",
             line: { shape: "hv", color: lines.forecast, width: 2, dash: "dash" },
-            hovertemplate: "%{y:.1f} °F<extra>RSWT forecast</extra>",
+            hovertemplate: "%{x|%H:%M}: %{y:.1f} °F<extra>RSWT forecast</extra>",
         }),
     ];
 
@@ -141,19 +156,32 @@ export default function FloParamsForecastPlot(props: {
             ...timeAxisRangeAndTicks,
         },
         xaxis2: {
-            ...floHorizonTimeAxis(base, { showTitle: true }),
+            ...timeAxis,
             anchor: "y2",
+            matches: "x",
+            showticklabels: false,
+            ...timeAxisRangeAndTicks,
+        },
+        xaxis3: {
+            ...floHorizonTimeAxis(base, { showTitle: true }),
+            anchor: "y3",
             matches: "x",
             ...timeAxisRangeAndTicks,
         },
         yaxis: {
+            ...base.yaxis,
+            domain: OAT_DOMAIN,
+            title: { text: "Outdoor air temp [°F]", standoff: 8 },
+            showgrid: false,
+        },
+        yaxis2: {
             ...base.yaxis,
             domain: LOAD_DOMAIN,
             title: { text: "Heating load [kW]", standoff: 8 },
             showgrid: false,
             range: [0, loadPlotMax > 0 ? loadPlotMax * 1.1 : 1],
         },
-        yaxis2: {
+        yaxis3: {
             ...base.yaxis,
             domain: RSWT_DOMAIN,
             title: { text: "RSWT [°F]", standoff: 8 },
@@ -163,7 +191,7 @@ export default function FloParamsForecastPlot(props: {
         ...(showActual ? {
             legend: {
                 x: 1,
-                y: 1,
+                y: LOAD_DOMAIN[1],
                 xref: "paper",
                 yref: "paper",
                 xanchor: "right",
@@ -175,6 +203,16 @@ export default function FloParamsForecastPlot(props: {
         legend2: {
             x: 1,
             y: RSWT_DOMAIN[1],
+            xref: "paper",
+            yref: "paper",
+            xanchor: "right",
+            yanchor: "top",
+            bgcolor: "rgba(0,0,0,0)",
+            font: { size: 11 },
+        },
+        legend3: {
+            x: 1,
+            y: OAT_DOMAIN[1],
             xref: "paper",
             yref: "paper",
             xanchor: "right",
