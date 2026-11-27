@@ -43,7 +43,7 @@ import { FloPenGitCommitCopy } from "./FloPenGitCommitCopy";
 import { fetchParams, fetchRecommendation, probeRerun, rerun } from "./flo-api";
 import { fetchActualLoadKw } from "./dist-load";
 import { bidView, defaultPairIndex, paramsView } from "./flo-path-view";
-import { floRerunRequest, penaltyTuning, type PenaltyTuning } from "./flo-rerun-tuning";
+import { floRerunRequest, heatPumpModeTrackingEnabled, penaltyTuning, type PenaltyTuning } from "./flo-rerun-tuning";
 import { fetchSlotClearedPrice } from "./pricing-api";
 import type { VisualizerParams } from "./VisualizerParams";
 
@@ -72,6 +72,7 @@ export default function VisualizerPage() {
         bottom: [],
     });
     const [floTuningDraft, setFloTuningDraft] = useState<FloPenaltyTuningDraft>({});
+    const [floModeTracking, setFloModeTracking] = useState<boolean | null>(true);
     const [rerunAvailable, setRerunAvailable] = useState(false);
     const [isRerunning, setIsRerunning] = useState(false);
     const [floRerunRecommendation, setFloRerunRecommendation] = useState<AnyFloRecommendation | null>(null);
@@ -236,6 +237,7 @@ export default function VisualizerPage() {
         setFloRerunRecommendation(null);
         setFloHorizonBarSelections({ top: [], bottom: [] });
         setFloTuningDraft({});
+        setFloModeTracking(true);
         setIsFloPenMode(false);
         setFloSummaryXAxisMetrics(null);
     }
@@ -417,6 +419,7 @@ export default function VisualizerPage() {
                     recommendation.OptimalPathList[pairIndex].StepDurationMinutes.length,
                 ));
                 setFloTuningDraft(floPenaltyTuningDraft((params && penaltyTuning(params)) ?? {}));
+                setFloModeTracking(params === null ? true : heatPumpModeTrackingEnabled(params));
                 setFloRerunRecommendation(null);
             }
         } catch (error) {
@@ -444,7 +447,7 @@ export default function VisualizerPage() {
     async function onFloPenRerunClick() {
         const base = floParams === null ? null : penaltyTuning(floParams);
         const values = floPenaltyTuningFromDraft(floTuningDraft);
-        if (!floParams || base === null || values === null || isLoading || isFloLoading || isRerunning) {
+        if (!floParams || base === null || values === null || floModeTracking === null || isLoading || isFloLoading || isRerunning) {
             return;
         }
         const generation = floQueryGeneration.current;
@@ -456,6 +459,7 @@ export default function VisualizerPage() {
                 { ...base, ...values } as PenaltyTuning,
                 floHorizonSelectedSteps(floHorizonBarSelections.top),
                 floHorizonSelectedSteps(floHorizonBarSelections.bottom),
+                floModeTracking,
             ));
             if (generation !== floQueryGeneration.current) {
                 return;
@@ -680,6 +684,20 @@ export default function VisualizerPage() {
                                     onDraftChange={setFloTuningDraft}
                                     disabled={isLoading || isFloLoading || isRerunning}
                                 />
+                                <div className="form-check form-switch flo-pen-mode-tracking">
+                                    <input
+                                        id="flo-heat-pump-mode-tracking"
+                                        className="form-check-input"
+                                        type="checkbox"
+                                        role="switch"
+                                        checked={floModeTracking === true}
+                                        disabled={isLoading || isFloLoading || isRerunning || floModeTracking === null}
+                                        onChange={(evt) => setFloModeTracking(evt.currentTarget.checked)}
+                                    />
+                                    <label className="form-check-label" htmlFor="flo-heat-pump-mode-tracking">
+                                        Heat pump mode tracking
+                                    </label>
+                                </div>
                                 <FloPenGitCommitCopy commit={shownFloRecommendation.FloGitCommit} />
                                 <button
                                     className="btn btn-sm btn-outline-secondary flo-pen-rerun-btn"
@@ -691,6 +709,7 @@ export default function VisualizerPage() {
                                         || isFloLoading
                                         || isRerunning
                                         || floPenaltyTuningFromDraft(floTuningDraft) === null
+                                        || floModeTracking === null
                                     }
                                     onClick={() => void onFloPenRerunClick()}
                                 >

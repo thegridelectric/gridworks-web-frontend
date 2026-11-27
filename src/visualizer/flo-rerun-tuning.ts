@@ -48,6 +48,25 @@ const UNMET_LOAD_OFF: UnmetLoadKnobs = {
     UnmetLoadPenaltyWeight: 10,
 };
 
+/** Bruce reads this from a 003 tuning's Experimental and keeps mode
+ *  tracking on when the key is absent. Hand-coded: no word declares it. */
+export const HEAT_PUMP_MODE_TRACKING_KEY = "HeatPumpModeTrackingEnabled";
+
+/** Whether the hour's request tracks heat-pump mode. True when the key is
+ *  absent, which is the behavior bruce keeps. Null when a 003 tuning's
+ *  Experimental holds the key as something other than a boolean. */
+export function heatPumpModeTrackingEnabled(params: AnyFloParams): boolean | null {
+    const tuning = params.Tuning;
+    if (tuning.TypeName !== "flo.tuning.bruce" || tuning.Version !== "003") {
+        return true;
+    }
+    if (!Object.hasOwn(tuning.Experimental, HEAT_PUMP_MODE_TRACKING_KEY)) {
+        return true;
+    }
+    const value = tuning.Experimental[HEAT_PUMP_MODE_TRACKING_KEY];
+    return typeof value === "boolean" ? value : null;
+}
+
 /** The unmet-load knobs a bruce tuning states: declared fields at 002,
  *  keys of Experimental at 003. Null at 001, which has no unmet-load
  *  penalty, and for a 003 tuning whose Experimental does not hold them. */
@@ -81,10 +100,14 @@ export function penaltyTuning(params: AnyFloParams): PenaltyTuning | null {
  *  a `flo.params` word the backend's codec reads: validated here so an
  *  edit that breaks the word is refused before it is sent. A 005 request
  *  stays 005 and a 002 to 004 request becomes 004, its Tuning
- *  `flo.tuning.bruce` 003 with the unmet-load knobs in Experimental beside
- *  the keys it already held; a 001 request stays 001 and drops the
- *  unmet-load knobs. */
-export function withPenaltyTuning(params: AnyFloParams, tuning: PenaltyTuning): AnyFloParams {
+ *  `flo.tuning.bruce` 003 with the unmet-load knobs and
+ *  `HeatPumpModeTrackingEnabled` in Experimental beside the keys it
+ *  already held; a 001 request stays 001 and drops the unmet-load knobs. */
+export function withPenaltyTuning(
+    params: AnyFloParams,
+    tuning: PenaltyTuning,
+    modeTrackingEnabled = true,
+): AnyFloParams {
     if (params.Tuning.TypeName !== "flo.tuning.bruce") {
         throw new Error(`A re-run edits flo.tuning.bruce; this request's Tuning is ${params.Tuning.TypeName}`);
     }
@@ -103,7 +126,7 @@ export function withPenaltyTuning(params: AnyFloParams, tuning: PenaltyTuning): 
         Tuning: {
             ...withoutUnmetLoad(params.Tuning),
             ...declared,
-            Experimental: { ...experimental, ...knobs },
+            Experimental: { ...experimental, ...knobs, [HEAT_PUMP_MODE_TRACKING_KEY]: modeTrackingEnabled },
             Version: "003",
         },
     });
@@ -118,9 +141,10 @@ export function floRerunRequest(
     tuning: PenaltyTuning,
     hpForcedOnSteps: number[],
     hpForcedOffSteps: number[],
+    modeTrackingEnabled = true,
 ): FloRerunRequest {
     return FloRerunRequest.parse({
-        Params: withPenaltyTuning(params, tuning),
+        Params: withPenaltyTuning(params, tuning, modeTrackingEnabled),
         HpForcedOnSteps: hpForcedOnSteps,
         HpForcedOffSteps: hpForcedOffSteps,
         TypeName: "flo.rerun.request",
