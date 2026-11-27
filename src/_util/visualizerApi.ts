@@ -15,6 +15,7 @@ export function getDashboardWebSocketBaseUrl(): string {
         return fromEnv.replace(/\/$/, '');
     }
     const pathBase = import.meta.env.BASE_URL.replace(/\/$/, '');
-    return `${window.location.origin}${pathBase}`;
+    const wsOrigin = window.location.origin.replace(/^http/, 'ws');
+    return `${wsOrigin}${pathBase}`;
 
 }
