@@ -295,7 +295,7 @@ export default function FloPlot(props: {
             xaxis: "x",
             yaxis: "y",
             line: { shape: "hv", color: "rgba(31,119,180,0.6)", width: 1.5 },
-            hovertemplate: "%{y:.2f} kW<extra>HP</extra>",
+            hovertemplate: "%{x|%H:%M}: %{y:.2f} kW<extra>HP</extra>",
         }),
         ...(load === null ? [] : [trace({
             type: "scatter",
@@ -306,7 +306,7 @@ export default function FloPlot(props: {
             xaxis: "x",
             yaxis: "y",
             line: { shape: "hv", color: "rgba(214,39,40,0.6)", width: 1.5 },
-            hovertemplate: "%{y:.2f} kW<extra>Load</extra>",
+            hovertemplate: "%{x|%H:%M}: %{y:.2f} kW<extra>Load</extra>",
         })]),
         ...(price === null ? [] : [trace({
             type: "scatter",
@@ -318,7 +318,7 @@ export default function FloPlot(props: {
             yaxis: "y2",
             legend: "legend2",
             line: { shape: "hv", color: "rgba(128,128,128,0.6)", width: 1.5 },
-            hovertemplate: "%{y:.1f} $/MWh<extra>Electricity price</extra>",
+            hovertemplate: "%{x|%H:%M}: %{y:.1f} $/MWh<extra>Electricity price</extra>",
         })]),
         ...store.bars.map((layer) => trace({
             type: "bar",
@@ -335,7 +335,7 @@ export default function FloPlot(props: {
             textposition: "inside",
             textfont: { color: layer.textColor, size: 9 },
             customdata: layer.temp,
-            hovertemplate: "%{customdata:.0f}°F<extra></extra>",
+            hovertemplate: "%{x|%H:%M}: %{customdata:.0f}°F<extra></extra>",
         })),
         ...(view.socPct ? [trace({
             type: "scatter",

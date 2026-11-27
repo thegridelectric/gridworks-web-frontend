@@ -4,7 +4,13 @@ import exampleParams002 from "../../sema/__tests__/fixtures/registry-example-flo
 import exampleParams004 from "../../sema/__tests__/fixtures/registry-example-flo.params-004.json";
 import exampleParams005 from "../../sema/__tests__/fixtures/registry-example-flo.params-005.json";
 import { AnyFloParams } from "../../sema/types/AnyFloParams";
-import { PENALTY_FIELDS, floRerunRequest, penaltyTuning, withPenaltyTuning } from "../flo-rerun-tuning";
+import {
+    PENALTY_FIELDS,
+    floRerunRequest,
+    heatPumpModeTrackingEnabled,
+    penaltyTuning,
+    withPenaltyTuning,
+} from "../flo-rerun-tuning";
 
 const orange1 = AnyFloParams.parse(orange1Params001);
 const example002 = AnyFloParams.parse(exampleParams002);
@@ -61,7 +67,11 @@ describe("the re-run's penalty tuning", () => {
             TypeName: "flo.tuning.bruce",
             Version: "003",
             RswtPenaltyWeight: 2.5,
-            Experimental: { UnmetLoadPenaltyEnabled: false, UnmetLoadPenaltyWeight: 10 },
+            Experimental: {
+                UnmetLoadPenaltyEnabled: false,
+                UnmetLoadPenaltyWeight: 10,
+                HeatPumpModeTrackingEnabled: true,
+            },
         });
         expect(request.Params.Tuning).not.toHaveProperty("UnmetLoadPenaltyEnabled");
     });
@@ -76,10 +86,39 @@ describe("the re-run's penalty tuning", () => {
         expect(edited.Version).toBe("004");
         expect(edited.Tuning).toMatchObject({
             Version: "003",
-            Experimental: { UnmetLoadPenaltyEnabled: false, UnmetLoadPenaltyWeight: 4.5, OtherKnob: 3 },
+            Experimental: {
+                UnmetLoadPenaltyEnabled: false,
+                UnmetLoadPenaltyWeight: 4.5,
+                OtherKnob: 3,
+                HeatPumpModeTrackingEnabled: true,
+            },
         });
         expect(edited.Tuning).not.toHaveProperty("UnmetLoadPenaltyWeight");
         expect(penaltyTuning(edited)).toEqual({ ...tuning, UnmetLoadPenaltyEnabled: false, UnmetLoadPenaltyWeight: 4.5 });
+    });
+
+    it("reads mode tracking as on when the key is absent, and writes the choice beside the other knobs", () => {
+        expect(heatPumpModeTrackingEnabled(example005)).toBe(true);
+        const sent = AnyFloParams.parse({
+            ...exampleParams005,
+            Tuning: {
+                ...exampleParams005.Tuning,
+                Experimental: { ...exampleParams005.Tuning.Experimental, HeatPumpModeTrackingEnabled: false },
+            },
+        });
+        expect(heatPumpModeTrackingEnabled(sent)).toBe(false);
+        const edited = withPenaltyTuning(sent, penaltyTuning(sent)!, false);
+        expect(edited.Tuning).toMatchObject({
+            Experimental: { UnmetLoadPenaltyEnabled: true, UnmetLoadPenaltyWeight: 10, HeatPumpModeTrackingEnabled: false },
+        });
+        const broken = AnyFloParams.parse({
+            ...exampleParams005,
+            Tuning: {
+                ...exampleParams005.Tuning,
+                Experimental: { ...exampleParams005.Tuning.Experimental, HeatPumpModeTrackingEnabled: "no" },
+            },
+        });
+        expect(heatPumpModeTrackingEnabled(broken)).toBeNull();
     });
 
     it("keeps a 005 request at 005, its COP fields as sent", () => {

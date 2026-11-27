@@ -69,19 +69,36 @@ export type FloPathView = {
     pathCostUsd: number | null;
 };
 
-/** The index of the pair the view opens on: the pair whose path has the
- *  lowest PathCostUsd, which is the path the optimizer takes at its
- *  forecast price. A recommendation that states no path costs opens on
- *  the lowest-priced pair, the one that holds when the price clears at
- *  or below every pair. */
-export function defaultPairIndex(recommendation: AnyFloRecommendation): number {
-    const penalties = recommendation.Version === "000" ? undefined : recommendation.PathPenaltiesList;
-    if (!penalties || penalties.length === 0) return recommendation.PqPairs.length - 1;
-    let cheapest = 0;
-    penalties.forEach((p, i) => {
-        if (p.PathCostUsd < penalties[cheapest].PathCostUsd) cheapest = i;
-    });
-    return cheapest;
+/** The pair whose segment contains `priceMwh`. Pairs are in descending price
+ *  order: pair i holds for (price of pair i+1, price of pair i], and the last
+ *  pair holds from the bid floor up. A price above every pair takes the first. */
+export function pairIndexAtPrice(
+    pairs: { PriceX1000: number }[],
+    priceMwh: number,
+    bidMinPriceMwh: number,
+): number {
+    if (pairs.length === 0) return 0;
+    const pricesMwh = pairs.map((p) => p.PriceX1000 / 1000);
+    if (priceMwh > pricesMwh[0]) return 0;
+    for (let i = 0; i < pairs.length; i++) {
+        const floor = i + 1 < pairs.length ? pricesMwh[i + 1] : bidMinPriceMwh;
+        const inRange = i + 1 < pairs.length
+            ? floor < priceMwh && priceMwh <= pricesMwh[i]
+            : floor <= priceMwh && priceMwh <= pricesMwh[i];
+        if (inRange) return i;
+    }
+    return pairs.length - 1;
+}
+
+/** The pair the view opens on: the one the first-step forecast falls in.
+ *  With no forecast, the view opens on the lowest-priced pair. */
+export function defaultPairIndex(
+    recommendation: AnyFloRecommendation,
+    params: AnyFloParams | null,
+): number {
+    const pairs = recommendation.PqPairs;
+    if (params === null || pairs.length === 0) return Math.max(0, pairs.length - 1);
+    return pairIndexAtPrice(pairs, priceUsdMwhList(params)[0], params.PriceMinUsdMwh);
 }
 
 export function pathView(recommendation: AnyFloRecommendation, pairIndex: number): FloPathView {
@@ -153,8 +170,8 @@ export function pathView(recommendation: AnyFloRecommendation, pairIndex: number
 }
 
 /** What the FLO view draws from the slot's request, on the request's
- *  step grid: the forecast load in kW and the electricity price the
- *  optimizer saw, in USD per MWh. */
+ *  step grid: outdoor air temperature, forecast load in kW, and the
+ *  electricity price the optimizer saw, in USD per MWh. */
 export type FloParamsView = {
     stepStart: string[];
     /** The same step starts in UTC seconds. */
@@ -162,6 +179,7 @@ export type FloParamsView = {
     /** Where the last step ends, as a display time. */
     horizonEnd: string;
     priceUsdMwh: number[];
+    oatF: number[];
     loadKw: number[];
     rswtF: number[];
 };
@@ -188,6 +206,7 @@ export function paramsView(params: AnyFloParams): FloParamsView {
         stepStartS,
         horizonEnd: formatForDisplay(DateTime.fromSeconds(t)),
         priceUsdMwh: priceUsdMwhList(params),
+        oatF: [...params.OatFList],
         loadKw: params.LoadKwhList.map((kwh, i) => kwh / (params.StepDurationMinutes[i] / 60)),
         rswtF: [...params.RswtFList],
     };
@@ -441,15 +460,7 @@ export function bidView(
     const maxQuantityKwh = hpMaxQuantityKwh * 1.1;
 
     function quantityAtPriceMwh(priceMwh: number): number {
-        if (priceMwh > pricesMwh[0]) return quantities[0];
-        for (let i = 0; i < pairs.length; i++) {
-            const floor = i + 1 < pairs.length ? pricesMwh[i + 1] : bidMinPriceMwh;
-            const inRange = i + 1 < pairs.length
-                ? floor < priceMwh && priceMwh <= pricesMwh[i]
-                : floor <= priceMwh && priceMwh <= pricesMwh[i];
-            if (inRange) return quantities[i];
-        }
-        return quantities[quantities.length - 1];
+        return quantities[pairIndexAtPrice(pairs, priceMwh, bidMinPriceMwh)];
     }
 
     const stepQ: number[] = [];

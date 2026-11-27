@@ -131,6 +131,13 @@
     cursor: wait;
 }
 
+.flo-pen-mode-tracking {
+    align-self: center;
+    width: fit-content;
+    margin: 1.25rem auto 0;
+    font-size: 0.875rem;
+}
+
 .flo-pen-git-commit {
     align-self: center;
     display: flex;
@@ -141,7 +148,7 @@
     box-sizing: border-box;
     padding: 0 1rem;
     max-width: 36rem;
-    margin-top: 1.25rem;
+    margin-top: 0.5rem;
     margin-left: auto;
     margin-right: auto;
     font-size: 0.875rem;
@@ -333,6 +340,7 @@
 
 @media (max-width: 650px) {
     .flo-pen-instructions,
+    .flo-pen-mode-tracking,
     .flo-pen-git-commit,
     .flo-horizon-bars-wrap,
     .flo-penalty-tuning {

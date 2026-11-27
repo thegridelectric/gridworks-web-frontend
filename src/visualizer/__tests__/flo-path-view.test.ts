@@ -11,15 +11,24 @@ const example000 = AnyFloRecommendation.parse(exampleRecommendation000);
 const orange1Store = orange1.Version === '001' ? orange1.StoreStateList![1] : undefined;
 
 describe('the FLO path view', () => {
-    it('opens on the pair whose path costs least', () => {
-        const costs = orange1.Version === '001' ? orange1.PathPenaltiesList!.map((p) => p.PathCostUsd) : [];
-        expect(costs[0]).toBeLessThan(costs[1]);
-        expect(defaultPairIndex(orange1)).toBe(0);
-        expect(pathView(orange1, defaultPairIndex(orange1)).hpKw[0]).toBe(0);
+    it('opens on the pair the first-step forecast falls in', () => {
+        const params = FloParams001.parse(orange1Params001);
+        expect(defaultPairIndex(orange1, params)).toBe(0);
+        expect(pathView(orange1, defaultPairIndex(orange1, params)).hpKw[0]).toBe(0);
     });
 
-    it('opens on the lowest-priced pair when the recommendation states no path costs', () => {
-        expect(defaultPairIndex(example000)).toBe(example000.PqPairs.length - 1);
+    it('opens on the lower pair when the forecast is below the kink, even if that path costs more', () => {
+        const raw = structuredClone(orange1Params001);
+        raw.LmpUsdMwhList[0] = 0;
+        const params = FloParams001.parse(raw);
+        const costs = orange1.Version === '001' ? orange1.PathPenaltiesList!.map((p) => p.PathCostUsd) : [];
+        expect(costs[0]).toBeLessThan(costs[1]);
+        expect(defaultPairIndex(orange1, params)).toBe(1);
+    });
+
+    it('uses the forecast for a recommendation that states no path costs', () => {
+        const params = FloParams001.parse(orange1Params001);
+        expect(defaultPairIndex(example000, params)).toBe(1);
     });
 
     it('lays the steps out from the slot start on the path step grid', () => {
@@ -214,6 +223,7 @@ describe('the FLO params view', () => {
         expect(view.stepStart[0]).toBe('2026-11-09T14:00:00');
         expect(view.priceUsdMwh[0]).toBeCloseTo(params.LmpUsdMwhList[0] + params.DistUsdMwhList[0]);
         expect(view.loadKw[5]).toBeCloseTo(params.LoadKwhList[5] / (params.StepDurationMinutes[5] / 60));
+        expect(view.oatF[5]).toBeCloseTo(params.OatFList[5]);
         expect(view.rswtF[5]).toBeCloseTo(params.RswtFList[5]);
     });
 });
